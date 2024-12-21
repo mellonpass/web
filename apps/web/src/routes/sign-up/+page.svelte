@@ -1,27 +1,53 @@
 <script>
-    let matchedPasswords = $state(true);
-    const invalidityMapper = $state({});
+    import { invalidateAll } from '$app/navigation';
+    import { checkEmailIfExists, createAccount } from '../../lib/accounts';
 
-    const formFields = [
+    let matchedPasswords = $state(true);
+
+    const serverErrors = $state([]);
+    const invalidityMapper = $state({});
+    const formFields = $state([
         {
             "id": "name",
             "label": "Name",
             "name": "name",
+            "value": "",
             "type": "text",
-            "errorMsg": "Required field."
+            "errorMsg": "Required field.",
         },
         {
             "id": "email",
             "label": "Email",
             "name": "email",
+            "value": "",
             "type": "email",
-            "errorMsg": "Invalid email."
+            "errorMsg": "Invalid email.",
         },
-    ];
+    ]);
+    const emailField = $derived(formFields.find(field => field.id === "email"));
+    const nameField = $derived(formFields.find(field => field.id === "name"));
 
+    // checks if email is taken.
+    const validateEmail = async () => {
+        try {
+            const emailResp = await checkEmailIfExists(emailField.value);
+            invalidityMapper.name = !emailResp.data.is_valid;
+            return !invalidityMapper.name;
+        } catch (error) {
+            serverErrors.push({"message": error, id: serverErrors.length})
+            throw error;
+        }
+    };
 
-    function handleSignUpSubmit(e) {
+    // checks if name is non-whitespace.
+    const validateName = () => {
+        invalidityMapper.name = nameField.value.trim() === "";
+        return !invalidityMapper.name;
+    };
+
+    const handleSignUpSubmit = async (e) => {
         e.preventDefault();
+
         const form = e.currentTarget;
         const data = new FormData(form);
 
@@ -30,15 +56,36 @@
             invalidityMapper[key] = !element.checkValidity();
         }
 
+        // if any of the fields are invalid, reject submit.
         if (Object.values(invalidityMapper).some(invalid => invalid)) {
             return;
         }
 
+        // ensure that these fields validity check beyond required.
+        if (validateName()) {
+            try {
+                await createAccount(nameField.value, emailField.value);
+                invalidateAll();
+            } catch (error) {
+                serverErrors.push({"message": error.message})
+                throw error;
+            }
+        }
     }
 
-    function handleInputFocusOut(e) {
+    const handleInputFocusOut = async (e) => {
         const element = e.currentTarget;
         invalidityMapper[element.name] = !element.checkValidity();
+
+        // Check if email is valid from the server.
+        if (element.name === "email" && !invalidityMapper[element.name]) {
+            // validateEmail();
+        }
+
+        // Check if name is valid e.g. non-whitespace.
+        if (element.name === "name" && !invalidityMapper[element.name]) {
+            validateName();
+        }
     }
 
 
@@ -56,6 +103,14 @@
                 <h2 class="uk-text-center">Create account</h2>
             </header>
 
+
+            {#each serverErrors as error (error)}
+                <div class="uk-alert-danger" uk-alert>
+                    <a href class="uk-alert-close" uk-close></a>
+                    <p>{error.message}</p>
+                </div>
+            {/each}
+
             <form id="signup-form" method="post" onsubmit={handleSignUpSubmit} novalidate>
                 <div class="uk-margin">
                     {#each formFields as formField (formField.id)}
@@ -66,6 +121,7 @@
                             onfocusout={handleInputFocusOut}
                             class:uk-form-danger={invalidityMapper[formField.name]}
                             class="uk-input"
+                            bind:value={formField.value}
                             type="{formField.type}"
                             id="{formField.id}"
                             name="{formField.name}"
