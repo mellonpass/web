@@ -17,28 +17,10 @@
             "type": "email",
             "errorMsg": "Invalid email."
         },
-        {
-            "id": "password",
-            "label": "Password",
-            "name": "password",
-            "type": "password",
-            "errorMsg": "Required field."
-        },
-        {
-            "id": "confirm-password",
-            "label": "Confirm password",
-            "name": "confirm-password",
-            "type": "password",
-            "errorMsg": "Required field."
-        },
     ];
 
 
-    function matchPasswords(password1, password2) {
-        return password1 === password2;
-    }
-
-    async function handleSignUpSubmit(e) {
+    function handleSignUpSubmit(e) {
         e.preventDefault();
         const form = e.currentTarget;
         const data = new FormData(form);
@@ -52,10 +34,9 @@
             return;
         }
 
-        matchedPasswords = matchPasswords(form.elements["password"].value, form.elements["confirm-password"].value);
     }
 
-    async function handleInputFocusOut(e) {
+    function handleInputFocusOut(e) {
         const element = e.currentTarget;
         invalidityMapper[element.name] = !element.checkValidity();
     }
@@ -78,7 +59,7 @@
             <form id="signup-form" method="post" onsubmit={handleSignUpSubmit} novalidate>
                 <div class="uk-margin">
                     {#each formFields as formField (formField.id)}
-                        <div class="uk-margin-small-bottom">
+                        <div class="uk-margin-small">
                             <label for="{formField.name}">{formField.label}</label>
                         </div>
                         <input
@@ -97,11 +78,6 @@
                         {/if}
                     {/each}
 
-                    {#if !matchedPasswords}
-                        <div class="uk-margin-small uk-text-default uk-text-danger">
-                            Password mismatched!
-                        </div>
-                    {/if}
                     <div class="uk-margin">
                         <button class="uk-button uk-button-primary uk-width-1-1">Continue</button>
                     </div>
