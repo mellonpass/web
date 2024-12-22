@@ -15,7 +15,7 @@ export const checkEmailIfExists = async (email) => {
         return data;
     }
 
-    throw new Error(data.error)
+    throw data.error;
 };
 
 
@@ -34,5 +34,5 @@ export const createAccount = async (name, email) => {
         return data;
     }
 
-    throw new Error(data.error)
+    throw data.error;
 };
