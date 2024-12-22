@@ -1,5 +1,4 @@
 <script>
-    import { invalidateAll } from '$app/navigation';
     import { checkEmailIfExists, createAccount } from '../../lib/accounts';
 
     let matchedPasswords = $state(true);
@@ -31,11 +30,16 @@
     const validateEmail = async () => {
         try {
             const emailResp = await checkEmailIfExists(emailField.value);
-            invalidityMapper.name = !emailResp.data.is_valid;
-            return !invalidityMapper.name;
+            invalidityMapper.email = !emailResp.data.is_valid;
+
+            if (invalidityMapper.email) {
+                emailField.errorMsg = "Email is already taken."
+            }
+
+            return !invalidityMapper.email;
         } catch (error) {
-            serverErrors.push({"message": error, id: serverErrors.length})
-            throw error;
+            serverErrors.length = 0;
+            serverErrors.push({"message": error});
         }
     };
 
@@ -51,6 +55,7 @@
         const form = e.currentTarget;
         const data = new FormData(form);
 
+        // check fields validity.
         for (const [key, value] of data.entries()) {
             const element = form.elements[key]
             invalidityMapper[key] = !element.checkValidity();
@@ -65,10 +70,17 @@
         if (validateName()) {
             try {
                 await createAccount(nameField.value, emailField.value);
-                invalidateAll();
             } catch (error) {
-                serverErrors.push({"message": error.message})
-                throw error;
+                serverErrors.length = 0;
+                // if server returns a multiple error validation.
+                if (typeof(error) === "object") {
+                    Object.keys(error).forEach(key => {
+                        const key_ = key.charAt(0).toUpperCase() + key.slice(1);
+                        serverErrors.push({"message": `${key_}: ${error[key].join("; ")}`})
+                    });
+                } else {
+                    serverErrors.push({"message": error})
+                }
             }
         }
     }
@@ -78,8 +90,13 @@
         invalidityMapper[element.name] = !element.checkValidity();
 
         // Check if email is valid from the server.
-        if (element.name === "email" && !invalidityMapper[element.name]) {
-            // validateEmail();
+        if (element.name === "email") {
+            // if valid on the from end validate email from server.
+            if (!invalidityMapper[element.name]) {
+                validateEmail();
+            } else {
+                emailField.errorMsg = "Invalid email.";
+            }
         }
 
         // Check if name is valid e.g. non-whitespace.
