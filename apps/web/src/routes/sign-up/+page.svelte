@@ -89,22 +89,27 @@
 
     const handleInputFocusOut = async (e) => {
         const element = e.currentTarget;
-        invalidityMapper[element.name] = !element.checkValidity();
 
-        // Check if email is valid from the server.
         if (element.name === "email") {
-            // if valid on the from end validate email from server.
-            if (!invalidityMapper[element.name]) {
+            // if valid, validate email from server.
+            if (element.checkValidity()) {
                 validateEmail();
+                // validate func provides showing of error.
+                return;
             } else {
-                emailField.errorMsg = "Invalid email.";
+                emailField.errorMsg = "Required field.";
+            }
+        } else if (element.name === "name") {
+            // if valid, check if name is valid e.g. non-whitespace.
+            if (element.checkValidity()) {
+                // validate func provides showing of error.
+                validateName();
+                return;
+            } else {
+                emailField.errorMsg = "Required field.";
             }
         }
-
-        // Check if name is valid e.g. non-whitespace.
-        if (element.name === "name" && !invalidityMapper[element.name]) {
-            validateName();
-        }
+        invalidityMapper[element.name] = !element.checkValidity();
     }
 
 
