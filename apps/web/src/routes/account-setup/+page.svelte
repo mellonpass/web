@@ -72,13 +72,14 @@
                     name="master-password"
                     bind:value={mpFieldVal}
                 >
-                <p class:uk-text-danger={mpFieldInvalid} class="uk-text-meta uk-margin-remove-top">
-                    <strong>Important:</strong> Your master password cannot be recovered if you forget it! 12 character minimum.
-                </p>
                 {#if mpFieldInvalid}
                     <div class="uk-margin-small uk-text-default uk-text-danger">
                         Master password should be a minimum of 12.
                     </div>
+                {:else}
+                    <p class:uk-text-danger={mpFieldInvalid} class="uk-text-meta uk-margin-remove-top">
+                        <strong>Important:</strong> Your master password cannot be recovered if you forget it! 12 character minimum.
+                    </p>
                 {/if}
 
                 <progress
