@@ -12,7 +12,10 @@
     let mpFieldVal = $state("");
     let mpFieldInvalid = $state(false);
     let mpFieldToogle = $state(false);
+
+    let mpcFieldVal = $state("");
     let mpcFieldToogle = $state(false);
+    let mpcFieldInvalid = $state(false);
 
     let progressBarVal = $derived.by(() => {
         let points = 0;
@@ -48,6 +51,10 @@
 
     const handleMpKeyup = (e) => {
         mpFieldInvalid = ["", null].includes(mpFieldVal);
+    };
+
+    const handleMpcInputFocusOut = (e) => {
+        mpcFieldInvalid = (mpcFieldVal != mpFieldVal);
     };
 
 
@@ -117,12 +124,21 @@
                     >
                     </a>
                     <input
+                        onfocusout={handleMpcInputFocusOut}
                         class="uk-input"
+                        class:uk-form-danger={mpcFieldInvalid}
                         type={mpcFieldToogle ? "text" : "password"}
                         id="confirm-password"
                         name="confirm-password"
+                        bind:value={mpcFieldVal}
                     >
                 </div>
+
+                {#if mpcFieldInvalid}
+                    <div class="uk-margin-small uk-text-default uk-text-danger">
+                        Master password mismatch.
+                    </div>
+                {/if}
 
                 <div class="uk-margin-small">
                     <label for="hint">Master password hint</label>
