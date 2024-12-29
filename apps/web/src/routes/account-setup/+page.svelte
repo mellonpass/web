@@ -11,6 +11,8 @@
 
     let mpFieldVal = $state("");
     let mpFieldInvalid = $state(false);
+    let mpFieldToogle = $state(false);
+    let mpcFieldToogle = $state(false);
 
     let progressBarVal = $derived.by(() => {
         let points = 0;
@@ -58,20 +60,31 @@
         </header>
 
         <form class="uk-margin-medium" action="#" novalidate>
-            <div>
+            <div class="uk-margin">
                 <div class="uk-margin-small">
                     <label for="master-password">Master password</label>
                 </div>
-                <input
-                    onfocusout={handleMpInputFocusOut}
-                    onkeyup={handleMpKeyup}
-                    class:uk-form-danger={mpFieldInvalid}
-                    class="uk-input"
-                    type="password"
-                    id="master-password"
-                    name="master-password"
-                    bind:value={mpFieldVal}
-                >
+
+                <div class="uk-inline uk-width-100">
+                    <a
+                        aria-label="eye-icon"
+                        class="uk-form-icon uk-form-icon-flip"
+                        href="#"
+                        uk-icon="icon: {mpFieldToogle ? 'eye-slash' : 'eye'}"
+                        onclick={() => {mpFieldToogle = !mpFieldToogle}}>
+                    </a>
+                    <input
+                        onfocusout={handleMpInputFocusOut}
+                        onkeyup={handleMpKeyup}
+                        class:uk-form-danger={mpFieldInvalid}
+                        class="uk-input"
+                        type={mpFieldToogle ? "text" : "password"}
+                        id="master-password"
+                        name="master-password"
+                        bind:value={mpFieldVal}
+                    >
+                </div>
+
                 {#if mpFieldInvalid}
                     <div class="uk-margin-small uk-text-default uk-text-danger">
                         Master password should be a minimum of 12.
@@ -87,22 +100,29 @@
                     value={progressBarVal}
                     max="100">
                 </progress>
-                <p class="uk-text-meta uk-margin-remove-top">
-                    
-                </p>
             </div>
 
             <div class="uk-margin">
                 <div class="uk-margin-small">
                     <label for="confirm-password">Confirm master password</label>
                 </div>
-                <input
-                    class="uk-input"
-                    type="password"
-                    id="confirm-password"
-                    name="confirm-password"
-                    required
-                >
+
+                <div class="uk-inline uk-width-100">
+                    <a
+                        aria-label="eye-icon"
+                        class="uk-form-icon uk-form-icon-flip"
+                        href="#"
+                        uk-icon="icon: {mpcFieldToogle ? 'eye-slash' : 'eye'}"
+                        onclick={() => {mpcFieldToogle = !mpcFieldToogle}}
+                    >
+                    </a>
+                    <input
+                        class="uk-input"
+                        type={mpcFieldToogle ? "text" : "password"}
+                        id="confirm-password"
+                        name="confirm-password"
+                    >
+                </div>
 
                 <div class="uk-margin-small">
                     <label for="hint">Master password hint</label>
