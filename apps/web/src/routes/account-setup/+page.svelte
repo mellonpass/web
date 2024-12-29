@@ -106,7 +106,7 @@
                 </div>
 
                 {#if mpFieldInvalid}
-                    <div class="uk-margin-small uk-text-default uk-text-danger">
+                    <div class="uk-margin-small uk-text-meta uk-text-danger">
                         Master password should be a minimum of 12.
                     </div>
                 {:else}
@@ -148,7 +148,7 @@
                 </div>
 
                 {#if mpcFieldInvalid}
-                    <div class="uk-margin-small uk-text-default uk-text-danger">
+                    <div class="uk-margin-small uk-text-meta uk-text-danger">
                         Master password mismatch.
                     </div>
                 {/if}
