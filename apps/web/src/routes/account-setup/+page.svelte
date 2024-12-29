@@ -1,4 +1,6 @@
 <script>
+    const HINT_LIMIT = 50;
+
     const mpRules = {
         "hasMinChar": /^.{12,}$/,  // min of 12 characters.
         "hasUpperCase": /[A-Z]/,
@@ -9,13 +11,18 @@
         "hasMultiDigit": /\d{2,}/,
     };
 
+    // master password field attrs.
     let mpFieldVal = $state("");
     let mpFieldInvalid = $state(false);
     let mpFieldToogle = $state(false);
 
+    // master password confirm field attrs.
     let mpcFieldVal = $state("");
     let mpcFieldToogle = $state(false);
     let mpcFieldInvalid = $state(false);
+
+    // master password hint field attrs.
+    let mphFieldVal = $state("");
 
     let progressBarVal = $derived.by(() => {
         let points = 0;
@@ -55,6 +62,12 @@
 
     const handleMpcInputFocusOut = (e) => {
         mpcFieldInvalid = (mpcFieldVal != mpFieldVal);
+    };
+
+    const handleMphInput = (e) => {
+        if (mphFieldVal.length > HINT_LIMIT) {
+            mphFieldVal = mphFieldVal.slice(0, HINT_LIMIT);
+        }
     };
 
 
@@ -148,10 +161,11 @@
                     type="text"
                     id="hint"
                     name="hint"
-                    required
+                    oninput={handleMphInput}
+                    bind:value={mphFieldVal}
                 >
                 <p class="uk-text-meta uk-margin-remove-top">
-                    If you forget your password, the password hint can be sent to your email. 0/50 character maximum.
+                    If you forget your password, the password hint can be sent to your email. {mphFieldVal.length}/50 character maximum.
                 </p>
     
             </div>
