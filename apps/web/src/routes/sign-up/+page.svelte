@@ -1,5 +1,5 @@
 <script>
-    import { checkEmailIfExists, createAccount } from '../../lib/accounts';
+    import { checkEmailIfExists, createAccount } from '$lib/accounts';
 
     let matchedPasswords = $state(true);
     let signUpSuccessful = $state(false);
@@ -40,7 +40,7 @@
             return !invalidityMapper.email;
         } catch (error) {
             serverErrors.length = 0;
-            serverErrors.push({"message": error});
+            serverErrors.push({"message": error.error});
         }
     };
 
@@ -73,15 +73,16 @@
                 await createAccount(nameField.value, emailField.value);
                 signUpSuccessful = true;
             } catch (error) {
+                const error_ = error.error;
                 serverErrors.length = 0;
                 // if server returns a multiple error validation.
-                if (typeof(error) === "object") {
-                    Object.keys(error).forEach(key => {
+                if (typeof(error_) === "object") {
+                    Object.keys(error_).forEach(key => {
                         const key_ = key.charAt(0).toUpperCase() + key.slice(1);
-                        serverErrors.push({"message": `${key_}: ${error[key].join("; ")}`})
+                        serverErrors.push({"message": `${key_}: ${error_[key].join("; ")}`})
                     });
                 } else {
-                    serverErrors.push({"message": error})
+                    serverErrors.push({"message": error_})
                 }
             }
         }
