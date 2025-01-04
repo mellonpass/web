@@ -1,6 +1,8 @@
 <script>
     import { createAnimationTriggerAction } from 'svelte-trigger-action'
 
+    import { generateMasterKey } from '$lib/crypto';
+
     const { verifiedEmail } = $props();
 
     const { triggerAnimation, animationAction } = createAnimationTriggerAction()
@@ -66,7 +68,7 @@
         }
     };
 
-    const onFormSubmit = (e) => {
+    const onFormSubmit = async (e) => {
         e.preventDefault();
 
         mpFieldInvalid = mpFieldVal == null ? true : mpFieldInvalid;
@@ -83,6 +85,9 @@
             triggerAnimation('shake');
             return;
         }
+
+        console.log(await generateMasterKey(verifiedEmail, mpFieldVal));
+
     };
 
     $effect(() => {
