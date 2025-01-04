@@ -1,5 +1,5 @@
 <script>
-    import { checkEmailIfExists, createAccount } from '$lib/accounts';
+    import { checkEmailIfExists, createAccount } from '$lib/services/accounts';
 
     let matchedPasswords = $state(true);
     let signUpSuccessful = $state(false);

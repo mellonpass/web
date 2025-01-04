@@ -4,11 +4,11 @@
     import { page } from '$app/stores';
 
     import { HTTPStatus } from '$lib/http';
-    import { verifyAccount } from '$lib/accounts';
+    import { verifyAccount } from '$lib/services/accounts';
 
-    import AccountSetup from '../../components/AccountSetup.svelte';
-    import Error from '../../components/Error.svelte';
-    import VerifyAccountInvalidToken from '../../components/VerifyAccountInvalidToken.svelte';
+    import AccountSetup from '$components/AccountSetup.svelte';
+    import Error from '$components/Error.svelte';
+    import VerifyAccountInvalidToken from '$components/VerifyAccountInvalidToken.svelte';
 
     let renderPage = $state(false);
     let invalidToken = $state(false);
