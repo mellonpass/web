@@ -7,7 +7,7 @@
     import { verifyAccount } from '$lib/services/accounts';
 
     import AccountSetup from '$components/AccountSetup.svelte';
-    import Error from '$components/Error.svelte';
+    import PageError from '$components/PageError.svelte';
     import VerifyAccountInvalidToken from '$components/VerifyAccountInvalidToken.svelte';
 
     let renderPage = $state(false);
@@ -17,9 +17,12 @@
 
     let verificationError = $state({});
 
+    let verifiedEmail = $state(null);
+
     onMount(async () => {
         try {
             const verifyResp = await verifyAccount($page.url.searchParams.get('token_id'));
+            verifiedEmail = verifyResp.data.verified_email;
         } catch (err) {
             console.log(err);
             
@@ -38,8 +41,9 @@
 
 </script>
 
+<AccountSetup verifiedEmail={verifiedEmail}/>
 
-{#if renderPage}
+<!-- {#if renderPage}
     {#if !restricted}
         {#if !invalidToken}
             <AccountSetup/>
@@ -47,6 +51,6 @@
             <VerifyAccountInvalidToken message={verificationError.error}/>
         {/if}
     {:else}
-        <Error code={pageError.code}/>
+        <PageError code={pageError.code}/>
     {/if}
-{/if}
+{/if} -->

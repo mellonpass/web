@@ -1,6 +1,8 @@
 <script>
     import { createAnimationTriggerAction } from 'svelte-trigger-action'
 
+    const { verifiedEmail } = $props();
+
     const { triggerAnimation, animationAction } = createAnimationTriggerAction()
 
     const HINT_LIMIT = 50;
