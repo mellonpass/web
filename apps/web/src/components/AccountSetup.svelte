@@ -1,4 +1,8 @@
 <script>
+    import { createAnimationTriggerAction } from 'svelte-trigger-action'
+
+    const { triggerAnimation, animationAction } = createAnimationTriggerAction()
+
     const HINT_LIMIT = 50;
     const PASSWORD_POINT_MULTIPLIER = 15;
 
@@ -13,12 +17,12 @@
     };
 
     // master password field attrs.
-    let mpFieldVal = $state("");
-    let mpFieldInvalid = $state(false);
+    let mpFieldVal = $state(null);
     let mpFieldToogle = $state(false);
+    let mpFieldInvalid = $state(false);
 
     // master password confirm field attrs.
-    let mpcFieldVal = $state("");
+    let mpcFieldVal = $state(null);
     let mpcFieldToogle = $state(false);
     let mpcFieldInvalid = $state(false);
 
@@ -40,30 +44,19 @@
         return points * PASSWORD_POINT_MULTIPLIER;
     });
 
-    let progressBarStrengthIndicator = $derived.by(() => {
-        const indicator = progressBarVal / 15
-        if (indicator >= 1 && indicator <= 2) {
+    let progressBarIndicator = $derived(progressBarVal / 15);
+
+    let progressBarClass = $derived.by(() => {
+        if (progressBarIndicator >= 1 && progressBarIndicator <= 2) {
             return "progress-weak";
-        } else if (indicator == 3) {
+        } else if (progressBarIndicator == 3) {
             return "progress-weak-2";
-        } else if (indicator >= 4 && indicator <= 5) {
+        } else if (progressBarIndicator >= 4 && progressBarIndicator <= 5) {
             return "";  // default progress bar theme.
-        } else if (indicator >= 6) {
+        } else if (progressBarIndicator >= 6) {
             return "progress-strong";
         }
     });
-
-    const handleMpInputFocusOut = (e) => {
-        mpFieldInvalid = !mpRules.hasMinChar.test(mpFieldVal);
-    };
-
-    const handleMpKeyup = (e) => {
-        mpFieldInvalid = ["", null].includes(mpFieldVal);
-    };
-
-    const handleMpcInputFocusOut = (e) => {
-        mpcFieldInvalid = (mpcFieldVal != mpFieldVal);
-    };
 
     const handleMphInput = (e) => {
         if (mphFieldVal.length > HINT_LIMIT) {
@@ -71,7 +64,34 @@
         }
     };
 
-    // End of form script
+    const onFormSubmit = (e) => {
+        e.preventDefault();
+
+        mpFieldInvalid = mpFieldVal == null ? true : mpFieldInvalid;
+        mpcFieldInvalid = mpcFieldVal == null ? true : mpcFieldInvalid;
+
+        const invalidFields = (mpFieldInvalid || mpcFieldInvalid);
+
+        if (invalidFields) {
+            return;
+        }
+
+        // Master password is weak.
+        if (progressBarIndicator <= 3) {
+            triggerAnimation('shake');
+            return;
+        }
+    };
+
+    $effect(() => {
+        if (mpFieldVal == null) { return };
+        mpFieldInvalid = !mpRules.hasMinChar.test(mpFieldVal);
+    });
+
+    $effect(() => {
+        if (mpcFieldVal == null) { return };
+        mpcFieldInvalid = mpcFieldVal != mpFieldVal;
+    });
 
 </script>
 
@@ -79,7 +99,7 @@
     <h2>Account setup</h2>
 </header>
 
-<form class="uk-margin-medium" action="#" novalidate>
+<form class="uk-margin-medium" onsubmit={onFormSubmit} novalidate>
     <div class="uk-margin">
         <div class="uk-margin-small">
             <label for="master-password">Master password</label>
@@ -94,8 +114,6 @@
                 onclick={() => {mpFieldToogle = !mpFieldToogle}}>
             </a>
             <input
-                onfocusout={handleMpInputFocusOut}
-                onkeyup={handleMpKeyup}
                 class:uk-form-danger={mpFieldInvalid}
                 class="uk-input"
                 type={mpFieldToogle ? "text" : "password"}
@@ -116,7 +134,8 @@
         {/if}
 
         <progress
-            class="uk-progress { progressBarStrengthIndicator }"
+            use:animationAction
+            class="uk-progress { progressBarClass }"
             value={progressBarVal}
             max="100">
         </progress>
@@ -137,7 +156,6 @@
             >
             </a>
             <input
-                onfocusout={handleMpcInputFocusOut}
                 class="uk-input"
                 class:uk-form-danger={mpcFieldInvalid}
                 type={mpcFieldToogle ? "text" : "password"}
@@ -206,4 +224,29 @@
     .uk-progress.progress-strong::-ms-fill {
         background-color: green ;
     }
-    </style>
+
+    :global(.shake) {
+        animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+    }
+
+    @keyframes shake {
+        10%, 90% {
+            transform: translate3d(-1px, 0, 0);
+        }
+        
+        20%, 80% {
+            transform: translate3d(4px, 0, 0);
+        }
+
+        30%, 50%, 70% {
+            transform: translate3d(-4px, 0, 0);
+        }
+
+        40%, 60% {
+            transform: translate3d(4px, 0, 0);
+        }
+    }
+</style>
