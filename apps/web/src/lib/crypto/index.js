@@ -9,7 +9,7 @@ const arrayBytesToHex = (bytes) => {
  * Generate a 256-bit master key using PBKDF2 from the user's email and master password.
  * @param {string} email - The verified email of the user.
  * @param {string} masterPassword - The master password in plain text.
- * @returns {string} - The master key.
+ * @returns {ArrayBuffer} - The master key in bytes.
  */
 export const generateMasterKey = async (email, masterPassword) => {
     const encoder = new TextEncoder();
@@ -22,13 +22,12 @@ export const generateMasterKey = async (email, masterPassword) => {
         false,
         ["deriveBits"],
     );
-    const derivedBits = await crypto.subtle.deriveBits(
+    return await crypto.subtle.deriveBits(
         { name: "PBKDF2", hash: "SHA-256", salt: salt, iterations: 720000, },
         baseKey,
-        256 // The length of the derived bits (256-bit).
+        256, // The length of the derived bits (256-bit).
     );
 
-    return arrayBytesToHex(derivedBits);
 };
 
 
