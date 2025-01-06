@@ -58,7 +58,7 @@ export const generateStretchedMasterKey = async (masterKey) => {
         baseKey,
         { name: 'AES-GCM', length: 256 },  // Output is used for 256-bit AES key.
         false,
-        ["encrypt"]
+        ["encrypt", "decrypt"]
     );
 };
 
