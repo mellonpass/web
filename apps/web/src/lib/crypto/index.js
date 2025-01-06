@@ -62,10 +62,9 @@ export const generateLoginhash = async (masterKey, masterPassword) => {
 
 
 /**
- * Generate a stretched master key from the user's master key using a 512-bit
- * HKDF method.
- * @param {string} masterKey - The master key.
- * @returns {string} - The stretched master key.
+ * Generate a 512-bit stretched master key from the user's master key using the HKDF method.
+ * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
+ * @returns {CryptoKey} - The stretched master key.
  */
 export const generateStretchedMasterKey = async (masterKey) => {
     const encoder = new TextEncoder();
@@ -76,15 +75,22 @@ export const generateStretchedMasterKey = async (masterKey) => {
         salt: encoder.encode(""), // Salt is not necessary, we can rely on info.
         info: encoder.encode("For encryption and decryption of protected key."),
     };
-
     const baseKey = await crypto.subtle.importKey(
         "raw",
-        encoder.encode(masterKey),
+        masterKey,
         "HKDF",
         false,
-        ["deriveBits"],
+        ["deriveKey"],
     );
 
+    return await window.crypto.subtle.deriveKey(
+        algorithm,
+        baseKey,
+        { name: 'AES-GCM', length: 256 },  // Output is used for 256-bit AES key.
+        false,
+        ["encrypt"]
+    );
+};
 
 
 /**
