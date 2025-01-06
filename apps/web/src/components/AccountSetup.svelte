@@ -1,7 +1,6 @@
 <script>
-    import { createAnimationTriggerAction } from 'svelte-trigger-action'
-
-    import { generateMasterKey } from '$lib/crypto';
+    import { generateLoginhash, generateMasterKey } from '$lib/crypto';
+    import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
     const { verifiedEmail } = $props();
 
@@ -86,8 +85,11 @@
             return;
         }
 
-        console.log(await generateMasterKey(verifiedEmail, mpFieldVal));
+        const masterKey = await generateMasterKey(verifiedEmail, mpFieldVal);
+        const loginHash = await generateLoginhash(masterKey, mpFieldVal);
 
+        console.log("masterKey", masterKey);
+        console.log("loginHash", loginHash);
     };
 
     $effect(() => {
