@@ -1,5 +1,5 @@
 <script>
-    import { generateLoginhash, generateMasterKey } from '$lib/crypto';
+    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
     const { verifiedEmail } = $props();
@@ -87,9 +87,11 @@
 
         const masterKey = await generateMasterKey(verifiedEmail, mpFieldVal);
         const loginHash = await generateLoginhash(masterKey, mpFieldVal);
+        const stretchedMasterKey = await generateStretchedMasterKey(masterKey);
+        const protectedSymmetricKey = await generateProtectedSymmetricKey(stretchedMasterKey);
 
-        console.log("masterKey", masterKey);
         console.log("loginHash", loginHash);
+        console.log("protectedSymmetricKey", protectedSymmetricKey);
     };
 
     $effect(() => {
