@@ -34,7 +34,7 @@ export const generateMasterKey = async (email, masterPassword) => {
 
 /**
  * Generate a 256-bit login hash using PBKDF2 method from the user's master password and master key.
- * @param {string} masterKey - The user's master key.
+ * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
  * @param {string} masterPassword - The master password in plain text.
  * @param {string} loginHash - The user's login hash.
  */
@@ -50,13 +50,12 @@ export const generateLoginhash = async (masterKey, masterPassword) => {
     };
     const baseKey = await crypto.subtle.importKey(
         "raw",
-        encoder.encode(masterKey),
+        masterKey,
         "PBKDF2",
         false,
         ["deriveBits"],
     );
-    const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256)
-
+    const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
     return arrayBytesToHex(derivedBits);
 };
 
