@@ -32,34 +32,6 @@ export const generateMasterKey = async (email, masterPassword) => {
 
 
 /**
- * Generate a 256-bit login hash using PBKDF2 method from the user's master password and master key.
- * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
- * @param {string} masterPassword - The master password in plain text.
- * @param {string} loginHash - The user's login hash.
- */
-export const generateLoginhash = async (masterKey, masterPassword) => {
-    const encoder = new TextEncoder();
-    const salt = encoder.encode(masterPassword);
-
-    const algorithm = {
-        name: "PBKDF2",
-        hash: "SHA-256",
-        salt: salt,
-        iterations: 720000,
-    };
-    const baseKey = await crypto.subtle.importKey(
-        "raw",
-        masterKey,
-        "PBKDF2",
-        false,
-        ["deriveBits"],
-    );
-    const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
-    return arrayBytesToHex(derivedBits);
-};
-
-
-/**
  * Generate a 512-bit stretched master key from the user's master key using the HKDF method.
  * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
  * @returns {CryptoKey} - The stretched master key.
@@ -108,4 +80,32 @@ export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
         randomSK
     );
     return arrayBytesToHex(pSKBytes);
+};
+
+
+/**
+ * Generate a 256-bit login hash using PBKDF2 method from the user's master password and master key.
+ * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
+ * @param {string} masterPassword - The master password in plain text.
+ * @param {string} loginHash - The user's login hash.
+ */
+export const generateLoginhash = async (masterKey, masterPassword) => {
+    const encoder = new TextEncoder();
+    const salt = encoder.encode(masterPassword);
+
+    const algorithm = {
+        name: "PBKDF2",
+        hash: "SHA-256",
+        salt: salt,
+        iterations: 720000,
+    };
+    const baseKey = await crypto.subtle.importKey(
+        "raw",
+        masterKey,
+        "PBKDF2",
+        false,
+        ["deriveBits"],
+    );
+    const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
+    return arrayBytesToHex(derivedBits);
 };
