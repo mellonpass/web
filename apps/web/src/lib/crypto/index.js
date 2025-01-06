@@ -85,6 +85,23 @@ export const generateStretchedMasterKey = async (masterKey) => {
         ["deriveBits"],
     );
 
-    const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 512)
-    return arrayBytesToHex(derivedBits);
+
+
+/**
+ * Generate a secured random 512-bit symmetric key and 128-bit IV and encrypt the
+ * symmetric key using 512-bit Stretched Master Key.
+ * @param {CryptoKey} stretchedMasterKey - The 512-bit stretched master key.
+ * @returns {string} - The protected symmetric key in string format.
+ */
+export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
+    const encoder = new TextEncoder();
+    const randomSK = crypto.getRandomValues(new Uint8Array(64));
+    const randomIV = crypto.getRandomValues(new Uint8Array(16));
+
+    const pSKBytes = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: randomIV },
+        stretchedMasterKey,
+        randomSK
+    );
+    return arrayBytesToHex(pSKBytes);
 };
