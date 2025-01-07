@@ -1,5 +1,5 @@
 <script>
-    import { checkEmailIfExists, createAccount } from '$lib/services/accounts';
+    import { createAccount } from '$lib/services/accounts';
 
     let matchedPasswords = $state(true);
     let signUpSuccessful = $state(false);
@@ -26,23 +26,6 @@
     ]);
     const emailField = $derived(formFields.find(field => field.id === "email"));
     const nameField = $derived(formFields.find(field => field.id === "name"));
-
-    // checks if email is taken.
-    const validateEmail = async () => {
-        try {
-            const emailResp = await checkEmailIfExists(emailField.value);
-            invalidityMapper.email = !emailResp.data.is_valid;
-
-            if (invalidityMapper.email) {
-                emailField.errorMsg = "Email is already taken."
-            }
-
-            return !invalidityMapper.email;
-        } catch (error) {
-            serverErrors.length = 0;
-            serverErrors.push({"message": error.error});
-        }
-    };
 
     // checks if name is non-whitespace.
     const validateName = () => {
@@ -91,16 +74,7 @@
     const handleInputFocusOut = async (e) => {
         const element = e.currentTarget;
 
-        if (element.name === "email") {
-            // if valid, validate email from server.
-            if (element.checkValidity()) {
-                validateEmail();
-                // validate func provides showing of error.
-                return;
-            } else {
-                emailField.errorMsg = "Required field.";
-            }
-        } else if (element.name === "name") {
+        if (element.name === "name") {
             // if valid, check if name is valid e.g. non-whitespace.
             if (element.checkValidity()) {
                 // validate func provides showing of error.
