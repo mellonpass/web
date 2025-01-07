@@ -1,3 +1,7 @@
+<!-- 
+    - Doesn't limit max length of master password
+-->
+
 <script>
     import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
     import { createAnimationTriggerAction } from 'svelte-trigger-action';

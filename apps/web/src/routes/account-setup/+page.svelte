@@ -24,8 +24,7 @@
             const verifyResp = await verifyAccount($page.url.searchParams.get('token_id'));
             verifiedEmail = verifyResp.data.verified_email;
         } catch (err) {
-            console.log(err);
-            
+
             invalidToken = (err.statusCode == HTTPStatus.UNPROCESSABLE_ENTITY);
             if (invalidToken) {
                 verificationError = err;
@@ -41,6 +40,7 @@
 
 </script>
 
+<!-- TODO: Remove and uncomment below codes. -->
 <AccountSetup verifiedEmail={verifiedEmail}/>
 
 <!-- {#if renderPage}
