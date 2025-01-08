@@ -43,7 +43,8 @@
 <!-- TODO: Remove and uncomment below codes. -->
 <AccountSetup verifiedEmail={verifiedEmail}/>
 
-<!-- {#if renderPage}
+<!-- 
+{#if renderPage}
     {#if !restricted}
         {#if !invalidToken}
             <AccountSetup/>

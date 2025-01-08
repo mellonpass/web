@@ -1,11 +1,12 @@
 import { PUBLIC_SERVER_URL } from '$env/static/public';
+import { requests } from '$lib/http';
 
 export const createAccount = async (name, email) => {
     const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/create`, {
-        method: "POST",
-        body: JSON.stringify({ "name": name, "email": email }),
+        method: 'POST',
+        body: JSON.stringify({ 'name': name, 'email': email }),
         headers: {
-            "content-type": "application/json",
+            'content-type': 'application/json',
         },
     })
 
@@ -21,10 +22,10 @@ export const createAccount = async (name, email) => {
 
 export const verifyAccount = async (token_id) => {
     const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/verify`, {
-        method: "POST",
-        body: JSON.stringify({ "token_id": token_id }),
+        method: 'POST',
+        body: JSON.stringify({ 'token_id': token_id }),
         headers: {
-            "content-type": "application/json",
+            'content-type': 'application/json',
         },
     })
 
@@ -35,4 +36,16 @@ export const verifyAccount = async (token_id) => {
     }
 
     throw { error: data.error, code: data.code, statusCode: response.status };
+};
+
+
+export const setupAccount = async (loginHash, protectedSymmetricKey, hint) => {
+    const encodedLH = btoa(loginHash);
+    const encodedPSK = btoa(JSON.stringify(protectedSymmetricKey));
+
+    return await requests(
+        'POST',
+        `${PUBLIC_SERVER_URL}/accounts/setup`,
+        { 'protected_symmetric_key': encodedPSK, 'login_hash': encodedLH, 'hint': hint }
+    );
 };

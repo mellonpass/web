@@ -1,5 +1,8 @@
 const arrayBytesToHex = (bytes) => {
-    return Array.from(new Uint8Array(bytes))
+    if (typeof (bytes) != Uint8Array) {
+        bytes = new Uint8Array(bytes);
+    }
+    return Array.from(bytes)
         .map(byte => byte.toString(16).padStart(2, '0'))
         .join('');
 };
@@ -67,7 +70,7 @@ export const generateStretchedMasterKey = async (masterKey) => {
  * Generate a secured random 512-bit symmetric key and 128-bit IV and encrypt the
  * symmetric key using 512-bit Stretched Master Key.
  * @param {CryptoKey} stretchedMasterKey - The 512-bit stretched master key.
- * @returns {string} - The protected symmetric key in string format.
+ * @returns {Object} - Object containing the protected symmetric key and the IV.
  */
 export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
     const encoder = new TextEncoder();
@@ -79,7 +82,11 @@ export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
         stretchedMasterKey,
         randomSK
     );
-    return arrayBytesToHex(pSKBytes);
+
+    return {
+        key: arrayBytesToHex(pSKBytes),
+        iv: arrayBytesToHex(randomIV),
+    };
 };
 
 

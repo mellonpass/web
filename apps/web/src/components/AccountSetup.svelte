@@ -3,8 +3,11 @@
 -->
 
 <script>
-    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
+
+    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
+    import { setupAccount } from '$lib/services/accounts';
+    import { goto } from '$app/navigation';
 
     const { verifiedEmail } = $props();
 
@@ -92,10 +95,15 @@
         const masterKey = await generateMasterKey(verifiedEmail, mpFieldVal);
         const loginHash = await generateLoginhash(masterKey, mpFieldVal);
         const stretchedMasterKey = await generateStretchedMasterKey(masterKey);
-        const protectedSymmetricKey = await generateProtectedSymmetricKey(stretchedMasterKey);
+        const protectedSymmetricKeyObj = await generateProtectedSymmetricKey(stretchedMasterKey);
 
-        console.log("loginHash", loginHash);
-        console.log("protectedSymmetricKey", protectedSymmetricKey);
+        try {
+            await setupAccount(loginHash, protectedSymmetricKeyObj, mphFieldVal);
+            goto('/login');
+        } catch (error) {
+            // TODO: Show error page here.
+            throw error;
+        }
     };
 
     $effect(() => {
