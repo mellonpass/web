@@ -40,18 +40,16 @@
 
 </script>
 
-<!-- TODO: Remove and uncomment below codes. -->
-<AccountSetup verifiedEmail={verifiedEmail}/>
 
-<!-- 
 {#if renderPage}
     {#if !restricted}
         {#if !invalidToken}
-            <AccountSetup/>
+            <AccountSetup verifiedEmail={verifiedEmail}/>
         {:else}
             <VerifyAccountInvalidToken message={verificationError.error}/>
         {/if}
     {:else}
         <PageError code={pageError.code}/>
     {/if}
-{/if} -->
+{/if}
+

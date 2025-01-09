@@ -39,13 +39,13 @@ export const verifyAccount = async (token_id) => {
 };
 
 
-export const setupAccount = async (loginHash, protectedSymmetricKey, hint) => {
+export const setupAccount = async (email, loginHash, protectedSymmetricKey, hint) => {
     const encodedLH = btoa(loginHash);
     const encodedPSK = btoa(JSON.stringify(protectedSymmetricKey));
 
     return await requests(
         'POST',
         `${PUBLIC_SERVER_URL}/accounts/setup`,
-        { 'protected_symmetric_key': encodedPSK, 'login_hash': encodedLH, 'hint': hint }
+        { 'email': email, 'protected_symmetric_key': encodedPSK, 'login_hash': encodedLH, 'hint': hint }
     );
 };

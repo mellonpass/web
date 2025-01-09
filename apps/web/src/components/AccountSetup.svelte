@@ -98,8 +98,8 @@
         const protectedSymmetricKeyObj = await generateProtectedSymmetricKey(stretchedMasterKey);
 
         try {
-            await setupAccount(loginHash, protectedSymmetricKeyObj, mphFieldVal);
-            goto('/login');
+            await setupAccount(verifiedEmail, loginHash, protectedSymmetricKeyObj, mphFieldVal);
+            window.location.assign('/login');
         } catch (error) {
             // TODO: Show error page here.
             throw error;
