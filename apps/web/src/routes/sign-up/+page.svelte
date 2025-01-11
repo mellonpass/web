@@ -146,7 +146,7 @@
             </div>
 
             <p class="uk-text-center">
-                Already have an account? <a href="#">Log in</a>.
+                Already have an account? <a href="/login">Log in</a>.
             </p>
         {/if}
     </section>
