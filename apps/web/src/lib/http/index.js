@@ -1,5 +1,6 @@
 export const HTTPStatus = {
     OK: 200,
+    TEMPORARY_REDIRECT: 307,
     BAD_REQUEST: 400,
     FORBIDDEN: 403,
     UNPROCESSABLE_ENTITY: 422,
