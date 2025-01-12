@@ -12,4 +12,3 @@
 {:else}
     <VerifyAccountInvalidToken message={data.validationError.error}/>
 {/if}
-
