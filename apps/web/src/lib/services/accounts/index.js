@@ -40,12 +40,30 @@ export const verifyAccount = async (token_id) => {
 
 
 export const setupAccount = async (email, loginHash, protectedSymmetricKey, hint) => {
-    const encodedLH = btoa(loginHash);
     const encodedPSK = btoa(JSON.stringify(protectedSymmetricKey));
 
     return await requests(
         'POST',
         `${PUBLIC_SERVER_URL}/accounts/setup`,
-        { 'email': email, 'protected_symmetric_key': encodedPSK, 'login_hash': encodedLH, 'hint': hint }
+        { 'email': email, 'protected_symmetric_key': encodedPSK, 'login_hash': loginHash, 'hint': hint }
     );
+};
+
+
+export const loginAccount = async (email, loginHash) => {
+    return await requests({
+        method: 'POST',
+        url: `${PUBLIC_SERVER_URL}/accounts/login`,
+        payload: { 'email': email, 'login_hash': loginHash },
+        options: { credentials: "include" },
+    });
+};
+
+
+export const whoami = async () => {
+    return await requests({
+        method: 'GET',
+        url: `${PUBLIC_SERVER_URL}/accounts/whoami`,
+        options: { credentials: "include" },
+    });
 };

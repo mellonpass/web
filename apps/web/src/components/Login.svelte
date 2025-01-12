@@ -1,5 +1,7 @@
 <script>
+    import { page } from '$app/stores';
     import { generateLoginhash, generateMasterKey } from "$lib/crypto";
+    import { loginAccount } from "$lib/services/accounts";
 
     const emailInput = $state({
         name: "email",
@@ -36,7 +38,9 @@
         if (e.target.checkValidity()) {
             const masterKey = await generateMasterKey(emailInput.value, masterPasswordInput.value);
             const loginHash = await generateLoginhash(masterKey, masterPasswordInput.value);
-            console.log(loginHash);
+            const data = await loginAccount(emailInput.value, loginHash);
+            localStorage.setItem("accessToken", JSON.stringify(data));
+            window.location.assign($page.url.searchParams.get("next"));
         }
     };
 

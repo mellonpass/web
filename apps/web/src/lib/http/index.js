@@ -1,5 +1,6 @@
 export const HTTPStatus = {
     OK: 200,
+    PERMANENT_REDIRECT: 301,
     TEMPORARY_REDIRECT: 307,
     BAD_REQUEST: 400,
     FORBIDDEN: 403,
@@ -7,12 +8,13 @@ export const HTTPStatus = {
 };
 
 
-export const requests = async (method, url, payload, headers = { "content-type": 'application/json' }) => {
+export const requests = async ({ method, url, payload, headers = { 'content-type': 'application/json' }, options = {} }) => {
 
     const response = await fetch(url, {
         method: method,
         body: JSON.stringify(payload),
-        headers: headers
+        headers: headers,
+        ...options,
     });
 
     const data = await response.json();

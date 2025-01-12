@@ -1,6 +1,11 @@
 <script>
     import Login from "$components/Login.svelte";
+    
+    let { data } = $props();
+    let render = data.render;
 </script>
 
 
-<Login />
+{#if render}
+    <Login />
+{/if}
