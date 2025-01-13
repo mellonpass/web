@@ -57,7 +57,7 @@
             <label for="email">Email</label>
         </div>
 
-        <div class="uk-inline uk-width-100">
+        <div class="uk-inline uk-width-1-1">
             <input
                 bind:value={emailInput.value}
                 onfocusout={onFieldFocusOut}
