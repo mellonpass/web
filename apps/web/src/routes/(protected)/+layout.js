@@ -4,10 +4,10 @@ import { HTTPStatus } from '$lib/http';
 import { whoami } from '$lib/services/accounts/index.js';
 
 export const load = async ({ url }) => {
-    try {
-        const response = await whoami();
+    const response = await whoami();
+    if (response.data.auth) {
         localStorage.setItem("whoami", JSON.stringify(response.data));
-    } catch (error) {
+    } else {
         redirect(HTTPStatus.TEMPORARY_REDIRECT, `/login?next=${url.pathname}`);
     }
 };

@@ -40,7 +40,7 @@
             const loginHash = await generateLoginhash(masterKey, masterPasswordInput.value);
             const data = await loginAccount(emailInput.value, loginHash);
             localStorage.setItem("accessToken", JSON.stringify(data));
-            window.location.assign($page.url.searchParams.get("next"));
+            window.location.assign($page.url.searchParams.get("next") ?? "/");
         }
     };
 
