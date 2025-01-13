@@ -1,5 +1,8 @@
 <script>
+    import gravatar from 'gravatar';
     const whoami = JSON.parse(localStorage.getItem("whoami"));
+
+    let gravatar_url = gravatar.url(whoami.identity, {s: '100', r: 'pg', d: 'retro'});
 </script>
 
 <nav class="uk-navbar-container">
@@ -10,7 +13,7 @@
                 <div class="uk-navbar-item uk-width-1-1">
                     <div class="uk-inline uk-width-1-1">
                         <span class="uk-form-icon" uk-icon="icon: search"></span>
-                        <input class="uk-input uk-border-pill" type="text" placeholder="Search vault" aria-label="Input">
+                        <input name="search" class="uk-input uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off">
                     </div>
                 </div>
             </div>
@@ -20,9 +23,9 @@
                     <li>
                         <div class="uk-grid-medium uk-flex-middle" uk-grid>
                             <div>
-                                <img class="uk-border-circle" src="https://getuikit.com/docs/images/avatar.jpg" width="50" height="50">
+                                <img class="uk-border-circle" src={gravatar_url} width="50" height="50">
                             </div>
-                            <div>
+                            <div class="uk-padding-small">
                                 <h5 class="uk-margin-remove">{whoami.identity}</h5>
                                 <p class="uk-margin-remove">MellonPass</p>
                             </div>
