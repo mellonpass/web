@@ -25,7 +25,7 @@
                             <div>
                                 <img class="uk-border-circle" src={gravatar_url} width="50" height="50">
                             </div>
-                            <div class="uk-padding-small">
+                            <div>
                                 <h5 class="uk-margin-remove">{whoami.identity}</h5>
                                 <p class="uk-margin-remove">MellonPass</p>
                             </div>
