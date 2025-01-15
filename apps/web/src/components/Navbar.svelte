@@ -19,22 +19,25 @@
             </div>
 
             <div class="uk-navbar-right uk-margin-small">
-                <ul class="uk-navbar-nav" style="cursor:pointer;">
+                <ul class="uk-navbar-nav">
                     <li>
-                        <div class="uk-grid-medium uk-flex-middle" uk-grid>
-                            <div>
-                                <img class="uk-border-circle" src={gravatar_url} width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="uk-margin-remove">{whoami.identity}</h5>
-                                <p class="uk-margin-remove">MellonPass</p>
-                            </div>
-                            <span uk-drop-parent-icon></span>
-                        </div>
-                        <div class="uk-navbar-dropdown">
+                        <img style="cursor: pointer;" alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+                        <div class="uk-navbar-dropdown dropdown-width-custom">
                             <ul class="uk-nav uk-navbar-dropdown-nav">
-                                <li><a href><span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout</a></li>
-                                <li><a href><span class="uk-margin-small-right" uk-icon="lock"></span>Lock</a></li>
+                                <li>
+                                    <div class="uk-grid-small uk-flex-middle" uk-grid>
+                                        <div class="uk-width-auto">
+                                            <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+                                        </div>
+                                        <div class="uk-width-expand">
+                                            <span class="uk-text-default">Logged in as</span>
+                                            <span class="uk-text-light">{whoami.identity}</span>
+                                        </div>
+                                    </div>
+                                </li>
+                                <hr>
+                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout</a></li>
+                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="lock"></span>Lock now</a></li>
                             </ul>
                         </div>
                     </li>
@@ -43,3 +46,11 @@
         </div>
     </div>
 </nav>
+
+
+<style>
+    /* override navbar dropdown width */
+    .dropdown-width-custom:not(.uk-drop-stack) {
+        width: 250px;
+    }
+</style>
