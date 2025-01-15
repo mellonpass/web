@@ -12,9 +12,11 @@
         <VaultList />
     </div>
     <div class="uk-width-expand">
-        <ProfileNavbar />
-        <div class="vault-content uk-height-viewport">
-
+        <div class="uk-flex uk-flex-column">
+            <ProfileNavbar />
+            <div class="vault-content" uk-height-viewport="offset-top: true">
+                
+            </div>
         </div>
     </div>
 </div>
