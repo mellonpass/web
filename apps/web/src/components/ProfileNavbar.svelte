@@ -5,23 +5,25 @@
     let gravatar_url = gravatar.url(whoami.identity, {s: '100', r: 'pg', d: 'retro'});
 </script>
 
-<nav class="uk-navbar-container">
-    <div class="uk-container uk-container-xlarge">
-        <div uk-navbar="align: center; mode: click;">
+<nav class="uk-navbar-container uk-navbar-transparent">
+    <div class="uk-container">
+        <div uk-navbar>
 
-            <div class="uk-navbar-center" style="width: 50%;">
+            <!-- <div class="uk-navbar-center" style="width: 50%;">
                 <div class="uk-navbar-item uk-width-1-1">
                     <div class="uk-inline uk-width-1-1">
                         <span class="uk-form-icon" uk-icon="icon: search"></span>
                         <input name="search" class="uk-input uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off">
                     </div>
                 </div>
-            </div>
+            </div> -->
 
-            <div class="uk-navbar-right uk-margin-small">
+            <div class="uk-navbar-right">
                 <ul class="uk-navbar-nav">
                     <li>
-                        <img style="cursor: pointer;" alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+                        <div style="cursor: pointer;" class="uk-padding-small">
+                            <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+                        </div>
                         <div class="uk-navbar-dropdown dropdown-width-custom">
                             <ul class="uk-nav uk-navbar-dropdown-nav">
                                 <li>
