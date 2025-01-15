@@ -1,7 +1,6 @@
 <script>
     import ProfileNavbar from "$components/ProfileNavbar.svelte";
-    import VaultNavbar from "$components/VaultNavbar.svelte";
-    
+    import VaultList from "$components/VaultList.svelte";
 </script>
 
 
@@ -10,7 +9,7 @@
         <div></div>
     </div>
     <div class="vault-list uk-width-1-4">
-        <VaultNavbar />
+        <VaultList />
     </div>
     <div class="uk-width-expand">
         <ProfileNavbar />
