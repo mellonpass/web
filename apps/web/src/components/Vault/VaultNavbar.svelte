@@ -5,9 +5,16 @@
     let gravatar_url = gravatar.url(whoami.identity, {s: '100', r: 'pg', d: 'retro'});
 </script>
 
-<nav class="uk-navbar-container uk-navbar-transparent">
+<nav class="x-uk-navbar-container uk-navbar-container uk-navbar-transparent">
     <div class="uk-container">
         <div uk-navbar>
+
+            <div class="uk-navbar-left" style="width: 90%;">
+                <div class="uk-inline uk-width-1-1">
+                    <span class="uk-form-icon" uk-icon="icon: search"></span>
+                    <input name="search" class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+                </div>
+            </div>
             <div class="uk-navbar-right">
                 <ul class="uk-navbar-nav">
                     <li>
@@ -44,5 +51,9 @@
     /* override navbar dropdown width */
     .dropdown-width-custom:not(.uk-drop-stack) {
         width: 250px;
+    }
+
+    .x-uk-navbar-container {
+        border-bottom: solid #f5f5f5;
     }
 </style>
