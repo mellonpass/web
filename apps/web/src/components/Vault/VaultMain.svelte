@@ -1,5 +1,6 @@
 <script>
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
+    let search = $state(null);
 
     const vaultListItems = [
         {
@@ -16,16 +17,24 @@
         },
     ];
 
+    const filteredVaultListItem = $derived(
+        vaultListItems.filter(
+            item => search ? item.title.toLowerCase().includes(search) : true
+        ).sort(
+            (a, b) => a.title.localeCompare(b.title)
+        )
+    );
+
 </script>
 
 
 <div class="uk-flex uk-flex-column">
-    <VaultNavbar />
+    <VaultNavbar bind:search={search} />
     <div uk-height-viewport="offset-top: true">
         <div class="uk-flex" uk-height-viewport>
             <div class="x-vault-list uk-width-1-4">
                 <ul class="uk-list uk-margin-top">
-                    {#each vaultListItems as item}
+                    {#each filteredVaultListItem as item}
                         <li class="x-uk-list-item">
                             <a href class="uk-link-reset">
                                 <div class="uk-flex">
@@ -42,7 +51,7 @@
                     {/each}
                 </ul>
                 <div class="uk-text-center">
-                    <span class="uk-text-meta">{vaultListItems.length} item{vaultListItems.length > 1 ? "s" : "" }</span>
+                    <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
                 </div>
             </div>
             <div class="x-vault-content uk-width-expand uk-padding-small">

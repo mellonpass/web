@@ -1,4 +1,6 @@
 <script>
+    export let search = null;
+
     import gravatar from 'gravatar';
     const whoami = JSON.parse(localStorage.getItem("whoami"));
 
@@ -12,7 +14,7 @@
             <div class="uk-navbar-left" style="width: 90%;">
                 <div class="uk-inline uk-width-1-1">
                     <span class="uk-form-icon" uk-icon="icon: search"></span>
-                    <input name="search" class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+                    <input name="search" bind:value={search} class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
                 </div>
             </div>
             <div class="uk-navbar-right">
