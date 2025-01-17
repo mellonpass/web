@@ -1,12 +1,12 @@
 <script>
     import VaultMain from "$components/Vault/VaultMain.svelte";
-    import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
+    import SideNav from "$components/SideNav.svelte";
 </script>
 
 
 <div class="uk-height-viewport uk-flex">
     <div class="vault-side-nav uk-width-1-6">
-        <VaultSideNav />
+        <SideNav />
     </div>
     <div class="uk-width-expand">
         <VaultMain />
