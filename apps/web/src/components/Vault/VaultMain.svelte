@@ -1,5 +1,6 @@
 <script>
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
+    import VaultContent from "./VaultContent.svelte";
 
     let search = $state(null);
     let selected = $state(null);
@@ -46,6 +47,7 @@
     const onItemSelect = (item) => {
         filteredVaultListItem.forEach(item => item.selected = false);
         item.selected = !item.selected;
+        selected = item.selected ? item : null;
     };
 
 </script>
@@ -78,7 +80,9 @@
                 </div>
             </div>
             <div class="x-vault-content uk-width-expand uk-padding-small">
-                Content here
+                {#key selected}
+                    <VaultContent bind:vaultItem={selected} />
+                {/key}
             </div>
         </div>
     </div>
