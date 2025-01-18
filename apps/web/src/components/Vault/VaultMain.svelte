@@ -1,21 +1,39 @@
 <script>
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-    let search = $state(null);
 
-    const vaultListItems = [
+    let search = $state(null);
+    let selected = $state(null);
+
+    const vaultListItems = $state([
         {
+            "id": 1,
             "title": "Gmail login",
             "content": "janedoe@gmail.com",
+            "type": "LOGIN",
+            "selected": false,
         },
         {
+            "id": 2,
             "title": "Facebook login",
             "content": "johndoe@gmail.com",
+            "type": "LOGIN",
+            "selected": false,
         },
         {
+            "id": 3,
             "title": "Youtube login",
             "content": "johndoe@gmail.com",
+            "type": "LOGIN",
+            "selected": false,
         },
-    ];
+        {
+            "id": 4,
+            "title": "Dev API Key",
+            "content": "# --- secure header ----",
+            "type": "SECURE_NOTE",
+            "selected": false,
+        },
+    ]);
 
     const filteredVaultListItem = $derived(
         vaultListItems.filter(
@@ -24,6 +42,11 @@
             (a, b) => a.title.localeCompare(b.title)
         )
     );
+
+    const onItemSelect = (item) => {
+        filteredVaultListItem.forEach(item => item.selected = false);
+        item.selected = !item.selected;
+    };
 
 </script>
 
@@ -34,16 +57,16 @@
         <div class="uk-flex" uk-height-viewport>
             <div class="x-vault-list uk-width-1-4">
                 <ul class="uk-list uk-margin-top">
-                    {#each filteredVaultListItem as item}
-                        <li class="x-uk-list-item">
-                            <a href class="uk-link-reset">
+                    {#each filteredVaultListItem as item (item.id)}
+                        <li class:x-selected={item.selected} class="x-uk-list-item">
+                            <a href class="uk-link-reset" onclick={() => {onItemSelect(item)}}>
                                 <div class="uk-flex">
                                     <div class="uk-width-auto">
                                         <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
                                     </div>
                                     <div class="uk-width-expand uk-margin-left">
                                         <div class="uk-text-default">{item.title}</div>
-                                        <div class="uk-text-small uk-text-meta">{item.content}</div>
+                                        <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content}</div>
                                     </div>
                                 </div>
                             </a>
@@ -64,7 +87,17 @@
 
 <style>
     .x-uk-list-item {
-        padding: 5px 15px;
+        margin: 0;
+        padding: 10px 15px;
+    }
+
+    .x-uk-list-item:hover {
+        background: #FBFBFB;
+    }
+
+    .x-uk-list-item.x-selected {
+        color: white;
+        background: #142850;
     }
 
     .x-vault-content {
