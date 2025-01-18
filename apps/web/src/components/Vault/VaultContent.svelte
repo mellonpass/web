@@ -7,19 +7,22 @@
 
     let {vaultItem = $bindable()} = $props();
 
+    let VaultComponent = $state(null);
+
     const VAULT_MAPPER = {
         "LOGIN": VaultLogin,
         "SECURE_NOTE": VaultSecureNote
     }
 
-    let VaultComponent = $state(null);
-
     onMount(() => {
-        VaultComponent = VAULT_MAPPER[vaultItem.type];
+        if (vaultItem) {
+            VaultComponent = VAULT_MAPPER[vaultItem.type];
+        }
     });
 
 </script>
 
-<div>
-    <VaultComponent />
+
+<div class="uk-flex uk-flex-center uk-width-expand">
+    <VaultComponent bind:data={vaultItem} />
 </div>

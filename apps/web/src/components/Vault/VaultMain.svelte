@@ -12,6 +12,7 @@
             "content": "janedoe@gmail.com",
             "type": "LOGIN",
             "selected": false,
+            "data": {},
         },
         {
             "id": 2,
@@ -19,6 +20,7 @@
             "content": "johndoe@gmail.com",
             "type": "LOGIN",
             "selected": false,
+            "data": {},
         },
         {
             "id": 3,
@@ -26,6 +28,7 @@
             "content": "johndoe@gmail.com",
             "type": "LOGIN",
             "selected": false,
+            "data": {},
         },
         {
             "id": 4,
@@ -33,6 +36,7 @@
             "content": "# --- secure header ----",
             "type": "SECURE_NOTE",
             "selected": false,
+            "data": {},
         },
     ]);
 
