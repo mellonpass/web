@@ -4,10 +4,12 @@
     let { cipher } = $props();
 
     const onCopy = (data) => {
-        UIKit.notification({
-            message: "<div class='x-vault-login-notification'>Copied to clipboard</div>",
-            status: 'primary',
-            pos: 'bottom-right',
+        navigator.clipboard.writeText(data).then(() => {
+            UIKit.notification({
+                message: "<div class='x-vault-login-notification'>Copied to clipboard</div>",
+                status: 'primary',
+                pos: 'bottom-right',
+            });
         });
     };
 

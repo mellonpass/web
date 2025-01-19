@@ -1,7 +1,16 @@
 <script>
+    import { onMount } from "svelte";
+
     let { cipher } = $props();
 
     let showPassword = $state(false);
+    let titleInputRef = null
+
+    onMount(() => {
+        titleInputRef.focus();
+        titleInputRef.select();
+    });
+
 </script>
 
 <div class="uk-padding-small">
@@ -10,7 +19,16 @@
             <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
         </div>
         <div class="uk-width-expand">
-            <input bind:value={cipher.title} style="background: none;" class="uk-input uk-form-large x-editable-input" type="text" aria-label="Input">
+            <!-- svelte-ignore a11y_autofocus -->
+            <input
+                bind:this={titleInputRef}
+                bind:value={cipher.title}
+                style="background: none;"
+                class="uk-input uk-form-large x-editable-input"
+                type="text"
+                aria-label="Input"
+                autofocus
+            >
         </div>
     </div>
 </div>
