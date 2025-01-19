@@ -1,9 +1,17 @@
 <script>
     import { onMount } from "svelte";
 
-    let { cipher } = $props();
+    let { cipher, controller } = $props();
 
     let showPassword = $state(false);
+    let data = $state({
+        // Encrypt from cipher to data.
+        id: cipher.id,
+        title: cipher.title,
+        username: cipher.data.username,
+        password: cipher.data.password,
+    });
+
     let titleInputRef = null
 
     onMount(() => {
@@ -12,6 +20,10 @@
     });
 
 </script>
+
+<div class="uk-flex uk-flex-right uk-margin">
+    {@render controller(data)}
+</div>
 
 <div class="uk-padding-small">
     <div class="uk-grid-small uk-flex-middle" uk-grid>
@@ -22,7 +34,7 @@
             <!-- svelte-ignore a11y_autofocus -->
             <input
                 bind:this={titleInputRef}
-                bind:value={cipher.title}
+                bind:value={data.title}
                 style="background: none;"
                 class="uk-input uk-form-large x-editable-input"
                 type="text"
@@ -37,7 +49,7 @@
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-input-label uk-text-muted uk-margin-right">Username: </span>
         <input
-            bind:value={cipher.data.username}
+            bind:value={data.username}
             class="uk-input x-editable-input"
             type="text"
             aria-label="Input"
@@ -49,7 +61,7 @@
         {#if showPassword}
             <!-- svelte-ignore a11y_autofocus -->
             <input
-                bind:value={cipher.data.password}
+                bind:value={data.password}
                 onfocusin={() => {showPassword = true}}
                 onfocusout={() => {showPassword = false}}
                 type="text"
