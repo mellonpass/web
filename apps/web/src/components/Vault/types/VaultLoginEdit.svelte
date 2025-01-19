@@ -38,9 +38,10 @@
         <span class="x-input-label uk-text-muted uk-margin-right">Username: </span>
         <input
             bind:value={cipher.data.username}
-            class="uk-input uk-form-small x-editable-input"
+            class="uk-input x-editable-input"
             type="text"
-            aria-label="Input">
+            aria-label="Input"
+        >
     </div>
     <hr class="uk-margin-remove">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
@@ -50,7 +51,7 @@
             onfocusin={() => {showPassword = true}}
             onfocusout={() => {showPassword = false}}
             type={showPassword ? "text" : "password"}
-            class="uk-input uk-form-small x-editable-input" 
+            class="uk-input x-editable-input" 
             aria-label="Input"
         >
     </div>

@@ -6,7 +6,7 @@
     const onCopy = (data) => {
         navigator.clipboard.writeText(data).then(() => {
             UIKit.notification({
-                message: "<div class='x-vault-login-notification'>Copied to clipboard</div>",
+                message: `<div class='x-vault-login-notification'>Copied to clipboard.</div>`,
                 status: 'primary',
                 pos: 'bottom-right',
             });
