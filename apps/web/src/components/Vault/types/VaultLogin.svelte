@@ -2,11 +2,11 @@
     import VaultLoginContent from "./VaultLoginContent.svelte";
     import VaultLoginEdit from "./VaultLoginEdit.svelte";
 
-    import { ciphers } from "$lib/mock";
+    import { ciphers } from "$lib/mock/ciphers";
 
     let { vaultId } = $props();
 
-    let vaultData = ciphers.find(cipher => cipher.id == vaultId);
+    let data = ciphers.find(cipher => cipher.id == vaultId);
     let isEdit = $state(false);
 
 </script>
@@ -25,9 +25,9 @@
 
     {#key isEdit}
         {#if isEdit}
-            <VaultLoginEdit data={vaultData} />
+            <VaultLoginEdit data={data} />
         {:else}
-            <VaultLoginContent data={vaultData} />
+            <VaultLoginContent data={data} />
         {/if}
     {/key}
 </div>

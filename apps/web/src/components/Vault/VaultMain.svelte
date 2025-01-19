@@ -2,7 +2,7 @@
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
     import VaultContent from "./VaultContent.svelte";
 
-    import { ciphers } from "$lib/mock";
+    import { ciphers } from "$lib/mock/ciphers";
 
     let search = $state(null);
     let selectedItem = $state({});
