@@ -46,14 +46,26 @@
     <hr class="uk-margin-remove">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-input-label uk-text-muted uk-margin-right">Password: </span>
-        <input
-            bind:value={cipher.data.password}
-            onfocusin={() => {showPassword = true}}
-            onfocusout={() => {showPassword = false}}
-            type={showPassword ? "text" : "password"}
-            class="uk-input x-editable-input" 
-            aria-label="Input"
-        >
+        {#if showPassword}
+            <!-- svelte-ignore a11y_autofocus -->
+            <input
+                bind:value={cipher.data.password}
+                onfocusin={() => {showPassword = true}}
+                onfocusout={() => {showPassword = false}}
+                type="text"
+                class="uk-input x-editable-input" 
+                aria-label="Input"
+                autofocus
+            >
+        {:else}
+            <input
+                onfocusin={() => {showPassword = true}}
+                type="text"
+                class="uk-input x-editable-input" 
+                aria-label="Input"
+                value="• • • • • • • • • •"
+            >
+        {/if}
     </div>
 </div>
 
