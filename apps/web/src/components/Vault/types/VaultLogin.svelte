@@ -1,9 +1,17 @@
 <script>
-    // import UIKit from '$assets';
+    import UIKit from 'uikit';
 
-    // console.log(UIKit);
 
     let {data = $bindable()} = $props();
+
+    const onCopy = () => {
+        UIKit.notification({
+            message: "<div class='x-vault-login-notification'>Copied to clipboard</div>",
+            status: 'primary',
+            pos: 'bottom-right',
+            timeout: 100000,
+        });
+    };
 </script>
 
 <div class="uk-width-expand">
@@ -21,17 +29,17 @@
         </div>
     </div>
     <div class="x-login-panel uk-border-rounded">
-        <div class="x-login-item uk-padding-small uk-flex">
+        <a onclick={onCopy} href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
             <span class="uk-text-muted uk-margin-right">Username: </span>
             <span class="uk-text-emphasis uk-text-baseline uk-width-expand">johndoe@gmail.com</span>
-            <span class="x-copy-label uk-text-right">COPY</span>
-        </div>
+            <span class="x-copy-label uk-text-right uk-text-decoration-none">COPY</span>
+        </a>
         <hr class="uk-margin-remove">
-        <div class="x-login-item uk-padding-small uk-flex">
+        <a onclick={onCopy} href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
             <span class="uk-text-muted uk-margin-right">Password: </span>
             <span class="uk-text-emphasis uk-text-baseline uk-width-expand">• • • • • • • • • •</span>
-            <span class="x-copy-label uk-text-right">COPY</span>
-        </div>
+            <span class="x-copy-label uk-text-right uk-text-decoration-none">COPY</span>
+        </a>
     </div>
 </div>
 
@@ -44,10 +52,12 @@
 
     .x-login-item:hover {
         cursor: pointer;
+        font-weight: 500;
         background: #E3F2FD;
     }
 
     .x-copy-label {
+        color: black;
         visibility: hidden;
     }
 
@@ -55,6 +65,13 @@
         visibility: visible;
     }
 
-
+    :global(.x-vault-login-notification) {
+        color: white;
+        background: #585858;
+        font-size: small;
+        font-weight: 500;
+        padding: 10px;
+        border-radius: 5px;
+    }
 
 </style>

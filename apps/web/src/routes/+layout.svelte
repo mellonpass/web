@@ -1,7 +1,14 @@
-<script>
-    import 'uikit/dist/css/uikit.min.css';
-    import 'uikit/dist/js/uikit-icons';
-    import 'uikit/dist/js/uikit';
-</script>
+<style>
+
+    :global(.uk-notification-message) {
+        padding: 0 !important;
+        background: none !important;
+    }
+
+    :global(.uk-notification-close) {
+        visibility: hidden  !important;
+    }
+
+</style>
 
 <slot />
