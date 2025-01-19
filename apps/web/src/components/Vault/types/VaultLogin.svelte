@@ -1,4 +1,8 @@
 <script>
+    // import UIKit from '$assets';
+
+    // console.log(UIKit);
+
     let {data = $bindable()} = $props();
 </script>
 

@@ -17,6 +17,7 @@
 		"js-cookie": "^3.0.5",
 		"svelte": "^5.0.0",
 		"svelte-trigger-action": "^1.18.0",
+		"uikit": "^3.22.2",
 		"vite": "^6.0.0"
 	}
 }
