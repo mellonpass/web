@@ -2,43 +2,12 @@
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
     import VaultContent from "./VaultContent.svelte";
 
-    let search = $state(null);
-    let selected = $state(null);
+    import { ciphers } from "$lib/mock";
 
-    const vaultListItems = $state([
-        {
-            "id": 1,
-            "title": "Gmail login",
-            "content": "janedoe@gmail.com",
-            "type": "LOGIN",
-            "selected": false,
-            "data": {},
-        },
-        {
-            "id": 2,
-            "title": "Facebook login",
-            "content": "johndoe@gmail.com",
-            "type": "LOGIN",
-            "selected": false,
-            "data": {},
-        },
-        {
-            "id": 3,
-            "title": "Youtube login",
-            "content": "johndoe@gmail.com",
-            "type": "LOGIN",
-            "selected": false,
-            "data": {},
-        },
-        {
-            "id": 4,
-            "title": "Dev API Key",
-            "content": "# --- secure header ----",
-            "type": "SECURE_NOTE",
-            "selected": false,
-            "data": {},
-        },
-    ]);
+    let search = $state(null);
+    let selectedItem = $state({});
+
+    const vaultListItems = JSON.parse(JSON.stringify(ciphers));
 
     const filteredVaultListItem = $derived(
         vaultListItems.filter(
@@ -49,9 +18,12 @@
     );
 
     const onItemSelect = (item) => {
-        filteredVaultListItem.forEach(item => item.selected = false);
+        vaultListItems.forEach(item => item.selected = false);
         item.selected = !item.selected;
-        selected = item.selected ? item : null;
+        selectedItem = {
+            id: item.id,
+            type: item.type,
+        }
     };
 
 </script>
@@ -84,8 +56,8 @@
                 </div>
             </div>
             <div class="x-vault-content uk-width-expand uk-padding-small">
-                {#key selected}
-                    <VaultContent bind:vaultItem={selected} />
+                {#key selectedItem}
+                    <VaultContent vaultData={selectedItem}/>
                 {/key}
             </div>
         </div>

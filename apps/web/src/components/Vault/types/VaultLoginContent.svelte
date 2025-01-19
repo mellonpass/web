@@ -1,7 +1,7 @@
 <script>
     import UIKit from 'uikit';
 
-    let {data = $bindable()} = $props();
+    let { data } = $props();
 
     const onCopy = () => {
         UIKit.notification({

@@ -5,7 +5,7 @@
     import VaultLogin from "./types/VaultLogin.svelte";
     import VaultSecureNote from "./types/VaultSecureNote.svelte";
 
-    let {vaultItem = $bindable()} = $props();
+    let { vaultData } = $props();
 
     let VaultComponent = $state(null);
 
@@ -15,8 +15,8 @@
     }
 
     onMount(() => {
-        if (vaultItem) {
-            VaultComponent = VAULT_MAPPER[vaultItem.type];
+        if (vaultData) {
+            VaultComponent = VAULT_MAPPER[vaultData.type];
         }
     });
 
@@ -24,5 +24,5 @@
 
 
 <div class="uk-flex uk-flex-center uk-width-expand">
-    <VaultComponent bind:data={vaultItem} />
+    <VaultComponent vaultId={vaultData.id} />
 </div>
