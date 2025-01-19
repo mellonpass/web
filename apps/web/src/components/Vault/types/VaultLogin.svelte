@@ -6,7 +6,7 @@
 
     let { vaultId } = $props();
 
-    let data = ciphers.find(cipher => cipher.id == vaultId);
+    let cipher = {...ciphers.find(cipher => cipher.id == vaultId)};
     let isEdit = $state(false);
 
 </script>
@@ -25,9 +25,9 @@
 
     {#key isEdit}
         {#if isEdit}
-            <VaultLoginEdit data={data} />
+            <VaultLoginEdit cipher={cipher} />
         {:else}
-            <VaultLoginContent data={data} />
+            <VaultLoginContent cipher={cipher} />
         {/if}
     {/key}
 </div>

@@ -1,5 +1,7 @@
 <script>
-    let { data } = $props();
+    let { cipher } = $props();
+
+    let showPassword = $state(false);
 </script>
 
 <div class="uk-padding-small">
@@ -8,7 +10,7 @@
             <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
         </div>
         <div class="uk-width-expand">
-            <input bind:value={data.title} style="background: none;" class="uk-input uk-form-large x-editable-input" type="text" aria-label="Input">
+            <input bind:value={cipher.title} style="background: none;" class="uk-input uk-form-large x-editable-input" type="text" aria-label="Input">
         </div>
     </div>
 </div>
@@ -16,14 +18,23 @@
 <div class="x-login-panel uk-border-rounded">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-input-label uk-text-muted uk-margin-right">Username: </span>
-        <!-- TODO: use data -->
-        <input class="uk-input uk-form-small x-editable-input" height="40" type="text" aria-label="Input" value="johndoe@gmail.com">
+        <input
+            bind:value={cipher.data.username}
+            class="uk-input uk-form-small x-editable-input"
+            type="text"
+            aria-label="Input">
     </div>
     <hr class="uk-margin-remove">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-input-label uk-text-muted uk-margin-right">Password: </span>
-        <!-- TODO: use data -->
-        <input class="uk-input uk-form-small x-editable-input" height="40" type="password" aria-label="Input" value="• • • • • • • • • •">
+        <input
+            bind:value={cipher.data.password}
+            onfocusin={() => {showPassword = true}}
+            onfocusout={() => {showPassword = false}}
+            type={showPassword ? "text" : "password"}
+            class="uk-input uk-form-small x-editable-input" 
+            aria-label="Input"
+        >
     </div>
 </div>
 

@@ -6,7 +6,10 @@ export const ciphers = [
         "content": "janedoe@gmail.com",
         "type": "LOGIN",
         "selected": false,
-        "data": {},
+        "data": {
+            "username": "janedoe@gmail.com",
+            "password": "123456"
+        }
     },
     {
         "id": 2,
@@ -14,7 +17,10 @@ export const ciphers = [
         "content": "johndoe@gmail.com",
         "type": "LOGIN",
         "selected": false,
-        "data": {},
+        "data": {
+            "username": "johndoe@gmail.com",
+            "password": "123456"
+        },
     },
     {
         "id": 3,
@@ -22,7 +28,10 @@ export const ciphers = [
         "content": "johndoe@gmail.com",
         "type": "LOGIN",
         "selected": false,
-        "data": {},
+        "data": {
+            "username": "johndoe@gmail.com",
+            "password": "123456"
+        }
     },
     {
         "id": 4,
@@ -30,6 +39,8 @@ export const ciphers = [
         "content": "# --- secure header ----",
         "type": "SECURE_NOTE",
         "selected": false,
-        "data": {},
+        "data": {
+            "note": "some sensitive note."
+        },
     },
 ];
