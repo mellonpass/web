@@ -1,9 +1,9 @@
 <script>
-    let { onclick } = $props();
+    let { onclick, icon } = $props();
 </script>
 
-<button onclick={onclick} class="uk-button uk-button-default uk-border-rounded x-icon-button">
-    <span class="x-button-icon" uk-icon="icon: pencil"></span> 
+<button onclick={onclick} class="uk-button uk-button-default uk-button-small uk-border-rounded x-icon-button">
+    <span class="x-button-icon" uk-icon="icon: {icon}"></span> 
     <span class="x-button-text uk-text-middle">Edit</span>
 </button>
 

@@ -1,7 +1,7 @@
 <script>
     import { onMount } from "svelte";
 
-    let { cipher, controller } = $props();
+    let { cipher } = $props();
 
     let showPassword = $state(false);
     let data = $state({
@@ -20,10 +20,6 @@
     });
 
 </script>
-
-<div class="uk-flex uk-flex-right uk-margin">
-    {@render controller(data)}
-</div>
 
 <div class="uk-padding-small">
     <div class="uk-grid-small uk-flex-middle" uk-grid>

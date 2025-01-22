@@ -1,7 +1,7 @@
 <script>
     import UIKit from 'uikit';
 
-    let { cipher, controller } = $props();
+    let { cipher } = $props();
 
     const onCopy = (data) => {
         navigator.clipboard.writeText(data).then(() => {
@@ -14,10 +14,6 @@
     };
 
 </script>
-
-<div class="uk-flex uk-flex-right uk-margin">
-    {@render controller()}
-</div>
 
 <div class="uk-padding-small">
     <div class="uk-grid-small uk-flex-middle" uk-grid>

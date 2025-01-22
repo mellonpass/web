@@ -55,7 +55,7 @@
                     <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
                 </div>
             </div>
-            <div class="x-vault-content uk-width-expand uk-padding-small">
+            <div class="x-vault-content uk-width-expand">
                 {#key selectedItem}
                     <VaultContent vaultData={selectedItem}/>
                 {/key}
