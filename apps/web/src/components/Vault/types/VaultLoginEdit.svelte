@@ -47,7 +47,7 @@
 
 <div class="x-login-panel uk-border-rounded">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-        <span class="x-input-label uk-text-muted uk-margin-right">Username: </span>
+        <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
         <input
             bind:value={data.username}
             class="uk-input x-editable-input"
@@ -57,7 +57,7 @@
     </div>
     <hr class="uk-margin-remove">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-        <span class="x-input-label uk-text-muted uk-margin-right">Password: </span>
+        <span class="x-vertical-center uk-text-muted uk-margin-right">Password: </span>
         {#if showPassword}
             <!-- svelte-ignore a11y_autofocus -->
             <input
@@ -88,7 +88,7 @@
         border: solid 1px whitesmoke;
     }
 
-    .x-input-label {
+    .x-vertical-center {
         display: inline-flex;
         align-items: center;
     }

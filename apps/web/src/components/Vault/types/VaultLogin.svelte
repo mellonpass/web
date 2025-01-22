@@ -2,8 +2,8 @@
     import VaultLoginDetail from "./VaultLoginDetail.svelte";
     import VaultLoginEdit from "./VaultLoginEdit.svelte";
 
+    import IconButton from "$components/Buttons/IconButton.svelte";
     import { ciphers } from "$lib/mock/ciphers";
-    import { onMount } from "svelte";
 
     let { vaultId } = $props();
 
@@ -22,13 +22,11 @@
 {#snippet controller(data)}
     <div class="uk-flex uk-flex-right uk-margin">
         {#if isEdit}
-            <button onclick={() => {onEdit(data)}} class="uk-button uk-button-small uk-button-primary uk-border-rounded">
+            <button onclick={() => {onEdit(data)}} class="uk-button uk-button-small uk-button-primary">
                 Save
             </button>
         {/if}
-        <button class:uk-button-primary={!isEdit} onclick={() => {isEdit = !isEdit}} class="uk-button uk-button-small uk-border-rounded uk-margin-small-left">
-            {isEdit ? "Cancel" : "Edit"}
-        </button>
+        <IconButton onclick={() => {isEdit = !isEdit}}/>
     </div>
 {/snippet}
 
@@ -37,3 +35,8 @@
         <ComponentDisplay cipher={cipher} {controller}/>
     {/key}
 </div>
+
+
+<style>
+    .x-edit- {}
+</style>
