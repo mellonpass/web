@@ -3,12 +3,12 @@
     import VaultContent from "./VaultContent.svelte";
 
     import { ciphers } from "$lib/mock/ciphers";
+    import { onMount } from "svelte";
 
     let search = $state(null);
     let selectedItem = $state(null);
 
     const vaultListItems = JSON.parse(JSON.stringify(ciphers));
-
     const filteredVaultListItem = $derived(
         vaultListItems.filter(
             item => search ? item.title.toLowerCase().includes(search) : true
@@ -16,6 +16,10 @@
             (a, b) => a.title.localeCompare(b.title)
         )
     );
+
+    onMount(() => {
+        selectedItem = filteredVaultListItem[0];
+    });
 
     const onItemSelect = (item) => {
         vaultListItems.forEach(item => item.selected = false);
