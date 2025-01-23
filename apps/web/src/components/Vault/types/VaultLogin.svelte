@@ -5,7 +5,7 @@
     import IconButton from "$components/Buttons/IconButton.svelte";
     import { ciphers } from "$lib/mock/ciphers";
 
-    let { vaultId, editMode } = $props();
+    let { vaultId, editMode, data = $bindable({}) } = $props();
 
     let cipher = {...ciphers.find(cipher => cipher.id == vaultId)};
     let output = $state(null);
@@ -16,6 +16,6 @@
 
 <div class="uk-width-expand">
     {#key editMode}
-        <ComponentDisplay cipher={cipher}/>
+        <ComponentDisplay cipher={cipher} bind:data />
     {/key}
 </div>

@@ -5,7 +5,7 @@
     import { ciphers } from "$lib/mock/ciphers";
 
     let search = $state(null);
-    let selectedItem = $state({});
+    let selectedItem = $state(null);
 
     const vaultListItems = JSON.parse(JSON.stringify(ciphers));
 

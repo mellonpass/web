@@ -1,15 +1,23 @@
 <script>
     import { onMount } from "svelte";
+    import { writable } from 'svelte/store';
 
-    let { cipher } = $props();
+    let { cipher, data = $bindable({}) } = $props();
 
     let showPassword = $state(false);
-    let data = $state({
-        // Encrypt from cipher to data.
+
+    const initData = writable({
+        // Encrypt from cipher to initData.
         id: cipher.id,
         title: cipher.title,
         username: cipher.data.username,
         password: cipher.data.password,
+    });
+
+    // Capture initData changes and assign to
+    // component data for saving.
+    initData.subscribe((value) => {
+        data = value;
     });
 
     let titleInputRef = null
@@ -30,7 +38,7 @@
             <!-- svelte-ignore a11y_autofocus -->
             <input
                 bind:this={titleInputRef}
-                bind:value={data.title}
+                bind:value={$initData.title}
                 style="background: none;"
                 class="uk-input uk-form-large x-editable-input"
                 type="text"
@@ -45,7 +53,7 @@
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
         <input
-            bind:value={data.username}
+            bind:value={$initData.username}
             class="uk-input x-editable-input"
             type="text"
             aria-label="Input"
@@ -57,7 +65,7 @@
         {#if showPassword}
             <!-- svelte-ignore a11y_autofocus -->
             <input
-                bind:value={data.password}
+                bind:value={$initData.password}
                 onfocusin={() => {showPassword = true}}
                 onfocusout={() => {showPassword = false}}
                 type="text"
