@@ -1,6 +1,6 @@
 <script>
-    import VaultLoginDetail from "./VaultLoginDetail.svelte";
-    import VaultLoginEdit from "./VaultLoginEdit.svelte";
+    import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
+    import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
 
     import IconButton from "$components/Buttons/IconButton.svelte";
     import { ciphers } from "$lib/mock/ciphers";

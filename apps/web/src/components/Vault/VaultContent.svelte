@@ -3,8 +3,8 @@
     import { onMount } from "svelte";
     
     import IconButton from "$components/Buttons/IconButton.svelte";
-    import VaultLogin from "./types/VaultLogin.svelte";
-    import VaultSecureNote from "./types/VaultSecureNote.svelte";
+    import VaultLogin from "$components/Vault/types/Login/VaultLogin.svelte";
+    import VaultSecureNote from "$components/Vault/types/VaultSecureNote.svelte";
 
     let { vaultData = null } = $props();
 

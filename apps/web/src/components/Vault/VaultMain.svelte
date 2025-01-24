@@ -1,6 +1,6 @@
 <script>
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-    import VaultContent from "./VaultContent.svelte";
+    import VaultContent from "$components/Vault/VaultContent.svelte";
 
     import { ciphers } from "$lib/mock/ciphers";
     import { onMount } from "svelte";
