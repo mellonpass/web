@@ -8,21 +8,35 @@
     let search = $state(null);
     let selectedItem = $state(null);
 
-    const vaultListItems = JSON.parse(JSON.stringify(ciphers));
-    const filteredVaultListItem = $derived(
-        vaultListItems.filter(
+    // Copy ciphers array to create difference reference.
+    let vaultListItems = $state(JSON.parse(JSON.stringify(ciphers)));
+    const filteredVaultListItem = $derived.by(() => {
+        const res = vaultListItems.filter(
             item => search ? item.title.toLowerCase().includes(search) : true
         ).sort(
             (a, b) => a.title.localeCompare(b.title)
-        )
-    );
-
-    onMount(() => {
-        selectedItem = filteredVaultListItem[0];
+        );
+        return res;
     });
 
-    const onItemSelect = (item) => {
+    onMount(() => {
+        const firstItem = findVaultItem(filteredVaultListItem[0].id);
+        firstItem.selected = true;
+        selectedItem = {
+            id: firstItem.id,
+            type: firstItem.type,
+        };
+    });
+
+    const findVaultItem = (itemId) => {
+        return vaultListItems.find(item => item.id == itemId);
+    };
+
+    const onItemSelect = (itemId) => {
+        // Use the vaultListItems to modify it's content and not the 
+        // derived filteredVaultListItem.
         vaultListItems.forEach(item => item.selected = false);
+        const item = findVaultItem(itemId);
         item.selected = !item.selected;
         selectedItem = {
             id: item.id,
@@ -35,13 +49,14 @@
 
 <div class="uk-flex uk-flex-column">
     <VaultNavbar bind:search={search} />
+
     <div uk-height-viewport="offset-top: true">
         <div class="uk-flex" uk-height-viewport>
             <div class="x-vault-list uk-width-1-4">
                 <ul class="uk-list uk-margin-top">
                     {#each filteredVaultListItem as item (item.id)}
                         <li class:x-selected={item.selected} class="x-uk-list-item">
-                            <a href class="uk-link-reset" onclick={() => {onItemSelect(item)}}>
+                            <a href class="uk-link-reset" onclick={() => {onItemSelect(item.id)}}>
                                 <div class="uk-flex">
                                     <div class="uk-width-auto">
                                         <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
