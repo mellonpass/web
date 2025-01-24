@@ -61,7 +61,7 @@
             </div>
             <div class="x-vault-content uk-width-expand">
                 {#key selectedItem}
-                    <VaultContent vaultData={selectedItem}/>
+                    <VaultContent vaultId={selectedItem?.id}/>
                 {/key}
             </div>
         </div>

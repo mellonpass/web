@@ -1,28 +1,39 @@
 <script>
     
     import { onMount } from "svelte";
-    
+
     import IconButton from "$components/Buttons/IconButton.svelte";
-    import VaultLogin from "$components/Vault/types/Login/VaultLogin.svelte";
-    import VaultSecureNote from "$components/Vault/types/VaultSecureNote.svelte";
 
-    let { vaultData = null } = $props();
+    import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
+    import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
 
-    let VaultComponent = $state(null);
-    let isEditMode = $state(false);
+    import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
+    import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
+
+    import { ciphers } from "$lib/mock/ciphers";
+
+    let { vaultId = null } = $props();
+
+    const VAULT_MAPPER = {
+        "LOGIN": {
+            "details": VaultLoginDetail,
+            "edit": VaultLoginEdit,
+        },
+        "SECURE_NOTE": {
+            "details": VaultSecureNoteDetail,
+            "edit": VaultSecureNoteEdit,
+        }
+    };
 
     // Data assigned on component edit.
     let componentData = $state({});
 
-    const VAULT_MAPPER = {
-        "LOGIN": VaultLogin,
-        "SECURE_NOTE": VaultSecureNote
-    }
+    let editMode = $state(false);
+    let cipher = $state({...ciphers.find(cipher => cipher.id == vaultId)});
 
-    onMount(() => {
-        if (vaultData) {
-            VaultComponent = VAULT_MAPPER[vaultData.type];
-        }
+    let VaultComponent = $derived.by(() => {
+        let component = VAULT_MAPPER[cipher.type];
+        return editMode ? component.edit : component.details;
     });
 
     const onSave = () => {
@@ -31,9 +42,9 @@
 
 </script>
 
-{#if vaultData}
-    <div class:x-editing-mode={isEditMode} class="uk-padding-small">
-        {#if isEditMode}
+{#if vaultId}
+    <div class:x-editing-mode={editMode} class="uk-padding-small">
+        {#if editMode}
             <div class="uk-flex">
                 <div class="uk-width-expand">
                     <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
@@ -42,20 +53,24 @@
                     <button onclick={() => onSave()} class="uk-button uk-button-primary uk-button-small uk-border-rounded">
                         Save
                     </button>
-                    <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {isEditMode = !isEditMode}}>
+                    <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode}}>
                         Cancel
                     </button>
                 </div>
             </div>
         {:else}
             <div class="uk-flex uk-flex-right">
-                <IconButton onclick={() => {isEditMode = !isEditMode}} icon="pencil" text="Edit"/>
+                <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
             </div>
         {/if}
     </div>
 
     <div class="x-vault-content uk-flex uk-flex-center uk-width-expand">
-        <VaultComponent vaultId={vaultData.id} editMode={isEditMode} bind:data={componentData} />
+        <div class="uk-width-expand">
+            {#key editMode}
+                <VaultComponent {cipher} bind:data={componentData} />
+            {/key}
+        </div>
     </div>
 {/if}
 

@@ -40,7 +40,7 @@ export const ciphers = [
         "type": "SECURE_NOTE",
         "selected": false,
         "data": {
-            "note": "some sensitive note."
+            "note": "Some sensitive note."
         },
     },
 ];
