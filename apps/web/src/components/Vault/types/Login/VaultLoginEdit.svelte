@@ -49,7 +49,7 @@
     </div>
 </div>
 
-<div class="x-login-panel uk-border-rounded">
+<div class="x-panel uk-border-rounded">
     <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
         <input
@@ -87,7 +87,7 @@
 
 
 <style>
-    .x-login-panel {
+    .x-panel {
         background-color: white;
         border: solid 1px whitesmoke;
     }

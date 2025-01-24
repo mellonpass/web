@@ -1,1 +1,0 @@
-<div>Secure note</div>
