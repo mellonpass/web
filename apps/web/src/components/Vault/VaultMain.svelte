@@ -51,7 +51,7 @@
     <VaultNavbar bind:search={search} />
 
     <div class="uk-flex" uk-height-viewport="offset-top: true">
-        <div class="x-vault-list uk-width-1-4">
+        <div class="x-vault-list">
             <ul class="uk-list uk-margin-top">
                 {#each filteredVaultListItem as item (item.id)}
                     <li class:x-selected={item.selected} class="x-uk-list-item">
@@ -109,6 +109,7 @@
 
     .x-vault-list {
         height: 100%;
+        width: 275px;
         overflow: scroll;
     }
 </style>
