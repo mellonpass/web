@@ -80,9 +80,7 @@
             <button type="button" aria-label="close modal" onclick={() => {UIkit.modal("#vault-modal").hide()}} uk-close></button>
         </div>
         <ModalComponent />
-        <div class="uk-modal-footer">Footer</div>
     </div>
-    
 </div>
 
 <style>

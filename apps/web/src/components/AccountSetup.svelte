@@ -130,9 +130,9 @@
 
         <div class="uk-inline uk-width-100">
             <a
+                href
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
-                href={null}
                 uk-icon="icon: {mpFieldToogle ? 'eye-slash' : 'eye'}"
                 onclick={() => {mpFieldToogle = !mpFieldToogle}}>
             </a>
@@ -171,9 +171,9 @@
 
         <div class="uk-inline uk-width-100">
             <a
+                href
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
-                href={null}
                 uk-icon="icon: {mpcFieldToogle ? 'eye-slash' : 'eye'}"
                 onclick={() => {mpcFieldToogle = !mpcFieldToogle}}
             >

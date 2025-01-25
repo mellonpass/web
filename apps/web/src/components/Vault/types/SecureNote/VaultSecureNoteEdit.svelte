@@ -66,7 +66,7 @@
         bind:this={textInputRef}
         bind:value={$initData.note}
         placeholder="This is the beginning of a note."
-        class="uk-textarea uk-width-1-1 uk-padding-small">
+        class="uk-textarea uk-border-rounded uk-width-1-1 uk-padding-small">
     </textarea>
 </div>
 
