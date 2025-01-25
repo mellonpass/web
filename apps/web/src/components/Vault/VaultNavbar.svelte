@@ -19,20 +19,14 @@
                     </li>
                 </ul>
             </div>
-            <div class="uk-navbar-right">
+            <div class="uk-navbar-right uk-margin-left">
                 <ul class="uk-navbar-nav">
                     <li class="x-vertical-center">
-                        <a href ><span uk-icon="plus"></span></a>
-                        <div class="uk-navbar-dropdown dropdown-width-custom">
+                        <a href uk-icon="plus" aria-label="add vault item"></a>
+                        <div class="uk-navbar-dropdown">
                             <ul class="uk-nav uk-navbar-dropdown-nav">
-                                <li class="uk-active uk-text-default"><a href>What would you like to add?</a></li>
-                                <li class="uk-text-default">
-                                    <button class="uk-button uk-width-1-1">Login</button>
-                                </li>
-                                <div class="uk-margin-small"></div>
-                                <li class="uk-text-default">
-                                    <button class="uk-button uk-width-1-1">Secure note</button>
-                                </li>
+                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="sign-in"></span>Login</a></li>
+                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note</a></li>
                             </ul>
                         </div>
                     </li>
