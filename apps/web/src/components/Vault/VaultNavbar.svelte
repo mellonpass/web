@@ -12,14 +12,31 @@
         <div uk-navbar>
 
             <div class="uk-navbar-left" style="width: 90%;">
-                <div class="uk-inline uk-width-1-1">
-                    <span class="uk-form-icon" uk-icon="icon: search"></span>
-                    <input name="search" bind:value={search} class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
-                </div>
+                <ul class="uk-navbar-nav uk-width-1-1">
+                    <li class="uk-width-1-1">
+                        <span class="uk-form-icon" uk-icon="icon: search"></span>
+                        <input name="search" bind:value={search} class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+                    </li>
+                </ul>
             </div>
             <div class="uk-navbar-right">
                 <ul class="uk-navbar-nav">
-                    <li>
+                    <li class="x-vertical-center">
+                        <a href ><span uk-icon="plus"></span></a>
+                        <div class="uk-navbar-dropdown dropdown-width-custom">
+                            <ul class="uk-nav uk-navbar-dropdown-nav">
+                                <li class="uk-active uk-text-default"><a href>What would you like to add?</a></li>
+                                <li class="uk-text-default">
+                                    <button class="uk-button uk-width-1-1">Login</button>
+                                </li>
+                                <div class="uk-margin-small"></div>
+                                <li class="uk-text-default">
+                                    <button class="uk-button uk-width-1-1">Secure note</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="x-vertical-center">
                         <div style="cursor: pointer;" class="uk-padding-small">
                             <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
                         </div>
@@ -52,7 +69,12 @@
 <style>
     /* override navbar dropdown width */
     .dropdown-width-custom:not(.uk-drop-stack) {
-        width: 250px;
+        width: 300px;
+    }
+
+    .x-vertical-center {
+        display: inline-flex;
+        align-items: center;
     }
 
     .x-uk-navbar-container {
