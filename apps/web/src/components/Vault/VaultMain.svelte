@@ -63,7 +63,7 @@
                                     </div>
                                     <div class="uk-width-expand uk-margin-left">
                                         <div class="uk-text-default">{item.title}</div>
-                                        <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content}</div>
+                                        <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
                                     </div>
                                 </div>
                             </a>

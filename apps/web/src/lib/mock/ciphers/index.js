@@ -36,11 +36,11 @@ export const ciphers = [
     {
         "id": 4,
         "title": "Dev API Key",
-        "content": "# --- secure header ----",
+        "content": "# --- secure header ---",
         "type": "SECURE_NOTE",
         "selected": false,
         "data": {
-            "note": "Some sensitive note."
+            "note": "# --- secure header ---\nenv1=somevalue",
         },
     },
 ];

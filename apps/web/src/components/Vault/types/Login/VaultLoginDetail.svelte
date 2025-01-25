@@ -25,7 +25,7 @@
         </div>
     </div>
 </div>
-<div class="x-login-panel uk-border-rounded">
+<div class="x-panel uk-border-rounded">
     <a onclick={(e) => {onCopy(cipher.data.username)}} href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="uk-text-muted uk-margin-right">Username: </span>
         <span class="uk-text-emphasis uk-text-baseline uk-width-expand">{cipher.data.username}</span>
@@ -41,7 +41,7 @@
 
 
 <style>
-    .x-login-panel {
+    .x-panel {
         background-color: white;
         border: solid 1px whitesmoke;
     }
