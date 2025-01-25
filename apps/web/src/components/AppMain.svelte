@@ -17,7 +17,9 @@
 <style>
     .x-vault-side-nav {
         width: 235px;
-        background: #0D92F4;
+        height: 100%;
+        overflow: scroll;
+        background: #EEEEEE;
     }
 
 </style>

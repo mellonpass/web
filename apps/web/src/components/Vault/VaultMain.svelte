@@ -51,10 +51,10 @@
     <VaultNavbar bind:search={search} />
 
     <div class="uk-flex" uk-height-viewport="offset-top: true">
-        <div class="x-vault-list">
+        <div class="x-vault-list uk-padding-small">
             <ul class="uk-list uk-margin-top">
                 {#each filteredVaultListItem as item (item.id)}
-                    <li class:x-selected={item.selected} class="x-uk-list-item">
+                    <li class:x-selected={item.selected} class="x-uk-list-item uk-border-rounded">
                         <a href class="uk-link-reset" onclick={() => {onItemSelect(item.id)}}>
                             <div class="uk-flex">
                                 <div class="uk-width-auto">
@@ -94,7 +94,7 @@
 
     .x-uk-list-item.x-selected {
         color: white;
-        background: #142850;
+        background: #2962FF;
     }
 
     .x-vault-main-container {
