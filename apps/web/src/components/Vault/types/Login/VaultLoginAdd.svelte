@@ -42,7 +42,7 @@
 
 <div class="uk-modal-footer uk-flex uk-flex-row-reverse">
     <div class="uk-margin">
-        <button class="uk-button uk-button-primary">Save</button>
-        <button onclick={() => {UIkit.modal("#vault-modal").hide()}}  class="uk-button uk-button-default">Cancel</button>
+        <button class="uk-button uk-button-primary uk-border-rounded">Save</button>
+        <button onclick={() => {UIkit.modal("#vault-modal").hide()}}  class="uk-button uk-button-default uk-border-rounded">Cancel</button>
     </div>
 </div>
