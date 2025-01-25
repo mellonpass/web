@@ -1,10 +1,22 @@
 <script>
-    export let search = null;
-
     import gravatar from 'gravatar';
-    const whoami = JSON.parse(localStorage.getItem("whoami"));
+    
+    import VaultLoginAdd from '$components/Vault/types/Login/VaultLoginAdd.svelte';
+    import VaultSecureNoteAdd from '$components/Vault/types/SecureNote/VaultSecureNoteAdd.svelte';
+    
+    let { search = $bindable()} = $props();
+    let selectedModal = $state(null);
 
+    const ModalMapper = {
+        "login": VaultLoginAdd,
+        "secureNote": VaultSecureNoteAdd
+    };
+
+    const ModalComponent = $derived(ModalMapper[selectedModal]);
+
+    const whoami = JSON.parse(localStorage.getItem("whoami"));
     let gravatar_url = gravatar.url(whoami.identity, {s: '100', r: 'pg', d: 'retro'});
+
 </script>
 
 <nav class="x-uk-navbar-container uk-navbar-container uk-navbar-transparent">
@@ -25,8 +37,8 @@
                         <a href uk-icon="plus" aria-label="add vault item"></a>
                         <div class="uk-navbar-dropdown">
                             <ul class="uk-nav uk-navbar-dropdown-nav">
-                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="sign-in"></span>Login</a></li>
-                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note</a></li>
+                                <li class="uk-text-default"><a href uk-toggle="target: #vault-modal" onclick={() => selectedModal = "login"}><span class="uk-margin-small-right" uk-icon="sign-in"></span>Login</a></li>
+                                <li class="uk-text-default"><a href uk-toggle="target: #vault-modal" onclick={() => selectedModal = "secureNote"}><span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note</a></li>
                             </ul>
                         </div>
                     </li>
@@ -59,6 +71,19 @@
     </div>
 </nav>
 
+
+<!-- This is the modal -->
+<div id="vault-modal" uk-modal>
+    <div class="uk-modal-dialog">
+        <div class="uk-modal-header uk-flex">
+            <h2 class="uk-modal-title uk-text-center uk-width-expand uk-margin-remove">New Item</h2>
+            <button type="button" aria-label="close modal" onclick={() => {UIkit.modal("#vault-modal").hide()}} uk-close></button>
+        </div>
+        <ModalComponent />
+        <div class="uk-modal-footer">Footer</div>
+    </div>
+    
+</div>
 
 <style>
     /* override navbar dropdown width */
