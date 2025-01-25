@@ -47,38 +47,36 @@
 </script>
 
 
-<div class="uk-flex uk-flex-column">
+<div class="x-vault-main-container uk-flex uk-flex-column">
     <VaultNavbar bind:search={search} />
 
-    <div uk-height-viewport="offset-top: true">
-        <div class="uk-flex" uk-height-viewport>
-            <div class="x-vault-list uk-width-1-4">
-                <ul class="uk-list uk-margin-top">
-                    {#each filteredVaultListItem as item (item.id)}
-                        <li class:x-selected={item.selected} class="x-uk-list-item">
-                            <a href class="uk-link-reset" onclick={() => {onItemSelect(item.id)}}>
-                                <div class="uk-flex">
-                                    <div class="uk-width-auto">
-                                        <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
-                                    </div>
-                                    <div class="uk-width-expand uk-margin-left">
-                                        <div class="uk-text-default">{item.title}</div>
-                                        <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
-                                    </div>
+    <div class="uk-flex" uk-height-viewport="offset-top: true">
+        <div class="x-vault-list uk-width-1-4">
+            <ul class="uk-list uk-margin-top">
+                {#each filteredVaultListItem as item (item.id)}
+                    <li class:x-selected={item.selected} class="x-uk-list-item">
+                        <a href class="uk-link-reset" onclick={() => {onItemSelect(item.id)}}>
+                            <div class="uk-flex">
+                                <div class="uk-width-auto">
+                                    <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
                                 </div>
-                            </a>
-                        </li>
-                    {/each}
-                </ul>
-                <div class="uk-text-center">
-                    <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
-                </div>
+                                <div class="uk-width-expand uk-margin-left">
+                                    <div class="uk-text-default">{item.title}</div>
+                                    <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                {/each}
+            </ul>
+            <div class="uk-text-center">
+                <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
             </div>
-            <div class="x-vault-content uk-width-expand">
-                {#key selectedItem}
-                    <VaultContent vaultId={selectedItem?.id}/>
-                {/key}
-            </div>
+        </div>
+        <div class="x-vault-content uk-width-expand">
+            {#key selectedItem}
+                <VaultContent vaultId={selectedItem?.id}/>
+            {/key}
         </div>
     </div>
 </div>
@@ -99,7 +97,18 @@
         background: #142850;
     }
 
+    .x-vault-main-container {
+        height: 100vh;
+    }
+
     .x-vault-content {
         background-color: #FBFBFB;
+        height: 100%;
+        overflow: scroll;
+    }
+
+    .x-vault-list {
+        height: 100%;
+        overflow: scroll;
     }
 </style>

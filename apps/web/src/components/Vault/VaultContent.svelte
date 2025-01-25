@@ -65,7 +65,7 @@
         {/if}
     </div>
 
-    <div class="x-vault-content uk-flex uk-flex-center uk-width-expand">
+    <div class="x-vault-component uk-flex uk-flex-center uk-width-expand">
         <div class="uk-width-expand">
             {#key editMode}
                 <VaultComponent {cipher} bind:data={componentData} />
@@ -76,7 +76,7 @@
 
 
 <style>
-    .x-vault-content {
+    .x-vault-component {
         padding: 5px 15px;
     }
 
