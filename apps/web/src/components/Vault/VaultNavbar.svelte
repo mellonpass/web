@@ -1,4 +1,5 @@
 <script>
+    import UIkit from 'uikit';
     import gravatar from 'gravatar';
     
     import VaultLoginAdd from '$components/Vault/types/Login/VaultLoginAdd.svelte';
@@ -19,52 +20,63 @@
 
 </script>
 
-<nav class="x-uk-navbar-container uk-navbar-container uk-navbar-transparent">
-    <div class="uk-container">
-        <div uk-navbar>
-
-            <div class="uk-navbar-left" style="width: 90%;">
-                <ul class="uk-navbar-nav uk-width-1-1">
-                    <li class="uk-width-1-1">
-                        <span class="uk-form-icon" uk-icon="icon: search"></span>
-                        <input name="search" bind:value={search} class="uk-input uk-text-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+<nav class="x-navbar uk-flex uk-padding-small">
+    <div class="uk-width-expand x-vertical-center">
+        <div class="uk-inline uk-width-1-1">
+            <span class="uk-form-icon" uk-icon="icon: search"></span>
+            <input name="search" bind:value={search} class="uk-input uk-form-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+        </div>
+    </div>
+    <div class="uk-flex uk-flex-right">
+        <div class="uk-inline x-vertical-center uk-margin-left">
+            <button class="uk-button uk-button-primary uk-button-small uk-border-rounded uk-text-capitalize">New Item</button>
+            <div id="new-item-dropdown" uk-dropdown="mode: click; pos: bottom-right;">
+                <ul class="uk-nav uk-dropdown-nav">
+                    <li class="uk-text-default">
+                        <a
+                            href
+                            uk-toggle="target: #vault-modal"
+                            onclick={() => {
+                                selectedModal = "login";
+                                UIkit.dropdown("#new-item-dropdown").hide(0);
+                            }}>
+                            <span class="uk-margin-small-right" uk-icon="sign-in"></span>Login
+                        </a>
+                    </li>
+                    <li class="uk-text-default">
+                        <a
+                            href
+                            uk-toggle="target: #vault-modal"
+                            onclick={() => {
+                                selectedModal = "secureNote";
+                                UIkit.dropdown("#new-item-dropdown").hide(0);
+                            }}>
+                            <span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note
+                        </a>
                     </li>
                 </ul>
             </div>
-            <div class="uk-navbar-right uk-margin-left">
-                <ul class="uk-navbar-nav">
-                    <li class="x-vertical-center">
-                        <a href uk-icon="plus" aria-label="add vault item"></a>
-                        <div class="uk-navbar-dropdown">
-                            <ul class="uk-nav uk-navbar-dropdown-nav">
-                                <li class="uk-text-default"><a href uk-toggle="target: #vault-modal" onclick={() => selectedModal = "login"}><span class="uk-margin-small-right" uk-icon="sign-in"></span>Login</a></li>
-                                <li class="uk-text-default"><a href uk-toggle="target: #vault-modal" onclick={() => selectedModal = "secureNote"}><span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note</a></li>
-                            </ul>
+        </div>
+        <div class="uk-inline x-vertical-center uk-margin-left">
+            <div style="cursor: pointer;">
+                <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+            </div>
+            <div uk-dropdown="mode: click; pos: bottom-right;">
+                <ul class="uk-nav uk-dropdown-nav">
+                    <li>
+                        <div class="uk-grid-small uk-flex-middle" uk-grid>
+                            <div class="uk-width-auto">
+                                <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
+                            </div>
+                            <div class="uk-width-expand">
+                                <span class="uk-text-default">Logged in as</span>
+                                <span class="uk-text-light">{whoami.identity}</span>
+                            </div>
                         </div>
                     </li>
-                    <li class="x-vertical-center">
-                        <div style="cursor: pointer;" class="uk-padding-small">
-                            <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
-                        </div>
-                        <div class="uk-navbar-dropdown dropdown-width-custom">
-                            <ul class="uk-nav uk-navbar-dropdown-nav">
-                                <li>
-                                    <div class="uk-grid-small uk-flex-middle" uk-grid>
-                                        <div class="uk-width-auto">
-                                            <img alt="gravatar" class="uk-border-circle" src={gravatar_url} width="40" height="40">
-                                        </div>
-                                        <div class="uk-width-expand">
-                                            <span class="uk-text-default">Logged in as</span>
-                                            <span class="uk-text-light">{whoami.identity}</span>
-                                        </div>
-                                    </div>
-                                </li>
-                                <hr>
-                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout</a></li>
-                                <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="lock"></span>Lock now</a></li>
-                            </ul>
-                        </div>
-                    </li>
+                    <hr>
+                    <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout</a></li>
+                    <li class="uk-text-default"><a href><span class="uk-margin-small-right" uk-icon="lock"></span>Lock now</a></li>
                 </ul>
             </div>
         </div>
@@ -84,12 +96,7 @@
 </div>
 
 <style>
-    /* override navbar dropdown width */
-    .dropdown-width-custom:not(.uk-drop-stack) {
-        width: 300px;
-    }
-
-    .x-uk-navbar-container {
-        border-bottom: solid #f5f5f5;
+    .x-navbar {
+        background: #f7f7f7;
     }
 </style>
