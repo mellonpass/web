@@ -14,7 +14,7 @@
 
         <div class="uk-margin">
             <div class="uk-form-controls">
-                <textarea style="resize: none;" class="uk-textarea uk-border-rounded" aria-label="Textarea"></textarea>
+                <textarea style="resize: none;" class="uk-textarea uk-border-rounded" rows=10 aria-label="Textarea"></textarea>
             </div>
         </div>
     </form>

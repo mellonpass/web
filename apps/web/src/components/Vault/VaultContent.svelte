@@ -112,7 +112,8 @@
     }
 
     .x-editing-mode {
-        background: #F5F5F5;
+        background: #f1f1f1;
+        border-bottom: 1px solid #E0E0E0;
     }
 
 </style>

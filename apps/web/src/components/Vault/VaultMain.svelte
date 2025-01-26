@@ -51,7 +51,7 @@
     <VaultNavbar bind:search={search} />
 
     <div class="uk-flex" uk-height-viewport="offset-top: true">
-        <div class="x-vault-list uk-padding-small">
+        <div class="x-vault-list">
             <ul class="uk-list uk-margin-top">
                 {#each filteredVaultListItem as item (item.id)}
                     <li class:x-selected={item.selected} class="x-uk-list-item uk-border-rounded">
@@ -108,8 +108,10 @@
     }
 
     .x-vault-list {
+        padding: 0 10px;
         height: 100%;
         width: 275px;
         overflow: scroll;
+        border-right: 1px solid #E0E0E0;
     }
 </style>

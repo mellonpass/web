@@ -97,6 +97,6 @@
 
 <style>
     .x-navbar {
-        background: #f7f7f7;
+        border-bottom: solid 1px #E0E0E0;
     }
 </style>

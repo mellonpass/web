@@ -20,6 +20,7 @@
         height: 100%;
         overflow: scroll;
         background: #EEEEEE;
+        border-right: 1px solid #E0E0E0;
     }
 
 </style>
