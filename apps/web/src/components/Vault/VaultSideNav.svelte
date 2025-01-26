@@ -21,16 +21,17 @@
     </div>
 
     <!-- Tags -->
-    <div class="uk-margin">
+     <!-- Uncomment when tags are available in the BE. -->
+    <!-- <div class="uk-margin">
         <ul class="uk-nav-default" uk-nav>
             <li class="uk-parent">
                 <a href class="uk-text-default uk-text-bold">Tags <span uk-nav-parent-icon></span></a>
                 <ul class="uk-nav-sub">
-                    <!-- add tag list here -->
+                     // add tag list here
                 </ul>
             </li>
         </ul>
-    </div>
+    </div> -->
 
     <!-- Others -->
     <div class="uk-margin">
