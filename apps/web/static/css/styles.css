@@ -1,0 +1,10 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+.x-vertical-center {
+    display: inline-flex !important;
+    align-items: center !important;
+}

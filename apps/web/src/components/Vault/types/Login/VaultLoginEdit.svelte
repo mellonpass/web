@@ -92,11 +92,6 @@
         border: solid 1px whitesmoke;
     }
 
-    .x-vertical-center {
-        display: inline-flex;
-        align-items: center;
-    }
-
     .x-editable-input {
         border: none;
     }

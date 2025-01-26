@@ -89,11 +89,6 @@
         width: 300px;
     }
 
-    .x-vertical-center {
-        display: inline-flex;
-        align-items: center;
-    }
-
     .x-uk-navbar-container {
         border-bottom: solid #f5f5f5;
     }

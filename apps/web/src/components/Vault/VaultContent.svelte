@@ -61,6 +61,37 @@
         {:else}
             <div class="uk-flex uk-flex-right">
                 <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
+                <div class="uk-inline x-vertical-center">
+                    <a
+                        href
+                        uk-icon="icon: more-vertical"
+                        aria-label="more menu"
+                        class="uk-icon-link uk-margin-left"
+                    ></a>
+                    <div uk-dropdown="mode: click">
+                        <ul class="uk-nav uk-dropdown-nav">
+                            <li>
+                                <a href class="uk-text-default">
+                                    <span uk-icon="icon: star" class="uk-margin-small-right"></span>
+                                    Add to favorites
+                                </a>
+                            </li>
+                            <li class="uk-nav-divider"></li>
+                            <li>
+                                <a href class="uk-text-default">
+                                    <span uk-icon="icon: album" class="uk-margin-small-right"></span>
+                                    Archive
+                                </a>
+                            </li>
+                            <li>
+                                <a href class="uk-text-default" style="color: #D50000">
+                                    <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
+                                    Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         {/if}
     </div>
