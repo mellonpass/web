@@ -12,20 +12,22 @@
     let vaultListItems = $state(JSON.parse(JSON.stringify(ciphers)));
     const filteredVaultListItem = $derived.by(() => {
         const res = vaultListItems.filter(
-            item => search ? item.title.toLowerCase().includes(search) : true
+            item => search ? item.name.toLowerCase().includes(search) : true
         ).sort(
-            (a, b) => a.title.localeCompare(b.title)
+            (a, b) => a.name.localeCompare(b.name)
         );
         return res;
     });
 
     onMount(() => {
-        const firstItem = findVaultItem(filteredVaultListItem[0].id);
-        firstItem.selected = true;
-        selectedItem = {
-            id: firstItem.id,
-            type: firstItem.type,
-        };
+        if (filteredVaultListItem.length != 0) {
+            const firstItem = findVaultItem(filteredVaultListItem[0].id);
+            firstItem.selected = true;
+            selectedItem = {
+                id: firstItem.id,
+                type: firstItem.type,
+            };
+        }
     });
 
     const findVaultItem = (itemId) => {
@@ -61,7 +63,7 @@
                                     <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
                                 </div>
                                 <div class="uk-width-expand uk-margin-left">
-                                    <div class="uk-text-default">{item.title}</div>
+                                    <div class="uk-text-default">{item.name}</div>
                                     <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
                                 </div>
                             </div>
@@ -70,7 +72,11 @@
                 {/each}
             </ul>
             <div class="uk-text-center">
-                <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
+                {#if filteredVaultListItem.length > 0}
+                    <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
+                {:else}
+                    <span class="uk-text-meta">No items to show.</span>    
+                {/if}
             </div>
         </div>
         <div class="x-vault-content uk-width-expand">

@@ -10,7 +10,7 @@
             <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
         </div>
         <div class="uk-width-expand">
-            <h3 class="uk-card-title uk-margin-remove-bottom">{cipher.title}</h3>
+            <h3 class="uk-card-title uk-margin-remove-bottom">{cipher.name}</h3>
         </div>
     </div>
 </div>

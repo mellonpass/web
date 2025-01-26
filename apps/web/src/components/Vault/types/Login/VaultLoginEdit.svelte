@@ -9,7 +9,7 @@
     const initData = writable({
         // Encrypt from cipher to initData.
         id: cipher.id,
-        title: cipher.title,
+        title: cipher.name,
         username: cipher.data.username,
         password: cipher.data.password,
     });
@@ -38,7 +38,7 @@
             <!-- svelte-ignore a11y_autofocus -->
             <input
                 bind:this={titleInputRef}
-                bind:value={$initData.title}
+                bind:value={$initData.name}
                 style="background: none;"
                 class="uk-input uk-form-large x-editable-input"
                 type="text"
