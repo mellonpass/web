@@ -1,5 +1,6 @@
 <script>
     import { page } from '$app/stores';
+
     import { generateLoginhash, generateMasterKey } from "$lib/crypto";
     import { loginAccount } from "$lib/services/accounts";
 
@@ -38,8 +39,11 @@
         if (e.target.checkValidity()) {
             const masterKey = await generateMasterKey(emailInput.value, masterPasswordInput.value);
             const loginHash = await generateLoginhash(masterKey, masterPasswordInput.value);
-            const data = await loginAccount(emailInput.value, loginHash);
-            localStorage.setItem("accessToken", JSON.stringify(data));
+            const response = await loginAccount(emailInput.value, loginHash);
+
+            localStorage.setItem("token", JSON.stringify(response.data.token));
+            localStorage.setItem("psk", response.data.psk);
+
             window.location.assign($page.url.searchParams.get("next") ?? "/");
         }
     };

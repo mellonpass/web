@@ -1,6 +1,14 @@
 <script>
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
+    import { setContext } from "svelte";
+
+    setContext("psk", localStorage.getItem("psk"));
+    localStorage.removeItem("psk");
+
+    setContext("token", localStorage.getItem("token"));
+    localStorage.removeItem("token");
+
 </script>
 
 
