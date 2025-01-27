@@ -129,21 +129,21 @@
         </div>
 
         <div class="uk-inline uk-width-100">
+            <input
+            class:uk-form-danger={mpFieldInvalid}
+            class="uk-input"
+            type={mpFieldToogle ? "text" : "password"}
+            id="master-password"
+            name="master-password"
+            bind:value={mpFieldVal}
+            >
             <a
-                href
+                href={null}
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
                 uk-icon="icon: {mpFieldToogle ? 'eye-slash' : 'eye'}"
                 onclick={() => {mpFieldToogle = !mpFieldToogle}}>
             </a>
-            <input
-                class:uk-form-danger={mpFieldInvalid}
-                class="uk-input"
-                type={mpFieldToogle ? "text" : "password"}
-                id="master-password"
-                name="master-password"
-                bind:value={mpFieldVal}
-            >
         </div>
 
         {#if mpFieldInvalid}

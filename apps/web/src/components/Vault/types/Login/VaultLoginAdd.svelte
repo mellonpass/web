@@ -29,7 +29,7 @@
                     <a
                         aria-label="eye-icon"
                         class="uk-form-icon uk-form-icon-flip"
-                        href
+                        href={null}
                         uk-icon="icon: {passwordToggle ? 'eye-slash' : 'eye'}"
                         onclick={() => {passwordToggle = !passwordToggle}}
                     >

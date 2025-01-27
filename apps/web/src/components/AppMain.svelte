@@ -1,24 +1,39 @@
 <script>
+    import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
-    import { setContext } from "svelte";
+    import { getContext, onMount, setContext } from "svelte";
 
-    setContext("psk", localStorage.getItem("psk"));
-    localStorage.removeItem("psk");
+    if (localStorage.getItem("psk") != null) {
+        setContext("psk", localStorage.getItem("psk"));
+        localStorage.removeItem("psk");
+    }
 
-    setContext("token", localStorage.getItem("token"));
-    localStorage.removeItem("token");
+    if (localStorage.getItem("token") != null) {
+        setContext("token", localStorage.getItem("token"));
+        localStorage.removeItem("token");
+    }
+
+    let isUnlock = $state(false);
+
+    onMount(() => {
+        isUnlock = getContext("psk") != null;
+    });
 
 </script>
 
 
 <div class="uk-flex" style="height: 100vh;">
-    <div class="x-vault-side-nav">
-        <VaultSideNav />
-    </div>
-    <div class="x-vault-main uk-width-expand">
-        <VaultMain />
-    </div>
+    {#if isUnlock}
+        <div class="x-vault-side-nav">
+            <VaultSideNav />
+        </div>
+        <div class="x-vault-main uk-width-expand">
+            <VaultMain />
+        </div>
+    {:else}
+        <VaultLock />
+    {/if}
 </div>
 
 

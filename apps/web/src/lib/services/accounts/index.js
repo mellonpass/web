@@ -67,3 +67,12 @@ export const whoami = async () => {
         options: { credentials: "include" },
     });
 };
+
+export const unlock = async (loginHash) => {
+    return await requests({
+        method: 'POST',
+        url: `${PUBLIC_SERVER_URL}/accounts/unlock`,
+        payload: { 'login_hash': loginHash },
+        options: { credentials: "include" },
+    });
+};
