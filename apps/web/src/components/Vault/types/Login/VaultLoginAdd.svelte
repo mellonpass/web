@@ -1,31 +1,104 @@
 <script>
     let passwordToggle = $state(false);
+    
+    const cipherName = $state({
+        name: "cipher-name",
+        value: "Login",
+        invalid: null,
+    });
+
+    const cipherUsername = $state({
+        name: "cipher-username",
+        value: null,
+        invalid: null,
+    });
+
+    const cipherPassword = $state({
+        name: "cipher-password",
+        value: null,
+        invalid: null,
+    });
+
+    let formFields = {
+        "cipher-name": cipherName,
+        "cipher-username": cipherUsername,
+        "cipher-password": cipherPassword,
+    }
+
+    const onFieldFocusOut = (e) => {
+        const field = formFields[e.target.name];
+        field.invalid = !e.target.checkValidity();
+        console.log(field);
+    };
+
+    const onFormSubmit = (e) => {
+        e.preventDefault();
+
+        for (const key of Object.keys(formFields)) {
+            const el = e.target.elements[key];
+            const field = formFields[key];
+            field.invalid = !el.checkValidity();
+        }
+
+        if (e.target.checkValidity()) {
+            alert();
+        }
+
+    };
+
 </script>
 
 <div class="uk-modal-body">
-    <form class="uk-form-stacked">
+    <form id="loginForm" class="uk-form-stacked" onsubmit={onFormSubmit} novalidate>
         <div class="uk-margin">
             <!-- svelte-ignore a11y_autofocus -->
             <input
-                value="Login"
+                bind:value={cipherName.value}
+                onfocusout={onFieldFocusOut}
+                name={cipherName.name}
                 type="text"
                 aria-label="Item title"
                 class="uk-input uk-form-large uk-border-rounded"
+                required
                 autofocus
             >
+            {#if cipherName.invalid}
+                <div class="uk-margin-small uk-text-meta uk-text-danger">
+                    This field is required.
+                </div>
+            {/if}
         </div>
 
         <div class="uk-margin">
             <label class="uk-form-label" for="form-stacked-text">Username</label>
             <div class="uk-form-controls">
-                <input class="uk-input uk-border-rounded" type="text">
+                <input
+                    bind:value={cipherUsername.value}
+                    onfocusout={onFieldFocusOut}
+                    name={cipherUsername.name}
+                    type="text"
+                    class="uk-input uk-border-rounded"
+                    required
+                >
             </div>
+            {#if cipherUsername.invalid}
+                <div class="uk-margin-small uk-text-meta uk-text-danger">
+                    This field is required.
+                </div>
+            {/if}
         </div>
         <div class="uk-margin">
             <label class="uk-form-label" for="form-stacked-select">Password</label>
             <div class="uk-form-controls">
                 <div class="uk-inline uk-width-100">
-                    <input class="uk-input uk-border-rounded" type="{passwordToggle ? 'text' : 'password'}">
+                    <input
+                        bind:value={cipherPassword.value}
+                        onfocusout={onFieldFocusOut}
+                        name={cipherPassword.name}
+                        class="uk-input uk-border-rounded"
+                        type="{passwordToggle ? 'text' : 'password'}"
+                        required
+                    >
                     <a
                         aria-label="eye-icon"
                         class="uk-form-icon uk-form-icon-flip"
@@ -36,13 +109,18 @@
                     </a>
                 </div>
             </div>
+            {#if cipherPassword.invalid}
+                <div class="uk-margin-small uk-text-meta uk-text-danger">
+                    This field is required.
+                </div>
+            {/if}
         </div>
     </form>
 </div>
 
 <div class="uk-modal-footer uk-flex uk-flex-row-reverse">
     <div class="uk-margin">
-        <button class="uk-button uk-button-primary uk-border-rounded">Save</button>
+        <button form="loginForm" type="submit" class="uk-button uk-button-primary uk-border-rounded">Save</button>
         <button onclick={() => {UIkit.modal("#vault-modal").hide()}}  class="uk-button uk-button-default uk-border-rounded">Cancel</button>
     </div>
 </div>
