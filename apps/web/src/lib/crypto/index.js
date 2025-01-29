@@ -1,7 +1,7 @@
 /**
  * Convert ArrayBuffer into hexadecimal string.
  * @param {ArrayBuffer} buffer
- * @returns {string} A hexadecimal representation of the buffer.
+ * @returns {string} A hex representation of the buffer.
  */
 const arrayBufferToHex = (buffer) => {
     return Array.from(new Uint8Array(buffer))
@@ -11,9 +11,9 @@ const arrayBufferToHex = (buffer) => {
 
 
 /**
- * Convert hexadecimal string into ArrayBuffer.
+ * Convert hex string into ArrayBuffer.
  * @param {string} hex
- * @returns {ArrayBuffer} ArrayBuffer representation of the hexadecimal string.
+ * @returns {ArrayBuffer} ArrayBuffer representation of the hex.
  */
 const hexToArrayBuffer = (hex) => {
     return new Uint8Array(hex.match(/../g)
@@ -25,7 +25,7 @@ const hexToArrayBuffer = (hex) => {
  * Generate a 256-bit PBKDF2 Master Key from the user's email and master password.
  * @param {string} email
  * @param {string} masterPassword
- * @returns {string} 256-bit PBKDF2 Master Key.
+ * @returns {string} 256-bit PBKDF2 Master Key in hex.
  */
 export const generateMasterKey = async (email, masterPassword) => {
     const encoder = new TextEncoder();
@@ -52,7 +52,7 @@ export const generateMasterKey = async (email, masterPassword) => {
 /**
  * Generate a 512-bit HKDF Stretched Master Key from the user's Master Key.
  * @param {string} masterKey
- * @returns {string} 512-bit HKDF Stretched Master Key.
+ * @returns {string} 512-bit HKDF Stretched Master Key in hex.
  */
 export const generateStretchedMasterKey = async (masterKey) => {
     const encoder = new TextEncoder();
@@ -73,7 +73,7 @@ export const generateStretchedMasterKey = async (masterKey) => {
     );
 
     const buffer = await crypto.subtle.deriveBits(
-        { name: 'AES-GCM', length: 256 },  // Output is used for 256-bit AES key.
+        algorithm,
         baseKey,
         256, // The length of the derived bits (256-bit).
     );
@@ -85,7 +85,8 @@ export const generateStretchedMasterKey = async (masterKey) => {
 /**
  * Generate an encrypted secure random 512-bit Symmetric Key and 128-bit IV.
  * @param {string} stretchedMasterKey
- * @returns {Object} Object containing an encrypted 512-bit Symmetric Key and 128-bit IV.
+ * @returns {Object} Object containing hex of an encrypted 512-bit Symmetric Key
+ * and 128-bit IV.
  */
 export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
     const encoder = new TextEncoder();
@@ -108,16 +109,19 @@ export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
 
     return {
         key: arrayBufferToHex(pSKBytes),
+        // TODO: Find away how to rotate the IV.
         iv: arrayBufferToHex(randomIV.buffer),
     };
 };
 
 
 /**
- * Generate a 256-bit login hash using PBKDF2 method from the user's master password and master key.
+ * Generate a 256-bit Login Hash using PBKDF2 method from the user's
+ * master password and master key.
  * @param {string} masterKey
  * @param {string} masterPassword
  * @param {string} loginHash
+ * @returns {string} The hexadecimal representation of the 256-bit Login Hash.
  */
 export const generateLoginhash = async (masterKey, masterPassword) => {
     const encoder = new TextEncoder();
@@ -141,3 +145,63 @@ export const generateLoginhash = async (masterKey, masterPassword) => {
     const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
     return arrayBufferToHex(derivedBits);
 };
+
+
+/**
+ * Encrypt the 128-bit Cipher Key using AES-GCM with the SMK, PSK, and PSKIV.
+ * @param {string} smk Stretched Master Key
+ * @param {string} psk Protected Symmetric Key
+ * @param {string} pskIv Protected Symmetric Key IV
+ * @param {Uint8Array<ArrayBuffer>} cipherKey
+ * @returns {string} A base64 representation of the encrypted cipher key.
+ */
+export const encryptCipherKey = async (smk, psk, pskIv, cipherKey) => {
+    const encKey = await crypto.subtle.importKey(
+        "raw",
+        hexToArrayBuffer(smk),
+        { name: "AES-GCM" },
+        false,
+        ["encrypt"],
+    );
+
+    const data = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: new Uint8Array(hexToArrayBuffer(pskIv)) },
+        encKey,
+        cipherKey
+    );
+
+    return btoa(arrayBufferToHex(data));
+};
+
+
+/**
+ * Encrypt the data using AES-GCM with a 128-bit Cipher Key and a random IV.
+ * @param {Uint8Array<ArrayBuffer>} 
+ * @param {*} data
+ * @returns {string} The base64 representation of the object containing hex of
+ * encrypted data and the iv. 
+ */
+export const encryptText = async (cipherKey, data) => {
+    const encoder = new TextEncoder();
+    const encKey = await crypto.subtle.importKey(
+        "raw",
+        cipherKey,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt"],
+    );
+
+    const randomIV = crypto.getRandomValues(new Uint8Array(16));
+
+    const encData = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: randomIV },
+        encKey,
+        encoder.encode(data),
+    );
+
+    return btoa(JSON.stringify({
+        data: arrayBufferToHex(encData),
+        inv: arrayBufferToHex(randomIV.buffer),
+    }));
+};
+
