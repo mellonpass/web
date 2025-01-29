@@ -21,6 +21,7 @@
 
             try {
                 const response = await unlock(loginHash);
+                localStorage.setItem("emk", btoa(masterKey));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign('/');
             } catch (err) {

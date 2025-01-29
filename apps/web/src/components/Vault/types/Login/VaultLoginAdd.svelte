@@ -1,4 +1,5 @@
 <script>
+    import { encryptCipherKey, encryptText, generateStretchedMasterKey } from "$lib/crypto";
     import { getContext } from "svelte";
 
     let passwordToggle = $state(false);
@@ -27,7 +28,7 @@
         "cipher-password": cipherPassword,
     }
 
-    const esmk = getContext("esmk");
+    const emk = getContext("emk");
     const epsk = getContext("epsk");
 
     const onFieldFocusOut = (e) => {
@@ -35,7 +36,7 @@
         field.invalid = !e.target.checkValidity();
     };
 
-    const onFormSubmit = (e) => {
+    const onFormSubmit = async (e) => {
         e.preventDefault();
 
         for (const key of Object.keys(formFields)) {
@@ -45,9 +46,26 @@
         }
 
         if (e.target.checkValidity()) {
-            console.log(typeof atob(esmk));
-            console.log(atob(epsk));
-            alert();
+            const smk = await generateStretchedMasterKey(atob(emk));
+            const pskObj = JSON.parse(atob(epsk));
+
+            const cipherKey = crypto.getRandomValues(new Uint8Array(16));
+
+            const data = {
+                key: await encryptCipherKey(smk, pskObj.key, pskObj.iv, cipherKey),
+                name: await encryptText(
+                    cipherKey, cipherName.value
+                ),
+                username: await encryptText(
+                    cipherKey, cipherUsername.value
+                ),
+                password: await encryptText(
+                    cipherKey, cipherPassword.value
+                ),
+            }
+
+            // Store this in the database.
+            console.log(data);
         }
 
     };
