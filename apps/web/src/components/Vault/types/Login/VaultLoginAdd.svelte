@@ -70,12 +70,13 @@
         </div>
 
         <div class="uk-margin">
-            <label class="uk-form-label" for="form-stacked-text">Username</label>
+            <label class="uk-form-label" for={cipherUsername.name}>Username</label>
             <div class="uk-form-controls">
                 <input
                     bind:value={cipherUsername.value}
                     onfocusout={onFieldFocusOut}
                     name={cipherUsername.name}
+                    id={cipherUsername.name}
                     type="text"
                     class="uk-input uk-border-rounded"
                     required
@@ -88,13 +89,14 @@
             {/if}
         </div>
         <div class="uk-margin">
-            <label class="uk-form-label" for="form-stacked-select">Password</label>
+            <label class="uk-form-label" for={cipherPassword.name}>Password</label>
             <div class="uk-form-controls">
                 <div class="uk-inline uk-width-100">
                     <input
                         bind:value={cipherPassword.value}
                         onfocusout={onFieldFocusOut}
                         name={cipherPassword.name}
+                        id={cipherPassword.name}
                         class="uk-input uk-border-rounded"
                         type="{passwordToggle ? 'text' : 'password'}"
                         required

@@ -55,6 +55,7 @@
     
                     <div class="uk-inline uk-width-1-1">
                         <input
+                            id="master-password"
                             bind:value={mPass}
                             class="uk-input uk-border-rounded"
                             type={toggleMpass ? "text": "password"}
