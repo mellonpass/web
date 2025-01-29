@@ -7,7 +7,6 @@
 
     import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
     import { setupAccount } from '$lib/services/accounts';
-    import { goto } from '$app/navigation';
 
     const { verifiedEmail } = $props();
 

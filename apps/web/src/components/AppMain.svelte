@@ -4,9 +4,14 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import { getContext, onMount, setContext } from "svelte";
 
-    if (localStorage.getItem("psk") != null) {
-        setContext("psk", localStorage.getItem("psk"));
-        localStorage.removeItem("psk");
+    if (localStorage.getItem("emk") != null) {
+        setContext("emk", localStorage.getItem("emk"));
+        localStorage.removeItem("emk");
+    }
+
+    if (localStorage.getItem("epsk") != null) {
+        setContext("epsk", localStorage.getItem("epsk"));
+        localStorage.removeItem("epsk");
     }
 
     if (localStorage.getItem("token") != null) {
@@ -17,7 +22,7 @@
     let isUnlock = $state(false);
 
     onMount(() => {
-        isUnlock = getContext("psk") != null;
+        isUnlock = getContext("epsk") != null;
     });
 
 </script>

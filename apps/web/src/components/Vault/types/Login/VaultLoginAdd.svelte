@@ -1,4 +1,6 @@
 <script>
+    import { getContext } from "svelte";
+
     let passwordToggle = $state(false);
     
     const cipherName = $state({
@@ -25,10 +27,12 @@
         "cipher-password": cipherPassword,
     }
 
+    const esmk = getContext("esmk");
+    const epsk = getContext("epsk");
+
     const onFieldFocusOut = (e) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
-        console.log(field);
     };
 
     const onFormSubmit = (e) => {
@@ -41,6 +45,8 @@
         }
 
         if (e.target.checkValidity()) {
+            console.log(typeof atob(esmk));
+            console.log(atob(epsk));
             alert();
         }
 

@@ -1,18 +1,31 @@
-const arrayBytesToHex = (bytes) => {
-    if (typeof (bytes) != Uint8Array) {
-        bytes = new Uint8Array(bytes);
-    }
-    return Array.from(bytes)
+/**
+ * Convert ArrayBuffer into hexadecimal string.
+ * @param {ArrayBuffer} buffer
+ * @returns {string} A hexadecimal representation of the buffer.
+ */
+const arrayBufferToHex = (buffer) => {
+    return Array.from(new Uint8Array(buffer))
         .map(byte => byte.toString(16).padStart(2, '0'))
         .join('');
 };
 
 
 /**
- * Generate a 256-bit master key using PBKDF2 from the user's email and master password.
- * @param {string} email - The verified email of the user.
- * @param {string} masterPassword - The master password in plain text.
- * @returns {ArrayBuffer} - The master key in bytes.
+ * Convert hexadecimal string into ArrayBuffer.
+ * @param {string} hex
+ * @returns {ArrayBuffer} ArrayBuffer representation of the hexadecimal string.
+ */
+const hexToArrayBuffer = (hex) => {
+    return new Uint8Array(hex.match(/../g)
+        .map(h => parseInt(h, 16))).buffer
+};
+
+
+/**
+ * Generate a 256-bit PBKDF2 Master Key from the user's email and master password.
+ * @param {string} email
+ * @param {string} masterPassword
+ * @returns {string} 256-bit PBKDF2 Master Key.
  */
 export const generateMasterKey = async (email, masterPassword) => {
     const encoder = new TextEncoder();
@@ -25,19 +38,21 @@ export const generateMasterKey = async (email, masterPassword) => {
         false,
         ["deriveBits"],
     );
-    return await crypto.subtle.deriveBits(
+
+    const buffer = await crypto.subtle.deriveBits(
         { name: "PBKDF2", hash: "SHA-256", salt: salt, iterations: 720000, },
         baseKey,
         256, // The length of the derived bits (256-bit).
     );
 
+    return arrayBufferToHex(buffer);
 };
 
 
 /**
- * Generate a 512-bit stretched master key from the user's master key using the HKDF method.
- * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
- * @returns {CryptoKey} - The stretched master key.
+ * Generate a 512-bit HKDF Stretched Master Key from the user's Master Key.
+ * @param {string} masterKey
+ * @returns {string} 512-bit HKDF Stretched Master Key.
  */
 export const generateStretchedMasterKey = async (masterKey) => {
     const encoder = new TextEncoder();
@@ -48,53 +63,61 @@ export const generateStretchedMasterKey = async (masterKey) => {
         salt: encoder.encode(""), // Salt is not necessary, we can rely on info.
         info: encoder.encode("For encryption and decryption of protected key."),
     };
+
     const baseKey = await crypto.subtle.importKey(
         "raw",
-        masterKey,
+        hexToArrayBuffer(masterKey),
         "HKDF",
         false,
-        ["deriveKey"],
+        ["deriveBits"],
     );
 
-    return await window.crypto.subtle.deriveKey(
-        algorithm,
-        baseKey,
+    const buffer = await crypto.subtle.deriveBits(
         { name: 'AES-GCM', length: 256 },  // Output is used for 256-bit AES key.
-        false,
-        ["encrypt", "decrypt"]
+        baseKey,
+        256, // The length of the derived bits (256-bit).
     );
+
+    return arrayBufferToHex(buffer);
 };
 
 
 /**
- * Generate a secured random 512-bit symmetric key and 128-bit IV and encrypt the
- * symmetric key using 512-bit Stretched Master Key.
- * @param {CryptoKey} stretchedMasterKey - The 512-bit stretched master key.
- * @returns {Object} - Object containing the protected symmetric key and the IV.
+ * Generate an encrypted secure random 512-bit Symmetric Key and 128-bit IV.
+ * @param {string} stretchedMasterKey
+ * @returns {Object} Object containing an encrypted 512-bit Symmetric Key and 128-bit IV.
  */
 export const generateProtectedSymmetricKey = async (stretchedMasterKey) => {
     const encoder = new TextEncoder();
     const randomSK = crypto.getRandomValues(new Uint8Array(64));
     const randomIV = crypto.getRandomValues(new Uint8Array(16));
 
+    const baseKey = await crypto.subtle.importKey(
+        "raw",
+        hexToArrayBuffer(stretchedMasterKey),
+        "HKDF",
+        false,
+        ["encrypt"],
+    );
+
     const pSKBytes = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: randomIV },
-        stretchedMasterKey,
+        baseKey,
         randomSK
     );
 
     return {
-        key: arrayBytesToHex(pSKBytes),
-        iv: arrayBytesToHex(randomIV),
+        key: arrayBufferToHex(pSKBytes),
+        iv: arrayBufferToHex(randomIV.buffer),
     };
 };
 
 
 /**
  * Generate a 256-bit login hash using PBKDF2 method from the user's master password and master key.
- * @param {ArrayBuffer} masterKey - The 256-bit master key in bytes.
- * @param {string} masterPassword - The master password in plain text.
- * @param {string} loginHash - The user's login hash.
+ * @param {string} masterKey
+ * @param {string} masterPassword
+ * @param {string} loginHash
  */
 export const generateLoginhash = async (masterKey, masterPassword) => {
     const encoder = new TextEncoder();
@@ -106,13 +129,15 @@ export const generateLoginhash = async (masterKey, masterPassword) => {
         salt: salt,
         iterations: 720000,
     };
+
     const baseKey = await crypto.subtle.importKey(
         "raw",
-        masterKey,
+        hexToArrayBuffer(masterKey),
         "PBKDF2",
         false,
         ["deriveBits"],
     );
+
     const derivedBits = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
-    return arrayBytesToHex(derivedBits);
+    return arrayBufferToHex(derivedBits);
 };

@@ -42,7 +42,8 @@
             const response = await loginAccount(emailInput.value, loginHash);
 
             localStorage.setItem("token", JSON.stringify(response.data.token));
-            localStorage.setItem("psk", response.data.psk);
+            localStorage.setItem("emk", btoa(masterKey));
+            localStorage.setItem("epsk", response.data.psk);
 
             window.location.assign($page.url.searchParams.get("next") ?? "/");
         }
