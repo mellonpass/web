@@ -2,6 +2,7 @@ import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 
 
 export class StretchedMasterKey {
+    #key;
     ekey;
     mkey;
 
@@ -10,6 +11,7 @@ export class StretchedMasterKey {
      * @param {Uint8Array<ArrayBuffer>} key Buffer of the stretched master key.
      */
     constructor(key) {
+        this.#key = key;
         // Slice stretchedMasterKey into two 256-bit for encryption and hmac. 
         this.ekey = key.slice(0, 32);
         this.mkey = key.slice(32, 64);

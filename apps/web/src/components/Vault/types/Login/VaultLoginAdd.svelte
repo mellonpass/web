@@ -1,5 +1,6 @@
 <script>
     import { encryptCipherKey, encryptText, generateStretchedMasterKey } from "$lib/crypto";
+    import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
 
     let passwordToggle = $state(false);
@@ -28,7 +29,7 @@
         "cipher-password": cipherPassword,
     }
 
-    const emk = getContext("emk");
+    const mk = getContext("mk");
     const epsk = getContext("epsk");
 
     const onFieldFocusOut = (e) => {
@@ -46,10 +47,10 @@
         }
 
         if (e.target.checkValidity()) {
-            const smk = await generateStretchedMasterKey(atob(emk));
+            const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
             const pskObj = JSON.parse(atob(epsk));
 
-            const cipherKey = crypto.getRandomValues(new Uint8Array(16));
+            const cipherKey = crypto.getRandomValues(new Uint8Array(64));
 
             const data = {
                 key: await encryptCipherKey(smk, pskObj.key, pskObj.iv, cipherKey),
