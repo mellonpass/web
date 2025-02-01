@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import UIkit from 'uikit';
     import gravatar from 'gravatar';
     

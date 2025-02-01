@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     let { data } = $props();
 
     import AccountSetup from '$components/AccountSetup.svelte';

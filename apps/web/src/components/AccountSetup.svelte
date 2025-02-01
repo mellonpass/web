@@ -2,7 +2,7 @@
     - Doesn't limit max length of master password
 -->
 
-<script>
+<script lang="ts">
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
     import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';

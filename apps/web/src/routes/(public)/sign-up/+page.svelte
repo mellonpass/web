@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { createAccount } from '$lib/services/accounts';
 
     let matchedPasswords = $state(true);

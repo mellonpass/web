@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { page } from '$app/stores';
 
     import { generateLoginhash, generateMasterKey } from "$lib/crypto";

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { encryptCipherKey, encryptText, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";

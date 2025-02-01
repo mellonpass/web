@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
     import VaultContent from "$components/Vault/VaultContent.svelte";
 
