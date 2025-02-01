@@ -45,8 +45,8 @@
         }
 
         if (e.target.checkValidity()) {
-            const mk = await generateMasterKey(emailInput.value, masterPasswordInput.value);
-            const loginHash = await generateLoginhash(mk, masterPasswordInput.value);
+            const mk = await generateMasterKey(emailInput.value!, masterPasswordInput.value!);
+            const loginHash = await generateLoginhash(mk, masterPasswordInput.value!);
             const response = await loginAccount(emailInput.value!, loginHash);
 
             localStorage.setItem("token", JSON.stringify(response.data.token));

@@ -1,7 +1,3 @@
-<!-- 
-    - Doesn't limit max length of master password
--->
-
 <script lang="ts">
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
@@ -26,7 +22,7 @@
     };
 
     // master password field attrs.
-    let mpFieldVal = $state(null);
+    let mpFieldVal: string | null = $state(null);
     let mpFieldToogle = $state(false);
     let mpFieldInvalid = $state(false);
 
@@ -42,11 +38,11 @@
         let points = 0;
         for (const [name, regex] of Object.entries(mpRules)) {
 
-            if (!mpRules.hasMinChar.test(mpFieldVal)) {
+            if (!mpRules.hasMinChar.test(mpFieldVal!)) {
                 return 0;
             }
 
-            if (regex.test(mpFieldVal)) {
+            if (regex.test(mpFieldVal!)) {
                 points++;
             }
         }
@@ -67,13 +63,13 @@
         }
     });
 
-    const handleMphInput = (e) => {
+    const handleMphInput = (e: any) => {
         if (mphFieldVal.length > HINT_LIMIT) {
             mphFieldVal = mphFieldVal.slice(0, HINT_LIMIT);
         }
     };
 
-    const onFormSubmit = async (e) => {
+    const onFormSubmit = async (e: any) => {
         e.preventDefault();
 
         mpFieldInvalid = mpFieldVal == null ? true : mpFieldInvalid;
@@ -91,8 +87,8 @@
             return;
         }
 
-        const mk = await generateMasterKey(verifiedEmail, mpFieldVal);
-        const loginHash = await generateLoginhash(mk, mpFieldVal);
+        const mk = await generateMasterKey(verifiedEmail, mpFieldVal!);
+        const loginHash = await generateLoginhash(mk, mpFieldVal!);
         const smk = await generateStretchedMasterKey(mk);
         const psk = await generateProtectedSymmetricKey(smk);
 
@@ -129,13 +125,14 @@
 
         <div class="uk-inline uk-width-100">
             <input
-            class:uk-form-danger={mpFieldInvalid}
-            class="uk-input"
-            type={mpFieldToogle ? "text" : "password"}
-            id="master-password"
-            name="master-password"
-            bind:value={mpFieldVal}
+                class:uk-form-danger={mpFieldInvalid}
+                class="uk-input"
+                type={mpFieldToogle ? "text" : "password"}
+                id="master-password"
+                name="master-password"
+                bind:value={mpFieldVal}
             >
+            { /* @ts-ignore */ null }
             <a
                 href={null}
                 aria-label="eye-icon"
@@ -169,8 +166,9 @@
         </div>
 
         <div class="uk-inline uk-width-100">
+            { /* @ts-ignore */ null }
             <a
-                href
+                href={null}
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
                 uk-icon="icon: {mpcFieldToogle ? 'eye-slash' : 'eye'}"

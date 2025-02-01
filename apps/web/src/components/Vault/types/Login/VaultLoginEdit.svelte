@@ -20,7 +20,7 @@
         data = value;
     });
 
-    let titleInputRef = null
+    let titleInputRef: HTMLInputElement;
 
     onMount(() => {
         titleInputRef.focus();
@@ -30,6 +30,7 @@
 </script>
 
 <div class="uk-padding-small">
+    { /* @ts-ignore */ null }
     <div class="uk-grid-small uk-flex-middle" uk-grid>
         <div class="uk-width-auto">
             <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
@@ -38,7 +39,7 @@
             <!-- svelte-ignore a11y_autofocus -->
             <input
                 bind:this={titleInputRef}
-                bind:value={$initData.name}
+                bind:value={$initData.title}
                 style="background: none;"
                 class="uk-input uk-form-large x-editable-input"
                 type="text"
@@ -50,7 +51,7 @@
 </div>
 
 <div class="x-panel uk-border-rounded">
-    <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
+    <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
         <input
             bind:value={$initData.username}
@@ -60,7 +61,7 @@
         >
     </div>
     <hr class="uk-margin-remove">
-    <div href class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
+    <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
         <span class="x-vertical-center uk-text-muted uk-margin-right">Password: </span>
         {#if showPassword}
             <!-- svelte-ignore a11y_autofocus -->

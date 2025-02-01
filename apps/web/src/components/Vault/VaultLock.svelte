@@ -9,7 +9,7 @@
     let error = $state();
     let errorMsg = $state();
 
-    const whoami = JSON.parse(localStorage.getItem("whoami"));
+    const whoami = JSON.parse(localStorage.getItem("whoami")!);
 
     const onSubmit = async () => {
         invalid = mPass == null || mPass.length == 0;
@@ -25,7 +25,7 @@
                 localStorage.setItem("mk", arrayBufferToHex(masterKey));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign('/');
-            } catch (err) {
+            } catch (err: any) {
                 error = true;
                 errorMsg = err.error;
             }
@@ -64,6 +64,7 @@
                             autocomplete="off"
                             required
                         >
+                        { /* @ts-ignore */ null }
                         <a
                             href={null}
                             aria-label="eye-icon"

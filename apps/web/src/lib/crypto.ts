@@ -1,13 +1,13 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
-import { ProtectedSymmetricKey, StretchedMasterKey } from "$lib/types";
+import { ProtectedSymmetricKey, StretchedMasterKey } from "$lib/models";
 
 /**
  * Generate a MAC SHA-256 from a message using a key.
  * @param {Uint8Array<ArrayBuffer>} m Message
  * @param {Uint8Array<ArrayBuffer>} k MAC Key
- * @returns {Promise<Uint8Array<ArrayBuffer>} HMAC.
+ * @returns {Promise<Uint8Array<ArrayBuffer>>} HMAC.
  */
-const hmac = async (m, k) => {
+const hmac = async (m: Uint8Array<ArrayBuffer>, k: Uint8Array<ArrayBuffer>) => {
     const baseKey = await crypto.subtle.importKey(
         "raw",
         k,
@@ -27,7 +27,7 @@ const hmac = async (m, k) => {
  * @param {string} masterPassword
  * @returns {Promise<Uint8Array<ArrayBuffer>>} 256-bit PBKDF2 Master Key in hex.
  */
-export const generateMasterKey = async (email, masterPassword) => {
+export const generateMasterKey = async (email: string, masterPassword: string) => {
     const encoder = new TextEncoder();
     const salt = encoder.encode(email);
 
@@ -51,10 +51,10 @@ export const generateMasterKey = async (email, masterPassword) => {
 
 /**
  * Generate a 512-bit stretched symmetric key using HKDF from the user's master key.
- * @param {<Uint8Array<ArrayBuffer>} masterKey
+ * @param {Uint8Array<ArrayBuffer>} masterKey
  * @returns {Promise<StretchedMasterKey>} StretchedMasterKey.
  */
-export const generateStretchedMasterKey = async (masterKey) => {
+export const generateStretchedMasterKey = async (masterKey: Uint8Array<ArrayBuffer>) => {
     const encoder = new TextEncoder();
 
     const algorithm = {
@@ -88,7 +88,7 @@ export const generateStretchedMasterKey = async (masterKey) => {
  * @param {StretchedMasterKey} smk
  * @returns {Promise<ProtectedSymmetricKey>} ProtectedSymmetricKey.
  */
-export const generateProtectedSymmetricKey = async (smk) => {
+export const generateProtectedSymmetricKey = async (smk: StretchedMasterKey) => {
     // Create random 512-bit Symmetric Key and 128-bit IV.
     const skey = crypto.getRandomValues(new Uint8Array(64));
     const iv = crypto.getRandomValues(new Uint8Array(16));
@@ -121,11 +121,11 @@ export const generateProtectedSymmetricKey = async (smk) => {
 /**
  * Generate a 256-bit Login Hash using PBKDF2 method from the user"s
  * master password and master key.
- * @param {<Uint8Array<ArrayBuffer>} masterKey
+ * @param {Uint8Array<ArrayBuffer>} masterKey
  * @param {string} masterPassword
- * @returns {Promise<Uint8Array<ArrayBuffer>} The hexadecimal representation of the 256-bit Login Hash.
+ * @returns {Promise<Uint8Array<ArrayBuffer>>} The hexadecimal representation of the 256-bit Login Hash.
  */
-export const generateLoginhash = async (masterKey, masterPassword) => {
+export const generateLoginhash = async (masterKey: Uint8Array<ArrayBuffer>, masterPassword: string) => {
     const encoder = new TextEncoder();
     const salt = encoder.encode(masterPassword);
 
@@ -157,7 +157,7 @@ export const generateLoginhash = async (masterKey, masterPassword) => {
  * @param {Uint8Array<ArrayBuffer>} cipherKey
  * @returns {Promise<string>} A base64 representation of the encrypted cipher key.
  */
-export const encryptCipherKey = async (smk, psk, pskIV, cipherKey) => {
+export const encryptCipherKey = async (smk: string, psk: string, pskIV: string, cipherKey: Uint8Array<ArrayBuffer>) => {
     const sk = await decryptProtectedSymmetricKey(smk, psk, pskIV);
 
     const encKey = await crypto.subtle.importKey(
@@ -185,12 +185,12 @@ export const encryptCipherKey = async (smk, psk, pskIV, cipherKey) => {
 
 /**
  * Encrypt the data using AES-GCM with a 128-bit Cipher Key and a random IV.
- * @param {Uint8Array<ArrayBuffer>} 
- * @param {*} data
+ * @param {Uint8Array<ArrayBuffer>} cipherKey
+ * @param {string} data
  * @returns {Promise<string>} The base64 representation of the object containing hex of
  * encrypted data and the iv. 
  */
-export const encryptText = async (cipherKey, data) => {
+export const encryptText = async (cipherKey: Uint8Array<ArrayBuffer>, data: string) => {
     const encoder = new TextEncoder();
     const encKey = await crypto.subtle.importKey(
         "raw",
@@ -222,7 +222,7 @@ export const encryptText = async (cipherKey, data) => {
  * @param {string} pskIV The PSK IV.
  * @returns {Promise<Uint8Array<ArrayBuffer>>}} The decrypted symmetric key.
  */
-const decryptProtectedSymmetricKey = async (smk, psk, pskIV) => {
+const decryptProtectedSymmetricKey = async (smk: string, psk: string, pskIV: string) => {
     const encKey = await crypto.subtle.importKey(
         "raw",
         hexToArrayBuffer(smk),

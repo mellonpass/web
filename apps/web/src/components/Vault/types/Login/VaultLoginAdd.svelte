@@ -1,4 +1,6 @@
 <script lang="ts">
+    import UIkit from "uikit";
+
     import { encryptCipherKey, encryptText, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
@@ -23,21 +25,21 @@
         invalid: null,
     });
 
-    let formFields = {
+    let formFields: { [key: string]: any } = {
         "cipher-name": cipherName,
         "cipher-username": cipherUsername,
         "cipher-password": cipherPassword,
     }
 
-    const mk = getContext("mk");
-    const epsk = getContext("epsk");
+    const mk: string = getContext("mk");
+    const epsk: string = getContext("epsk");
 
-    const onFieldFocusOut = (e) => {
+    const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
     };
 
-    const onFormSubmit = async (e) => {
+    const onFormSubmit = async (e: any) => {
         e.preventDefault();
 
         for (const key of Object.keys(formFields)) {
@@ -52,21 +54,21 @@
 
             const cipherKey = crypto.getRandomValues(new Uint8Array(64));
 
-            const data = {
-                key: await encryptCipherKey(smk, pskObj.key, pskObj.iv, cipherKey),
-                name: await encryptText(
-                    cipherKey, cipherName.value
-                ),
-                username: await encryptText(
-                    cipherKey, cipherUsername.value
-                ),
-                password: await encryptText(
-                    cipherKey, cipherPassword.value
-                ),
-            }
+            // const data = {
+            //     key: await encryptCipherKey(smk, pskObj.key, pskObj.iv, cipherKey),
+            //     name: await encryptText(
+            //         cipherKey, cipherName.value
+            //     ),
+            //     username: await encryptText(
+            //         cipherKey, cipherUsername.value!
+            //     ),
+            //     password: await encryptText(
+            //         cipherKey, cipherPassword.value!
+            //     ),
+            // }
 
-            // Store this in the database.
-            console.log(data);
+            // // Store this in the database.
+            // console.log(data);
         }
 
     };
@@ -126,6 +128,7 @@
                         type="{passwordToggle ? 'text' : 'password'}"
                         required
                     >
+                    { /* @ts-ignore */ null}
                     <a
                         aria-label="eye-icon"
                         class="uk-form-icon uk-form-icon-flip"

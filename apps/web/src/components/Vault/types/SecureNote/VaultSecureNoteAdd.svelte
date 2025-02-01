@@ -1,3 +1,6 @@
+<script lang="ts">
+    import UIkit from "uikit";
+</script>
 
 <div class="uk-modal-body">
     <form class="uk-form-stacked">

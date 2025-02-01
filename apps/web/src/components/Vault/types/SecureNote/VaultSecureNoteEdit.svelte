@@ -4,10 +4,8 @@
 
     let { cipher, data = $bindable({}) } = $props();
 
-    let titleInputRef;
-    let textInputRef;
-
-    let showPassword = $state(false);
+    let titleInputRef: HTMLInputElement;
+    let textInputRef: HTMLTextAreaElement;
 
     const initData = writable({
         // Encrypt from cipher to initData.
@@ -41,6 +39,7 @@
 </script>
 
 <div class="uk-padding-small">
+    { /* @ts-ignore */ null}
     <div class="uk-grid-small uk-flex-middle" uk-grid>
         <div class="uk-width-auto">
             <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
@@ -49,7 +48,7 @@
             <!-- svelte-ignore a11y_autofocus -->
             <input
                 bind:this={titleInputRef}
-                bind:value={$initData.name}
+                bind:value={$initData.title}
                 style="background: none;"
                 class="uk-input uk-form-large x-editable-input"
                 type="text"

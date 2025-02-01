@@ -1,20 +1,18 @@
 <script lang="ts">
     
-    import { onMount } from "svelte";
-
     import IconButton from "$components/Buttons/IconButton.svelte";
 
     import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
     import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
 
-    import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
+    import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
 
-    import { ciphers } from "$lib/mock/ciphers";
+    import type { Cipher } from "$lib/types";
 
     let { vaultId = null } = $props();
 
-    const VAULT_MAPPER = {
+    const VAULT_MAPPER: { [key: string]: { [key: string]: any } } = {
         "LOGIN": {
             "details": VaultLoginDetail,
             "edit": VaultLoginEdit,
@@ -29,11 +27,15 @@
     let componentData = $state({});
 
     let editMode = $state(false);
-    let cipher = $state({...ciphers.find(cipher => cipher.id == vaultId)});
+    // TODO: Get cipher data from db.
+    let cipher: Cipher | null = $state(null);
 
     let VaultComponent = $derived.by(() => {
-        let component = VAULT_MAPPER[cipher.type];
-        return editMode ? component.edit : component.details;
+        if (cipher != null) {
+            // @ts-ignore TODO: remove ts-ignore if default cipher is defined.
+            let component = VAULT_MAPPER[cipher.type];
+            return editMode ? component.edit : component.details;
+        }
     });
 
     const onSave = () => {
@@ -62,29 +64,34 @@
             <div class="uk-flex uk-flex-right">
                 <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
                 <div class="uk-inline x-vertical-center">
+                    { /* @ts-ignore */ null}
                     <a
-                        href
+                        href={null}
                         uk-icon="icon: more-vertical"
                         aria-label="more menu"
                         class="uk-icon-link uk-margin-left"
                     ></a>
+                    { /* @ts-ignore */ null}
                     <div uk-dropdown="mode: click">
                         <ul class="uk-nav uk-dropdown-nav">
                             <li>
-                                <a href class="uk-text-default">
+                                <a href={null} class="uk-text-default">
+                                    { /* @ts-ignore */ null}
                                     <span uk-icon="icon: star" class="uk-margin-small-right"></span>
                                     Add to favorites
                                 </a>
                             </li>
                             <li class="uk-nav-divider"></li>
                             <li>
-                                <a href class="uk-text-default">
+                                <a href={null} class="uk-text-default">
+                                    { /* @ts-ignore */ null}
                                     <span uk-icon="icon: album" class="uk-margin-small-right"></span>
                                     Archive
                                 </a>
                             </li>
                             <li>
-                                <a href class="uk-text-default" style="color: #D50000">
+                                <a href={null} class="uk-text-default" style="color: #D50000">
+                                    { /* @ts-ignore */ null}
                                     <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
                                     Delete
                                 </a>
