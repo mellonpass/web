@@ -1,51 +1,135 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 
 
-export class StretchedMasterKey {
-    #key: Uint8Array<ArrayBuffer>;
-    ekey: Uint8Array<ArrayBuffer>;
-    mkey: Uint8Array<ArrayBuffer>;
+interface IKey {
+    keybuffer: Uint8Array<ArrayBuffer>;
+};
 
-    /**
-     * StretchedMasterKey
-     * @param {Uint8Array<ArrayBuffer>} key Buffer of the stretched master key.
-     */
-    constructor(key: Uint8Array<ArrayBuffer>) {
-        this.#key = key;
-        // Slice stretchedMasterKey into two 256-bit for encryption and hmac. 
-        this.ekey = key.slice(0, 32);
-        this.mkey = key.slice(32, 64);
+abstract class KeyMixin implements IKey {
+    keybuffer: Uint8Array<ArrayBuffer>;
+
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        this.keybuffer = keybuffer;
+    }
+
+    toBase64() {
+        return btoa(arrayBufferToHex(this.keybuffer));
+    }
+
+    static fromBase64<T extends KeyMixin>(this: new (encodedKey: any) => T, encodedKey: any): T {
+        return new this(hexToArrayBuffer(atob(encodedKey)));
+    }
+
+}
+
+abstract class Key extends KeyMixin {
+    private aeskeyBuffer: Uint8Array<ArrayBuffer>;
+    private mackeyBuffer: Uint8Array<ArrayBuffer>;
+
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
+        this.aeskeyBuffer = keybuffer.slice(0, 32);
+        this.mackeyBuffer = keybuffer.slice(32, 64);
+    }
+
+    async getMACKey(): Promise<CryptoKey> {
+        return await crypto.subtle.importKey(
+            "raw",
+            this.mackeyBuffer,
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign", "verify"]
+        );
+    }
+
+    async getAESKey(): Promise<CryptoKey> {
+        return await crypto.subtle.importKey(
+            "raw",
+            this.aeskeyBuffer,
+            { name: "AES-GCM" },
+            false,
+            ["encrypt", "decrypt"],
+        );
+    };
+
+    async hmacSignKey(key: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+        const macKey = await this.getMACKey();
+        const buffer = await crypto.subtle.sign("HMAC", macKey, key);
+        return new Uint8Array(buffer);
+    }
+
+    async hmacVerifyKey(signature: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<boolean> {
+        const macKey = await this.getMACKey();
+        return await crypto.subtle.verify(
+            "HMAC",
+            macKey,
+            signature,
+            data
+        );
+    }
+
+};
+
+
+export class StretchedMasterKey extends Key {
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
     }
 }
 
 
-export class ProtectedSymmetricKey {
-    #key;
-    pskey;
-    mac;
-    iv;
+export class SymmetricKey extends Key {
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
+    }
+}
 
-    /**
-     * 
-     * @param {Uint8Array<ArrayBuffer>} key The Buffer of protected symmetric key.
-     */
+
+export class CipherKey extends Key {
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
+    }
+}
+
+
+abstract class ProtectedKey extends KeyMixin {
+    private pkey: Uint8Array<ArrayBuffer>;
+    private mac: Uint8Array<ArrayBuffer>;
+    private iv: Uint8Array<ArrayBuffer>;
+
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
+        this.pkey = keybuffer.slice(0, 64);
+        this.mac = keybuffer.slice(64, 128);
+        this.iv = keybuffer.slice(128, 16);
+    }
+
+    async decrypt(sk: Key): Promise<Key> {
+        const result = await sk.hmacVerifyKey(this.mac, this.pkey);
+        if (result) {
+            const baseKey = await sk.getAESKey();
+            // Decrypted symmetric key.
+            const buffer = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: this.iv },
+                baseKey,
+                this.pkey,
+            );
+            return new SymmetricKey(new Uint8Array(buffer));
+        }
+        throw new Error("Invalid MAC signature!");
+    }
+
+}
+
+
+export class ProtectedSymmetricKey extends ProtectedKey {
     constructor(key: Uint8Array<ArrayBuffer>) {
-        this.#key = key;
-        this.pskey = this.#key.slice(0, 32);
-        this.mac = this.#key.slice(32, 64);
-        this.iv = this.#key.slice(64, 16);
+        super(key);
     }
+}
 
-    toBase64() {
-        return btoa(arrayBufferToHex(this.#key));
-    }
-
-    /**
-     * Convert base64 encoded string into protected symmetric key instance.
-     * @param {string} encodedKey Protected symmetric key in base64 format.
-     * @returns {ProtectedSymmetricKey}
-     */
-    static fromBase64(encodedKey: string) {
-        return new ProtectedSymmetricKey(hexToArrayBuffer(atob(encodedKey)));
+export class ProtectedCipherKey extends ProtectedKey {
+    constructor(key: Uint8Array<ArrayBuffer>) {
+        super(key);
     }
 }

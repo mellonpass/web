@@ -1,24 +1,5 @@
-import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
-import { ProtectedSymmetricKey, StretchedMasterKey } from "$lib/models";
-
-/**
- * Generate a MAC SHA-256 from a message using a key.
- * @param {Uint8Array<ArrayBuffer>} m Message
- * @param {Uint8Array<ArrayBuffer>} k MAC Key
- * @returns {Promise<Uint8Array<ArrayBuffer>>} HMAC.
- */
-const hmac = async (m: Uint8Array<ArrayBuffer>, k: Uint8Array<ArrayBuffer>) => {
-    const baseKey = await crypto.subtle.importKey(
-        "raw",
-        k,
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign", "verify"]
-    );
-
-    const buffer = await crypto.subtle.sign('HMAC', baseKey, m);
-    return new Uint8Array(buffer);
-};
+import { arrayBufferToHex } from "$lib/utils/bytes";
+import { CipherKey, ProtectedCipherKey, ProtectedSymmetricKey, StretchedMasterKey, SymmetricKey } from "$lib/models";
 
 
 /**
@@ -93,25 +74,17 @@ export const generateProtectedSymmetricKey = async (smk: StretchedMasterKey) => 
     const skey = crypto.getRandomValues(new Uint8Array(64));
     const iv = crypto.getRandomValues(new Uint8Array(16));
 
-    const baseSmk = await crypto.subtle.importKey(
-        "raw",
-        smk.ekey,
-        { name: "AES-GCM" },
-        false,
-        ["encrypt"],
-    );
-
     const epskBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: iv },
-        baseSmk,
+        await smk.getAESKey(),
         skey
     );
 
     // Create MAC for PSK.
     const psk = new Uint8Array(epskBuffer);
-    const mac = await hmac(psk, smk.mkey);
+    const mac = await smk.hmacSignKey(psk);
 
-    // Append mac and iv to the psk to form a 640-bit key.
+    // Append mac and iv to the psk to form a 1152-bit key.
     const pskBuffer = new Uint8Array([...psk, ...mac, ...iv])
 
     return new ProtectedSymmetricKey(pskBuffer);
@@ -149,37 +122,32 @@ export const generateLoginhash = async (masterKey: Uint8Array<ArrayBuffer>, mast
 };
 
 
+export const generateCipherKey = async () => {
+    const ckeyBuffer = crypto.getRandomValues(new Uint8Array(64));
+    return new CipherKey(ckeyBuffer);
+};
+
+
 /**
  * Encrypt the 128-bit Cipher Key using AES-GCM with the SMK, PSK, and PSKIV.
- * @param {string} smk Stretched Master Key
- * @param {string} psk Protected Symmetric Key
- * @param {string} pskIv Protected Symmetric Key IV
- * @param {Uint8Array<ArrayBuffer>} cipherKey
  * @returns {Promise<string>} A base64 representation of the encrypted cipher key.
  */
-export const encryptCipherKey = async (smk: string, psk: string, pskIV: string, cipherKey: Uint8Array<ArrayBuffer>) => {
-    const sk = await decryptProtectedSymmetricKey(smk, psk, pskIV);
+export const encryptCipherKey = async (sk: SymmetricKey, cipherKey: CipherKey) => {
+    const iv = crypto.getRandomValues(new Uint8Array(16));
 
-    const encKey = await crypto.subtle.importKey(
-        "raw",
-        sk,
-        { name: "AES-GCM" },
-        false,
-        ["encrypt"],
+    const eckeyBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        await sk.getAESKey(),
+        cipherKey.keybuffer
     );
 
-    const randomIV = crypto.getRandomValues(new Uint8Array(16));
+    // Create MAC for PSK.
+    const ck = new Uint8Array(eckeyBuffer);
+    const mac = await sk.hmacSignKey(ck);
 
-    const data = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: randomIV },
-        encKey,
-        cipherKey
-    );
-
-    return btoa(JSON.stringify({
-        key: arrayBufferToHex(data),
-        iv: arrayBufferToHex(randomIV),
-    }));
+    // Append mac and iv to the psk to form a 1152-bit key.
+    const pckBuffer = new Uint8Array([...ck, ...mac, ...iv])
+    return new ProtectedCipherKey(pckBuffer);
 };
 
 
@@ -190,51 +158,18 @@ export const encryptCipherKey = async (smk: string, psk: string, pskIV: string, 
  * @returns {Promise<string>} The base64 representation of the object containing hex of
  * encrypted data and the iv. 
  */
-export const encryptText = async (cipherKey: Uint8Array<ArrayBuffer>, data: string) => {
+export const encryptText = async (cipherKey: CipherKey, text: string) => {
     const encoder = new TextEncoder();
-    const encKey = await crypto.subtle.importKey(
-        "raw",
-        cipherKey,
-        { name: "AES-GCM" },
-        false,
-        ["encrypt"],
-    );
-
     const randomIV = crypto.getRandomValues(new Uint8Array(16));
 
     const encData = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: randomIV },
-        encKey,
-        encoder.encode(data),
+        await cipherKey.getAESKey(),
+        encoder.encode(text),
     );
 
     return btoa(JSON.stringify({
         data: arrayBufferToHex(encData),
         iv: arrayBufferToHex(randomIV),
     }));
-};
-
-
-/**
- * Decrypt the PSK using SMK and the PSK IV.
- * @param {string} smk Stretched Master Key.
- * @param {string} psk Protected Symmetric Key.
- * @param {string} pskIV The PSK IV.
- * @returns {Promise<Uint8Array<ArrayBuffer>>}} The decrypted symmetric key.
- */
-const decryptProtectedSymmetricKey = async (smk: string, psk: string, pskIV: string) => {
-    const encKey = await crypto.subtle.importKey(
-        "raw",
-        hexToArrayBuffer(smk),
-        { name: "AES-GCM" },
-        false,
-        ["decrypt"],
-    );
-    const data = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: hexToArrayBuffer(pskIV) },
-        encKey,
-        hexToArrayBuffer(psk),
-    );
-
-    return new Uint8Array(data);
 };

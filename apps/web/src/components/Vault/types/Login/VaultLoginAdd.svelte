@@ -1,9 +1,10 @@
 <script lang="ts">
     import UIkit from "uikit";
 
-    import { encryptCipherKey, encryptText, generateStretchedMasterKey } from "$lib/crypto";
+    import { encryptCipherKey, encryptText, generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
+    import { ProtectedSymmetricKey } from "$lib/models";
 
     let passwordToggle = $state(false);
     
@@ -50,25 +51,25 @@
 
         if (e.target.checkValidity()) {
             const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
-            const pskObj = JSON.parse(atob(epsk));
+            const sk = await ProtectedSymmetricKey.fromBase64(epsk).decrypt(smk);
 
-            const cipherKey = crypto.getRandomValues(new Uint8Array(64));
+            const cipherKey = await generateCipherKey();
 
-            // const data = {
-            //     key: await encryptCipherKey(smk, pskObj.key, pskObj.iv, cipherKey),
-            //     name: await encryptText(
-            //         cipherKey, cipherName.value
-            //     ),
-            //     username: await encryptText(
-            //         cipherKey, cipherUsername.value!
-            //     ),
-            //     password: await encryptText(
-            //         cipherKey, cipherPassword.value!
-            //     ),
-            // }
+            const data = {
+                key: await encryptCipherKey(sk, cipherKey),
+                name: await encryptText(
+                    cipherKey, cipherName.value
+                ),
+                username: await encryptText(
+                    cipherKey, cipherUsername.value!
+                ),
+                password: await encryptText(
+                    cipherKey, cipherPassword.value!
+                ),
+            }
 
-            // // Store this in the database.
-            // console.log(data);
+            // Store this in the database.
+            console.log(data);
         }
 
     };
