@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { HTTPStatus } from '$lib/http';
 
-import { whoami } from '$lib/services/accounts/index.js';
+import { whoami } from '$lib/services/accounts';
 
 export const load = async ({ url }) => {
     const response = await whoami();

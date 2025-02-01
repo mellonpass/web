@@ -39,14 +39,11 @@ export const verifyAccount = async (token_id) => {
 };
 
 
-export const setupAccount = async (email, loginHash, protectedSymmetricKeyObj, hint) => {
-    // protectedSymmetricKeyObj contains the PSK and the IV in object format.
-    const encodedPSK = btoa(JSON.stringify(protectedSymmetricKeyObj));
-
+export const setupAccount = async (email, loginHash, protectedSymmetricKey, hint) => {
     return await requests(
         'POST',
         `${PUBLIC_SERVER_URL}/accounts/setup`,
-        { 'email': email, 'protected_symmetric_key': encodedPSK, 'login_hash': loginHash, 'hint': hint }
+        { 'email': email, 'protected_symmetric_key': protectedSymmetricKey, 'login_hash': loginHash, 'hint': hint }
     );
 };
 
