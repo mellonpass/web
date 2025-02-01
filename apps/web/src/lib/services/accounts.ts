@@ -1,7 +1,7 @@
 import { PUBLIC_SERVER_URL } from '$env/static/public';
 import { requests } from '$lib/http';
 
-export const createAccount = async (name, email) => {
+export const createAccount = async (name: string, email: string) => {
     const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/create`, {
         method: 'POST',
         body: JSON.stringify({ 'name': name, 'email': email }),
@@ -20,10 +20,10 @@ export const createAccount = async (name, email) => {
 };
 
 
-export const verifyAccount = async (token_id) => {
+export const verifyAccount = async (tokenId: string) => {
     const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/verify`, {
         method: 'POST',
-        body: JSON.stringify({ 'token_id': token_id }),
+        body: JSON.stringify({ 'token_id': tokenId }),
         headers: {
             'content-type': 'application/json',
         },
@@ -39,16 +39,17 @@ export const verifyAccount = async (token_id) => {
 };
 
 
-export const setupAccount = async (email, loginHash, protectedSymmetricKey, hint) => {
-    return await requests(
-        'POST',
-        `${PUBLIC_SERVER_URL}/accounts/setup`,
-        { 'email': email, 'protected_symmetric_key': protectedSymmetricKey, 'login_hash': loginHash, 'hint': hint }
-    );
+export const setupAccount = async (email: string, loginHash: string, protectedSymmetricKey: string, hint: string) => {
+    return await requests({
+        method: 'POST',
+        url: `${PUBLIC_SERVER_URL}/accounts/setup`,
+        payload: { 'email': email, 'protected_symmetric_key': protectedSymmetricKey, 'login_hash': loginHash, 'hint': hint }
+    
+    });
 };
 
 
-export const loginAccount = async (email, loginHash) => {
+export const loginAccount = async (email: string, loginHash: string) => {
     return await requests({
         method: 'POST',
         url: `${PUBLIC_SERVER_URL}/accounts/login`,
@@ -66,7 +67,7 @@ export const whoami = async () => {
     });
 };
 
-export const unlock = async (loginHash) => {
+export const unlock = async (loginHash: string) => {
     return await requests({
         method: 'POST',
         url: `${PUBLIC_SERVER_URL}/accounts/unlock`,

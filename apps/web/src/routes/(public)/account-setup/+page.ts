@@ -5,14 +5,14 @@ import { verifyAccount } from '$lib/services/accounts';
 
 let isInvalidToken = false;
 let restricted = false;
-let validationError = {};
-let verifiedEmail = null;
+let validationError: { error: string, code: string, statusCode: number };
+let verifiedEmail: string | null = null;
 
 export const load = async ({ url }) => {
     try {
-        const verifyResp = await verifyAccount(url.searchParams.get('token_id'));
+        const verifyResp = await verifyAccount(url.searchParams.get('token_id')!);
         verifiedEmail = verifyResp.data.verified_email;
-    } catch (err) {
+    } catch (err: any) {
         isInvalidToken = (err.statusCode == HTTPStatus.UNPROCESSABLE_ENTITY);
         if (isInvalidToken) {
             validationError = err;

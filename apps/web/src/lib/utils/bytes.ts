@@ -3,7 +3,7 @@
  * @param {ArrayBuffer|Uint8Array} buffer
  * @returns {string} A hex representation of the buffer.
  */
-export const arrayBufferToHex = (buffer) => {
+export const arrayBufferToHex = (buffer: ArrayBuffer|Uint8Array) => {
     if (buffer instanceof ArrayBuffer) {
         buffer = new Uint8Array(buffer);
     }
@@ -18,7 +18,6 @@ export const arrayBufferToHex = (buffer) => {
  * @param {string} hex
  * @returns {Uint8Array<ArrayBuffer>} Uint8Array<ArrayBuffer>.
  */
-export const hexToArrayBuffer = (hex) => {
-    return new Uint8Array(hex.match(/../g)
-        .map(h => parseInt(h, 16))).buffer
+export const hexToArrayBuffer = (hex: string) => {
+    return new Uint8Array(hex.match(/../g).map(h => parseInt(h, 16))).buffer
 };

@@ -5,30 +5,37 @@
     import { loginAccount } from "$lib/services/accounts";
     import { arrayBufferToHex } from '$lib/utils/bytes';
 
-    const emailInput = $state({
+    type FormField = {
+        name: string;
+        value: string | null;
+        invalid: boolean | null;
+        toggle?: boolean;
+    };
+
+    const emailInput: FormField = $state({
         name: "email",
         value: null,
         invalid: null
     });
 
-    const masterPasswordInput = $state({
+    const masterPasswordInput: FormField = $state({
         name: "master-password",
         value: null,
         invalid: null,
         toggle: false,
     });
 
-    let formFields = {
+    let formFields: any = {
         "email": emailInput,
         "master-password": masterPasswordInput
     };
 
-    const onFieldFocusOut = (e) => {
+    const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
     };
 
-    const onFormSubmit = async (e) => {
+    const onFormSubmit = async (e: any) => {
         e.preventDefault();
 
         for (const key of Object.keys(formFields)) {
@@ -40,7 +47,7 @@
         if (e.target.checkValidity()) {
             const mk = await generateMasterKey(emailInput.value, masterPasswordInput.value);
             const loginHash = await generateLoginhash(mk, masterPasswordInput.value);
-            const response = await loginAccount(emailInput.value, loginHash);
+            const response = await loginAccount(emailInput.value!, loginHash);
 
             localStorage.setItem("token", JSON.stringify(response.data.token));
             localStorage.setItem("mk", arrayBufferToHex(mk));
@@ -49,7 +56,6 @@
             window.location.assign($page.url.searchParams.get("next") ?? "/");
         }
     };
-
 </script>
 
 
@@ -89,6 +95,7 @@
         </div>
 
         <div class="uk-inline uk-width-100">
+            { /* @ts-ignore */ null }
             <a
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"

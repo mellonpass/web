@@ -7,8 +7,16 @@ export const HTTPStatus = {
     UNPROCESSABLE_ENTITY: 422,
 };
 
+type RequestArgs = {
+    method: string;
+    url: string;
+    payload?: { [key: string]: any },
+    headers?: { [key: string]: any };
+    options?: { [key: string]: any };
+};
 
-export const requests = async ({ method, url, payload, headers = { 'content-type': 'application/json' }, options = {} }) => {
+// { method, url, payload, headers = { 'content-type': 'application/json' }, options = {} }
+export const requests = async ({ method, url, payload, headers = { 'content-type': 'application/json' }, options = {} }: RequestArgs) => {
 
     const response = await fetch(url, {
         method: method,

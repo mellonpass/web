@@ -1,12 +1,20 @@
 <script lang="ts">
     import { createAccount } from '$lib/services/accounts';
 
-    let matchedPasswords = $state(true);
+    type FormField = {
+        id: string;
+        label: string;
+        name: string;
+        value: string | null;
+        type: string;
+        errorMsg: string;
+    }
+
     let signUpSuccessful = $state(false);
 
-    const serverErrors = $state([]);
-    const invalidityMapper = $state({});
-    const formFields = $state([
+    const serverErrors: Array<{message: string}> = $state([]);
+    const invalidityMapper: {[key: string]: any} = $state({});
+    const formFields: Array<FormField> = $state([
         {
             "id": "name",
             "label": "Name",
@@ -29,11 +37,11 @@
 
     // checks if name is non-whitespace.
     const validateName = () => {
-        invalidityMapper.name = nameField.value.trim() === "";
+        invalidityMapper.name = nameField!.value?.trim() === "";
         return !invalidityMapper.name;
     };
 
-    const handleSignUpSubmit = async (e) => {
+    const handleSignUpSubmit = async (e: any) => {
         e.preventDefault();
 
         const form = e.currentTarget;
@@ -44,7 +52,6 @@
             const element = form.elements[key]
             invalidityMapper[key] = !element.checkValidity();
         }
-
         // if any of the fields are invalid, reject submit.
         if (Object.values(invalidityMapper).some(invalid => invalid)) {
             return;
@@ -53,9 +60,9 @@
         // ensure that these fields validity check beyond required.
         if (validateName()) {
             try {
-                await createAccount(nameField.value, emailField.value);
+                await createAccount(nameField!.value!, emailField!.value!);
                 signUpSuccessful = true;
-            } catch (error) {
+            } catch (error: any) {  // TODO: do something about error handling typing.
                 const error_ = error.error;
                 serverErrors.length = 0;
                 // if server returns a multiple error validation.
@@ -71,7 +78,7 @@
         }
     }
 
-    const handleInputFocusOut = async (e) => {
+    const handleInputFocusOut = async (e: any) => {
         const element = e.currentTarget;
 
         if (element.name === "name") {
@@ -81,7 +88,7 @@
                 validateName();
                 return;
             } else {
-                emailField.errorMsg = "Required field.";
+                emailField!.errorMsg = "Required field.";
             }
         }
         invalidityMapper[element.name] = !element.checkValidity();
@@ -94,8 +101,10 @@
     </header>
 
     {#each serverErrors as error (error)}
+        {/* @ts-ignore */ null}
         <div class="uk-alert-danger" uk-alert>
-            <a href class="uk-alert-close" uk-close></a>
+            {/* @ts-ignore */ null}
+            <a href={null} class="uk-alert-close" aria-label="alert-close" uk-close={true}></a>
             <p>{error.message}</p>
         </div>
     {/each}
@@ -130,7 +139,7 @@
     </form>
     
     <p>
-        By continuing, you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+        By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
     </p>
 {:else}
     <header>
@@ -139,7 +148,7 @@
 
     <div class="uk-card uk-card-medium uk-card-default uk-card-body">
         <p class="uk-text-center">
-            Follow the link in the email sent to <strong>{emailField.value}</strong> and continue creating your account.
+            Follow the link in the email sent to <strong>{emailField!.value}</strong> and continue creating your account.
         </p>
     </div>
 
