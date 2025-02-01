@@ -1,6 +1,7 @@
 <script>
     import { generateLoginhash, generateMasterKey } from "$lib/crypto";
     import { unlock } from "$lib/services/accounts";
+    import { arrayBufferToHex } from "$lib/utils/bytes";
 
     let mPass = $state("");
     let toggleMpass = $state(false);
@@ -21,7 +22,7 @@
 
             try {
                 const response = await unlock(loginHash);
-                localStorage.setItem("emk", btoa(masterKey));
+                localStorage.setItem("mk", arrayBufferToHex(masterKey));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign('/');
             } catch (err) {

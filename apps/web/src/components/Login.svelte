@@ -3,6 +3,7 @@
 
     import { generateLoginhash, generateMasterKey } from "$lib/crypto";
     import { loginAccount } from "$lib/services/accounts";
+    import { arrayBufferToHex } from '$lib/utils/bytes';
 
     const emailInput = $state({
         name: "email",
@@ -37,12 +38,12 @@
         }
 
         if (e.target.checkValidity()) {
-            const masterKey = await generateMasterKey(emailInput.value, masterPasswordInput.value);
-            const loginHash = await generateLoginhash(masterKey, masterPasswordInput.value);
+            const mk = await generateMasterKey(emailInput.value, masterPasswordInput.value);
+            const loginHash = await generateLoginhash(mk, masterPasswordInput.value);
             const response = await loginAccount(emailInput.value, loginHash);
 
             localStorage.setItem("token", JSON.stringify(response.data.token));
-            localStorage.setItem("emk", btoa(masterKey));
+            localStorage.setItem("mk", arrayBufferToHex(mk));
             localStorage.setItem("epsk", response.data.psk);
 
             window.location.assign($page.url.searchParams.get("next") ?? "/");

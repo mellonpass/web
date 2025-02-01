@@ -4,9 +4,9 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import { getContext, onMount, setContext } from "svelte";
 
-    if (localStorage.getItem("emk") != null) {
-        setContext("emk", localStorage.getItem("emk"));
-        localStorage.removeItem("emk");
+    if (localStorage.getItem("mk") != null) {
+        setContext("mk", localStorage.getItem("mk"));
+        localStorage.removeItem("mk");
     }
 
     if (localStorage.getItem("epsk") != null) {

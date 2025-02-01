@@ -91,13 +91,13 @@
             return;
         }
 
-        const masterKey = await generateMasterKey(verifiedEmail, mpFieldVal);
-        const loginHash = await generateLoginhash(masterKey, mpFieldVal);
-        const stretchedMasterKey = await generateStretchedMasterKey(masterKey);
-        const protectedSymmetricKeyObj = await generateProtectedSymmetricKey(stretchedMasterKey);
+        const mk = await generateMasterKey(verifiedEmail, mpFieldVal);
+        const loginHash = await generateLoginhash(mk, mpFieldVal);
+        const smk = await generateStretchedMasterKey(mk);
+        const psk = await generateProtectedSymmetricKey(smk);
 
         try {
-            await setupAccount(verifiedEmail, loginHash, protectedSymmetricKeyObj, mphFieldVal);
+            await setupAccount(verifiedEmail, loginHash, psk.toBase64(), mphFieldVal);
             window.location.assign('/login');
         } catch (error) {
             // TODO: Show error page here.
