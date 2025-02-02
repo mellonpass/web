@@ -1,11 +1,7 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 
 
-interface IKey {
-    keybuffer: Uint8Array<ArrayBuffer>;
-};
-
-abstract class KeyMixin implements IKey {
+abstract class KeyMixin {
     keybuffer: Uint8Array<ArrayBuffer>;
 
     constructor(keybuffer: Uint8Array<ArrayBuffer>) {
@@ -22,7 +18,8 @@ abstract class KeyMixin implements IKey {
 
 }
 
-abstract class Key extends KeyMixin {
+
+export abstract class Key extends KeyMixin {
     private aeskeyBuffer: Uint8Array<ArrayBuffer>;
     private mackeyBuffer: Uint8Array<ArrayBuffer>;
 
@@ -32,7 +29,7 @@ abstract class Key extends KeyMixin {
         this.mackeyBuffer = keybuffer.slice(32, 64);
     }
 
-    async getMACKey(): Promise<CryptoKey> {
+    protected async getMACKey(): Promise<CryptoKey> {
         return await crypto.subtle.importKey(
             "raw",
             this.mackeyBuffer,
@@ -42,7 +39,7 @@ abstract class Key extends KeyMixin {
         );
     }
 
-    async getAESKey(): Promise<CryptoKey> {
+    protected async getAESKey(): Promise<CryptoKey> {
         return await crypto.subtle.importKey(
             "raw",
             this.aeskeyBuffer,
@@ -52,13 +49,13 @@ abstract class Key extends KeyMixin {
         );
     };
 
-    async hmacSignKey(key: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    protected async hmacSignKey(key: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
         const macKey = await this.getMACKey();
         const buffer = await crypto.subtle.sign("HMAC", macKey, key);
         return new Uint8Array(buffer);
     }
 
-    async hmacVerifyKey(signature: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<boolean> {
+    protected async hmacVerifyKey(signature: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<boolean> {
         const macKey = await this.getMACKey();
         return await crypto.subtle.verify(
             "HMAC",
@@ -68,12 +65,60 @@ abstract class Key extends KeyMixin {
         );
     }
 
+    protected async encryptSign(data: Uint8Array<ArrayBuffer> | Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
+        const iv = crypto.getRandomValues(new Uint8Array(16));
+
+        const encBuffer = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            await this.getAESKey(),
+            data
+        );
+
+        const buffer = new Uint8Array(encBuffer);
+        const mac = await this.hmacSignKey(buffer);
+
+        // combine data into a single byte.
+        return new Uint8Array([...buffer, ...mac, ...iv])
+    }
+
+    async protectKey(key: Key): Promise<ProtectedKey> {
+        const pskBuffer = await this.encryptSign(key.keybuffer);
+        return this.setProtectedKeyType(pskBuffer);
+    }
+
+    protected abstract setProtectedKeyType(keybuffer: Uint8Array<ArrayBuffer>): ProtectedKey;
+
+    async extractKey(protectedKey: ProtectedKey): Promise<Key> {
+        const result = await this.hmacVerifyKey(protectedKey.mac, protectedKey.key);
+        if (result) {
+            const baseKey = await this.getAESKey();
+            // Decrypted symmetric key.
+            const buffer = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: protectedKey.iv },
+                baseKey,
+                protectedKey.key,
+            );
+            return this.getKeyType(new Uint8Array(buffer));
+        }
+        throw new Error("Invalid MAC signature!");
+    }
+
+    protected abstract getKeyType(keybuffer: Uint8Array<ArrayBuffer>): Key;
+
 };
 
 
 export class StretchedMasterKey extends Key {
     constructor(keybuffer: Uint8Array<ArrayBuffer>) {
         super(keybuffer);
+    }
+
+    protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): SymmetricKey {
+        return new SymmetricKey(keybuffer);
+    }
+
+    protected setProtectedKeyType(keybuffer: Uint8Array<ArrayBuffer>): ProtectedSymmetricKey {
+        return new ProtectedSymmetricKey(keybuffer);
     }
 }
 
@@ -82,54 +127,77 @@ export class SymmetricKey extends Key {
     constructor(keybuffer: Uint8Array<ArrayBuffer>) {
         super(keybuffer);
     }
+
+    protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): CipherKey {
+        return new CipherKey(keybuffer);
+    }
+
+    protected setProtectedKeyType(keybuffer: Uint8Array<ArrayBuffer>): ProtectedCipherKey {
+        return new ProtectedCipherKey(keybuffer);
+    }
 }
 
 
-export class CipherKey extends Key {
+abstract class BaseCipherKey extends Key {
     constructor(keybuffer: Uint8Array<ArrayBuffer>) {
         super(keybuffer);
     }
+
+    protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): Key {
+        throw {};
+    }
+
+    protected setProtectedKeyType(keybuffer: Uint8Array<ArrayBuffer>): ProtectedKey {
+        throw {};
+    }
+
+    protectKey(key: Key): Promise<ProtectedKey> {
+        throw new Error("Cipher key should be not able to protect a key.");
+    }
+
+    extractKey(protectedKey: ProtectedKey): Promise<Key> {
+        throw new Error("Cipher key should be not able to extract a key.");
+    }
+
+}
+
+
+export class CipherKey extends BaseCipherKey {
+    async encryptText(text: string): Promise<string> {
+        const encoder = new TextEncoder();
+        const buffer = await this.encryptSign(encoder.encode(text));
+        return btoa(arrayBufferToHex(buffer));
+    };
 }
 
 
 abstract class ProtectedKey extends KeyMixin {
-    private pkey: Uint8Array<ArrayBuffer>;
-    private mac: Uint8Array<ArrayBuffer>;
-    private iv: Uint8Array<ArrayBuffer>;
+    private IV_START_LEN = this.keybuffer.length - 16;
+    private MAC_START_LEN = this.IV_START_LEN - 32;
+
+    key: Uint8Array<ArrayBuffer>;
+    mac: Uint8Array<ArrayBuffer>;
+    iv: Uint8Array<ArrayBuffer>;
 
     constructor(keybuffer: Uint8Array<ArrayBuffer>) {
         super(keybuffer);
-        this.pkey = keybuffer.slice(0, 64);
-        this.mac = keybuffer.slice(64, 128);
-        this.iv = keybuffer.slice(128, 16);
-    }
 
-    async decrypt(sk: Key): Promise<Key> {
-        const result = await sk.hmacVerifyKey(this.mac, this.pkey);
-        if (result) {
-            const baseKey = await sk.getAESKey();
-            // Decrypted symmetric key.
-            const buffer = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: this.iv },
-                baseKey,
-                this.pkey,
-            );
-            return new SymmetricKey(new Uint8Array(buffer));
-        }
-        throw new Error("Invalid MAC signature!");
+        this.iv = keybuffer.slice(this.IV_START_LEN, keybuffer.byteLength);
+        this.mac = keybuffer.slice(this.MAC_START_LEN, this.IV_START_LEN);
+        this.key = keybuffer.slice(0, this.MAC_START_LEN);
     }
-
 }
 
 
 export class ProtectedSymmetricKey extends ProtectedKey {
-    constructor(key: Uint8Array<ArrayBuffer>) {
-        super(key);
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
     }
 }
 
+
 export class ProtectedCipherKey extends ProtectedKey {
-    constructor(key: Uint8Array<ArrayBuffer>) {
-        super(key);
+    constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+        super(keybuffer);
     }
 }

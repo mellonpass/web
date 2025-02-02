@@ -1,7 +1,7 @@
 <script lang="ts">
     import UIkit from "uikit";
 
-    import { encryptCipherKey, encryptText, generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
+    import { generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
     import { ProtectedSymmetricKey } from "$lib/models";
@@ -51,21 +51,18 @@
 
         if (e.target.checkValidity()) {
             const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
-            const sk = await ProtectedSymmetricKey.fromBase64(epsk).decrypt(smk);
+
+            const psk = await ProtectedSymmetricKey.fromBase64(epsk);
+            const sk = await smk.extractKey(psk);
 
             const cipherKey = await generateCipherKey();
+            const pck = await sk.protectKey(cipherKey);
 
             const data = {
-                key: await encryptCipherKey(sk, cipherKey),
-                name: await encryptText(
-                    cipherKey, cipherName.value
-                ),
-                username: await encryptText(
-                    cipherKey, cipherUsername.value!
-                ),
-                password: await encryptText(
-                    cipherKey, cipherPassword.value!
-                ),
+                key: pck.toBase64(),
+                name: await cipherKey.encryptText(cipherName.value),
+                username: await cipherKey.encryptText(cipherUsername.value!),
+                password: await cipherKey.encryptText(cipherUsername.value!),
             }
 
             // Store this in the database.

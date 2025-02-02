@@ -17,12 +17,12 @@
         if (!invalid) {
             error = false;
 
-            const masterKey = await generateMasterKey(whoami.identity, mPass);
-            const loginHash = await generateLoginhash(masterKey, mPass);
+            const mk = await generateMasterKey(whoami.identity, mPass);
+            const loginHash = await generateLoginhash(mk, mPass);
 
             try {
                 const response = await unlock(loginHash);
-                localStorage.setItem("mk", arrayBufferToHex(masterKey));
+                localStorage.setItem("mk", arrayBufferToHex(mk));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign('/');
             } catch (err: any) {
