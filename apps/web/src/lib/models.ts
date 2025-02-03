@@ -13,7 +13,7 @@ abstract class KeyMixin {
 
   static fromBase64<T extends KeyMixin>(
     this: new (encodedKey: any) => T,
-    encodedKey: any,
+    encodedKey: any
   ): T {
     return new this(hexToArrayBuffer(atob(encodedKey)));
   }
@@ -35,7 +35,7 @@ export abstract class Key extends KeyMixin {
       this.mackeyBuffer,
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign", "verify"],
+      ["sign", "verify"]
     );
   }
 
@@ -45,12 +45,12 @@ export abstract class Key extends KeyMixin {
       this.aeskeyBuffer,
       { name: "AES-GCM" },
       false,
-      ["encrypt", "decrypt"],
+      ["encrypt", "decrypt"]
     );
   }
 
   protected async hmacSignKey(
-    key: Uint8Array<ArrayBuffer>,
+    key: Uint8Array<ArrayBuffer>
   ): Promise<Uint8Array<ArrayBuffer>> {
     const macKey = await this.getMACKey();
     const buffer = await crypto.subtle.sign("HMAC", macKey, key);
@@ -59,24 +59,26 @@ export abstract class Key extends KeyMixin {
 
   protected async hmacVerifyKey(
     signature: Uint8Array<ArrayBuffer>,
-    data: Uint8Array<ArrayBuffer>,
+    data: Uint8Array<ArrayBuffer>
   ): Promise<boolean> {
     const macKey = await this.getMACKey();
     return await crypto.subtle.verify("HMAC", macKey, signature, data);
   }
 
   protected async encryptSign(
-    data: Uint8Array<ArrayBuffer> | Uint8Array,
+    data: Uint8Array<ArrayBuffer> | Uint8Array
   ): Promise<Uint8Array<ArrayBuffer>> {
     const iv = crypto.getRandomValues(new Uint8Array(16));
 
+    // buffer is includes 128-bit mac.
     const encBuffer = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: iv },
       await this.getAESKey(),
-      data,
+      data
     );
 
     const buffer = new Uint8Array(encBuffer);
+    // sign result with another 256-bit mac.
     const mac = await this.hmacSignKey(buffer);
 
     // combine data into a single byte.
@@ -89,18 +91,18 @@ export abstract class Key extends KeyMixin {
   }
 
   protected abstract setProtectedKeyType(
-    keybuffer: Uint8Array<ArrayBuffer>,
+    keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedKey;
 
   async extractKey(protectedKey: ProtectedKey): Promise<Key> {
     const result = await this.hmacVerifyKey(protectedKey.mac, protectedKey.key);
     if (result) {
       const baseKey = await this.getAESKey();
-      // Decrypted symmetric key.
+      // decrypted symmetric key.
       const buffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: protectedKey.iv },
         baseKey,
-        protectedKey.key,
+        protectedKey.key
       );
       return this.getKeyType(new Uint8Array(buffer));
     }
@@ -120,7 +122,7 @@ export class StretchedMasterKey extends Key {
   }
 
   protected setProtectedKeyType(
-    keybuffer: Uint8Array<ArrayBuffer>,
+    keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedSymmetricKey {
     return new ProtectedSymmetricKey(keybuffer);
   }
@@ -136,7 +138,7 @@ export class SymmetricKey extends Key {
   }
 
   protected setProtectedKeyType(
-    keybuffer: Uint8Array<ArrayBuffer>,
+    keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedCipherKey {
     return new ProtectedCipherKey(keybuffer);
   }
@@ -152,7 +154,7 @@ abstract class BaseCipherKey extends Key {
   }
 
   protected setProtectedKeyType(
-    keybuffer: Uint8Array<ArrayBuffer>,
+    keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedKey {
     throw {};
   }

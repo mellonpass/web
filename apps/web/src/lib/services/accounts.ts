@@ -41,7 +41,7 @@ export const setupAccount = async (
   email: string,
   loginHash: string,
   protectedSymmetricKey: string,
-  hint: string,
+  hint: string
 ) => {
   return await requests({
     method: "POST",
