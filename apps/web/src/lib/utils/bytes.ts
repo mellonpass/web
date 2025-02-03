@@ -3,15 +3,14 @@
  * @param {ArrayBuffer|Uint8Array} buffer
  * @returns {string} A hex representation of the buffer.
  */
-export const arrayBufferToHex = (buffer: ArrayBuffer|Uint8Array) => {
-    if (buffer instanceof ArrayBuffer) {
-        buffer = new Uint8Array(buffer);
-    }
-    return Array.from(buffer)
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
+export const arrayBufferToHex = (buffer: ArrayBuffer | Uint8Array) => {
+  if (buffer instanceof ArrayBuffer) {
+    buffer = new Uint8Array(buffer);
+  }
+  return Array.from(buffer)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 };
-
 
 /**
  * Convert hex string into ArrayBuffer.
@@ -19,5 +18,5 @@ export const arrayBufferToHex = (buffer: ArrayBuffer|Uint8Array) => {
  * @returns {Uint8Array<ArrayBuffer>} Uint8Array<ArrayBuffer>.
  */
 export const hexToArrayBuffer = (hex: string) => {
-    return new Uint8Array(hex.match(/../g)!.map(h => parseInt(h, 16)))
+  return new Uint8Array(hex.match(/../g)!.map((h) => parseInt(h, 16)));
 };
