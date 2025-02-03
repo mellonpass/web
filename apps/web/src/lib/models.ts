@@ -159,9 +159,8 @@ export class CipherKey extends AESHMACKey {
     super(keybuffer);
   }
 
-  async encryptText(text: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const buffer = await this.encryptSign(encoder.encode(text));
+  async encrypt(data: Uint8Array): Promise<string> {
+    const buffer = await this.encryptSign(data);
     return btoa(arrayBufferToHex(buffer));
   }
 }

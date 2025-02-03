@@ -50,6 +50,8 @@
         }
 
         if (e.target.checkValidity()) {
+            const encoder = new TextEncoder();
+
             const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
 
             const psk = await ProtectedSymmetricKey.fromBase64(epsk);
@@ -60,9 +62,9 @@
 
             const data = {
                 key: pck.toBase64(),
-                name: await cipherKey.encryptText(cipherName.value),
-                username: await cipherKey.encryptText(cipherUsername.value!),
-                password: await cipherKey.encryptText(cipherUsername.value!),
+                name: await cipherKey.encrypt(encoder.encode(cipherName.value)),
+                username: await cipherKey.encrypt(encoder.encode(cipherUsername.value!)),
+                password: await cipherKey.encrypt(encoder.encode(cipherUsername.value!)),
             }
 
             // Store this in the database.
