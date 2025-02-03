@@ -12,16 +12,6 @@ abstract class BaseKey {
     this.mackeyBuffer = keybuffer.slice(32, 64);
   }
 
-  protected async getMACKey(): Promise<CryptoKey> {
-    return await crypto.subtle.importKey(
-      "raw",
-      this.mackeyBuffer,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign", "verify"]
-    );
-  }
-
   protected async getAESKey(): Promise<CryptoKey> {
     return await crypto.subtle.importKey(
       "raw",
@@ -29,6 +19,16 @@ abstract class BaseKey {
       { name: "AES-GCM" },
       false,
       ["encrypt", "decrypt"]
+    );
+  }
+
+  protected async getMACKey(): Promise<CryptoKey> {
+    return await crypto.subtle.importKey(
+      "raw",
+      this.mackeyBuffer,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"]
     );
   }
 
