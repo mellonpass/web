@@ -1,30 +1,13 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 
-abstract class KeyMixin {
+abstract class BaseKey {
+  protected aeskeyBuffer: Uint8Array<ArrayBuffer>;
+  protected mackeyBuffer: Uint8Array<ArrayBuffer>;
+
   keybuffer: Uint8Array<ArrayBuffer>;
 
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     this.keybuffer = keybuffer;
-  }
-
-  toBase64() {
-    return btoa(arrayBufferToHex(this.keybuffer));
-  }
-
-  static fromBase64<T extends KeyMixin>(
-    this: new (encodedKey: any) => T,
-    encodedKey: any
-  ): T {
-    return new this(hexToArrayBuffer(atob(encodedKey)));
-  }
-}
-
-export abstract class Key extends KeyMixin {
-  private aeskeyBuffer: Uint8Array<ArrayBuffer>;
-  private mackeyBuffer: Uint8Array<ArrayBuffer>;
-
-  constructor(keybuffer: Uint8Array<ArrayBuffer>) {
-    super(keybuffer);
     this.aeskeyBuffer = keybuffer.slice(0, 32);
     this.mackeyBuffer = keybuffer.slice(32, 64);
   }
@@ -47,6 +30,26 @@ export abstract class Key extends KeyMixin {
       false,
       ["encrypt", "decrypt"]
     );
+  }
+
+  toBase64() {
+    return btoa(arrayBufferToHex(this.keybuffer));
+  }
+
+  static fromBase64<T extends BaseKey>(
+    this: new (encodedKey: any) => T,
+    encodedKey: any
+  ): T {
+    return new this(hexToArrayBuffer(atob(encodedKey)));
+  }
+}
+
+/**
+ * A key that can do AES encrypt-decrypt and HMAC sign-verify.
+ */
+export abstract class AESHMACKey extends BaseKey {
+  constructor(keybuffer: Uint8Array<ArrayBuffer>) {
+    super(keybuffer);
   }
 
   protected async hmacSignKey(
@@ -84,7 +87,12 @@ export abstract class Key extends KeyMixin {
     // combine data into a single byte.
     return new Uint8Array([...buffer, ...mac, ...iv]);
   }
+}
 
+/**
+ * A key that can protect Key and extract a from a ProtectedKey.
+ */
+abstract class Key extends AESHMACKey {
   async protectKey(key: Key): Promise<ProtectedKey> {
     const pskBuffer = await this.encryptSign(key.keybuffer);
     return this.setProtectedKeyType(pskBuffer);
@@ -94,7 +102,7 @@ export abstract class Key extends KeyMixin {
     keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedKey;
 
-  async extractKey(protectedKey: ProtectedKey): Promise<Key> {
+  async extractKey(protectedKey: ProtectedKey): Promise<AESHMACKey> {
     const result = await this.hmacVerifyKey(protectedKey.mac, protectedKey.key);
     if (result) {
       const baseKey = await this.getAESKey();
@@ -109,7 +117,7 @@ export abstract class Key extends KeyMixin {
     throw new Error("Invalid MAC signature!");
   }
 
-  protected abstract getKeyType(keybuffer: Uint8Array<ArrayBuffer>): Key;
+  protected abstract getKeyType(keybuffer: Uint8Array<ArrayBuffer>): AESHMACKey;
 }
 
 export class StretchedMasterKey extends Key {
@@ -144,31 +152,11 @@ export class SymmetricKey extends Key {
   }
 }
 
-abstract class BaseCipherKey extends Key {
+export class CipherKey extends AESHMACKey {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
   }
 
-  protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): Key {
-    throw {};
-  }
-
-  protected setProtectedKeyType(
-    keybuffer: Uint8Array<ArrayBuffer>
-  ): ProtectedKey {
-    throw {};
-  }
-
-  protectKey(key: Key): Promise<ProtectedKey> {
-    throw new Error("Cipher key should be not able to protect a key.");
-  }
-
-  extractKey(protectedKey: ProtectedKey): Promise<Key> {
-    throw new Error("Cipher key should be not able to extract a key.");
-  }
-}
-
-export class CipherKey extends BaseCipherKey {
   async encryptText(text: string): Promise<string> {
     const encoder = new TextEncoder();
     const buffer = await this.encryptSign(encoder.encode(text));
@@ -176,7 +164,7 @@ export class CipherKey extends BaseCipherKey {
   }
 }
 
-abstract class ProtectedKey extends KeyMixin {
+abstract class ProtectedKey extends BaseKey {
   private IV_START_LEN = this.keybuffer.length - 16;
   private MAC_START_LEN = this.IV_START_LEN - 32;
 
