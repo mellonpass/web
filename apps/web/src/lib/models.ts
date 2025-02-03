@@ -92,8 +92,8 @@ export abstract class AESHMACKey extends BaseKey {
 /**
  * A key that can protect Key and extract a from a ProtectedKey.
  */
-abstract class Key extends AESHMACKey {
-  async protectKey(key: Key): Promise<ProtectedKey> {
+export abstract class Key extends AESHMACKey {
+  async protectKey(key: Key | AESHMACKey): Promise<ProtectedKey> {
     const pskBuffer = await this.encryptSign(key.keybuffer);
     return this.setProtectedKeyType(pskBuffer);
   }
@@ -102,7 +102,7 @@ abstract class Key extends AESHMACKey {
     keybuffer: Uint8Array<ArrayBuffer>
   ): ProtectedKey;
 
-  async extractKey(protectedKey: ProtectedKey): Promise<AESHMACKey> {
+  async extractKey(protectedKey: ProtectedKey): Promise<Key | AESHMACKey> {
     const result = await this.hmacVerifyKey(protectedKey.mac, protectedKey.key);
     if (result) {
       const baseKey = await this.getAESKey();
@@ -117,7 +117,9 @@ abstract class Key extends AESHMACKey {
     throw new Error("Invalid MAC signature!");
   }
 
-  protected abstract getKeyType(keybuffer: Uint8Array<ArrayBuffer>): AESHMACKey;
+  protected abstract getKeyType(
+    keybuffer: Uint8Array<ArrayBuffer>
+  ): Key | AESHMACKey;
 }
 
 export class StretchedMasterKey extends Key {
@@ -125,7 +127,7 @@ export class StretchedMasterKey extends Key {
     super(keybuffer);
   }
 
-  protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): SymmetricKey {
+  protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): Key {
     return new SymmetricKey(keybuffer);
   }
 
@@ -141,7 +143,7 @@ export class SymmetricKey extends Key {
     super(keybuffer);
   }
 
-  protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): CipherKey {
+  protected getKeyType(keybuffer: Uint8Array<ArrayBuffer>): AESHMACKey {
     return new CipherKey(keybuffer);
   }
 

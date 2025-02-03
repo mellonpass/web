@@ -4,7 +4,7 @@
     import { generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
-    import { ProtectedSymmetricKey } from "$lib/models";
+    import { Key, ProtectedSymmetricKey } from "$lib/models";
 
     let passwordToggle = $state(false);
     
@@ -53,7 +53,7 @@
             const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
 
             const psk = await ProtectedSymmetricKey.fromBase64(epsk);
-            const sk = await smk.extractKey(psk);
+            const sk = await smk.extractKey(psk) as Key;
 
             const cipherKey = await generateCipherKey();
             const pck = await sk.protectKey(cipherKey);
