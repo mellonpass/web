@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 
-import { HTTPStatus } from "$lib/http";
+import { HTTPStatus } from "$lib/requests";
 import { verifyAccount } from "$lib/services/accounts";
 
 let isInvalidToken = false;

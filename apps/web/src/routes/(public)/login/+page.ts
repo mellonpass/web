@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { HTTPStatus } from "$lib/http";
+import { HTTPStatus } from "$lib/requests";
 
 import { whoami } from "$lib/services/accounts";
 

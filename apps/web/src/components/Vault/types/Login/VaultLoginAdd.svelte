@@ -1,7 +1,7 @@
 <script lang="ts">
     import UIkit from "uikit";
 
-    import { generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
+    import { generateCipherKey, generateStretchedMasterKey } from "$lib/key-generation";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
     import { Key, ProtectedSymmetricKey } from "$lib/models/keys";

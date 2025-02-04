@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
-    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/crypto';
+    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
     import { setupAccount } from '$lib/services/accounts';
 
     const { verifiedEmail } = $props();

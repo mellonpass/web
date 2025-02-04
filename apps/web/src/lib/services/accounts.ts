@@ -1,5 +1,5 @@
 import { PUBLIC_SERVER_URL } from "$env/static/public";
-import { requests } from "$lib/http";
+import { requests } from "$lib/requests";
 
 export const createAccount = async (name: string, email: string) => {
   const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/create`, {
