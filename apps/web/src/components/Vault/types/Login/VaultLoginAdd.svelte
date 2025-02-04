@@ -1,10 +1,10 @@
 <script lang="ts">
     import UIkit from "uikit";
 
-    import { generateCipherKey, generateStretchedMasterKey } from "$lib/key-generation";
-    import { hexToArrayBuffer } from "$lib/utils/bytes";
+    import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
-    import { Key, ProtectedSymmetricKey } from "$lib/models/keys";
+    import { CipherLogin } from "$lib/models/ciphers";
+    import type { SymmetricKey } from "$lib/models/keys";
 
     let passwordToggle = $state(false);
     
@@ -50,25 +50,20 @@
         }
 
         if (e.target.checkValidity()) {
-            const encoder = new TextEncoder();
-
-            const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
-
-            const psk = await ProtectedSymmetricKey.fromBase64(epsk);
-            const sk = await smk.extractKey(psk) as Key;
-
             const cipherKey = await generateCipherKey();
-            const pck = await sk.protectKey(cipherKey);
 
-            const data = {
-                key: pck.toBase64(),
-                name: await cipherKey.encrypt(encoder.encode(cipherName.value)),
-                username: await cipherKey.encrypt(encoder.encode(cipherUsername.value!)),
-                password: await cipherKey.encrypt(encoder.encode(cipherUsername.value!)),
-            }
+            const encoder = new TextEncoder();
+            const cipher = new CipherLogin(
+                cipherKey,
+                encoder.encode(cipherName.value),
+                {
+                    username: encoder.encode(cipherUsername.value!),
+                    password: encoder.encode(cipherPassword.value!),
+                }
+            )
 
-            // Store this in the database.
-            console.log(data);
+            const sk = await extractSymmetricKey(mk, epsk);
+            console.log(await cipher.encryptData(sk));
         }
 
     };

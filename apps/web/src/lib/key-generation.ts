@@ -1,6 +1,7 @@
-import { arrayBufferToHex } from "$lib/utils/bytes";
+import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 import {
   CipherKey,
+  Key,
   ProtectedSymmetricKey,
   StretchedMasterKey,
   SymmetricKey,
@@ -67,7 +68,7 @@ export const generateProtectedSymmetricKey = async (
   // Create random 512-bit Symmetric Key.
   const rawKey = crypto.getRandomValues(new Uint8Array(64));
   const sk = new SymmetricKey(rawKey);
-  return (await smk.protectKey(sk)) as ProtectedSymmetricKey;
+  return <ProtectedSymmetricKey>await smk.protectKey(sk);
 };
 
 export const generateLoginhash = async (
@@ -100,3 +101,12 @@ export const generateCipherKey = async () => {
   const ckeyBuffer = crypto.getRandomValues(new Uint8Array(64));
   return new CipherKey(ckeyBuffer);
 };
+
+export async function extractSymmetricKey(
+  mk: string,
+  epsk: string
+): Promise<SymmetricKey> {
+  const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
+  const psk = await ProtectedSymmetricKey.fromBase64(epsk);
+  return <SymmetricKey>await smk.extractKey(psk);
+}
