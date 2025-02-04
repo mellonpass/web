@@ -4,7 +4,7 @@
     import { generateCipherKey, generateStretchedMasterKey } from "$lib/crypto";
     import { hexToArrayBuffer } from "$lib/utils/bytes";
     import { getContext } from "svelte";
-    import { Key, ProtectedSymmetricKey } from "$lib/models";
+    import { Key, ProtectedSymmetricKey } from "$lib/models/keys";
 
     let passwordToggle = $state(false);
     

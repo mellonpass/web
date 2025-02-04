@@ -4,7 +4,7 @@ import {
   ProtectedSymmetricKey,
   StretchedMasterKey,
   SymmetricKey,
-} from "$lib/models";
+} from "$lib/models/keys";
 
 export const generateMasterKey = async (
   email: string,
