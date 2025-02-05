@@ -34,6 +34,15 @@ export abstract class Cipher {
     this.key = key;
     this.name = name;
   }
+
+  toDict() {
+    return {
+      type: this.type,
+      key: this.key,
+      name: this.name,
+      data: this.data,
+    };
+  }
 }
 
 interface CipherLoginArgs extends CipherDataArgs {

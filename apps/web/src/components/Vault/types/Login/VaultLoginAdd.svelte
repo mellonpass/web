@@ -5,6 +5,7 @@
     import { getContext } from "svelte";
     import { CipherLogin, CipherType } from "$lib/models/ciphers";
     import type { SymmetricKey } from "$lib/models/keys";
+  import { createCipher } from "$lib/services/ciphers";
 
     let passwordToggle = $state(false);
     
@@ -65,7 +66,9 @@
                 }
             });
 
-            console.log(cipher);
+            // TODO: handle response base on payload __typename (success or error).
+            const response = await createCipher(cipher);
+            console.log(response);
         }
 
     };
