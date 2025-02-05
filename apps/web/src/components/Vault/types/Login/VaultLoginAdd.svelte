@@ -3,7 +3,7 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
-    import { CipherLogin } from "$lib/models/ciphers";
+    import { CipherLogin, CipherType } from "$lib/models/ciphers";
     import type { SymmetricKey } from "$lib/models/keys";
 
     let passwordToggle = $state(false);
@@ -50,20 +50,22 @@
         }
 
         if (e.target.checkValidity()) {
-            const cipherKey = await generateCipherKey();
+            const ck = await generateCipherKey();
+            const sk = await extractSymmetricKey(mk, epsk);
+            const pck = await sk.protectKey(ck);
 
             const encoder = new TextEncoder();
-            const cipher = new CipherLogin(
-                cipherKey,
-                encoder.encode(cipherName.value),
-                {
-                    username: encoder.encode(cipherUsername.value!),
-                    password: encoder.encode(cipherPassword.value!),
+            const cipher = new CipherLogin({
+                type: CipherType.LOGIN,
+                key: pck.toBase64(),
+                name: await ck.encrypt(encoder.encode(cipherName.value)),
+                data: {
+                    username: await ck.encrypt(encoder.encode(cipherUsername.value!)),
+                    password: await ck.encrypt(encoder.encode(cipherPassword.value!)),
                 }
-            )
+            });
 
-            const sk = await extractSymmetricKey(mk, epsk);
-            console.log(await cipher.encryptData(sk));
+            console.log(cipher);
         }
 
     };
