@@ -3,5 +3,5 @@
   "version": "1.0.0",
   "description": "Monorepo for all MellonPass client applications",
   "author": "Roel Delos Reyes <badcoder28@gmail.com>",
-  "license": "MIT"
+  "license": "GPL-3.0-only"
 }
