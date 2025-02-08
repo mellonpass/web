@@ -3,7 +3,7 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
-    import { CipherLogin, CipherType } from "$lib/models/ciphers";
+    import { CipherLogin } from "$lib/models/ciphers";
     import { createCipher } from "$lib/services/ciphers";
 
     let passwordToggle = $state(false);
@@ -58,7 +58,6 @@
 
             const encoder = new TextEncoder();
             const cipher = new CipherLogin({
-                type: CipherType.LOGIN,
                 key: pck.toBase64(),
                 name: await ck.encrypt(encoder.encode(cipherName.value)),
                 data: {

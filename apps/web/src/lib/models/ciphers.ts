@@ -1,5 +1,3 @@
-import { CipherKey, ProtectedCipherKey, SymmetricKey } from "$lib/models/keys";
-
 type CipherLoginData = {
   username: string;
   password: string;
@@ -45,15 +43,40 @@ export abstract class Cipher {
   }
 }
 
-interface CipherLoginArgs extends CipherDataArgs {
-  data: CipherLoginData;
-}
-
 export class CipherLogin extends Cipher {
   data: CipherData;
 
-  constructor({ key, name, data }: CipherLoginArgs) {
-    super({ type: CipherType.LOGIN, key: key, name: name });
+  constructor({
+    type = CipherType.LOGIN,
+    key,
+    name,
+    data,
+  }: {
+    type?: CipherType;
+    key: string;
+    name: string;
+    data: CipherLoginData;
+  }) {
+    super({ type: type, key: key, name: name });
+    this.data = data;
+  }
+}
+
+export class CipherSecureNote extends Cipher {
+  data: CipherData;
+
+  constructor({
+    type = CipherType.SECURE_NOTE,
+    key,
+    name,
+    data,
+  }: {
+    type?: CipherType;
+    key: string;
+    name: string;
+    data: CipherSecureNoteData;
+  }) {
+    super({ type: type, key: key, name: name });
     this.data = data;
   }
 }
