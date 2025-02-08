@@ -4,10 +4,11 @@
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
     import { CipherLogin, CipherType } from "$lib/models/ciphers";
-    import type { SymmetricKey } from "$lib/models/keys";
-  import { createCipher } from "$lib/services/ciphers";
+    import { createCipher } from "$lib/services/ciphers";
 
     let passwordToggle = $state(false);
+    let errorCreate = $state(false);
+    let errorCreateMsg = $state(null);
     
     const cipherName = $state({
         name: "cipher-name",
@@ -66,9 +67,29 @@
                 }
             });
 
-            // TODO: handle response base on payload __typename (success or error).
             const response = await createCipher(cipher);
-            console.log(response);
+            switch (response.data.cipher.create.__typename) {
+                case "CipherCreateSuccess": {
+                    UIkit.modal("#vault-modal").hide();
+
+                    setTimeout(() => {
+                        e.target.reset();
+                        // Reset to default values.
+                        setTimeout(() => {
+                            errorCreate = false;
+                            errorCreateMsg = null;
+                            cipherName.value = "Login";
+                        }, 500);
+                    });
+
+                    break;
+                }
+                default: {
+                    errorCreateMsg = response.data.cipher.create.message;
+                    errorCreate = true;
+                    break;
+                }
+            }
         }
 
     };
@@ -146,6 +167,12 @@
             {/if}
         </div>
     </form>
+    {#if errorCreate}
+        {/* @ts-ignore */ null}
+        <div class="uk-alert-danger" uk-alert>
+            <p>Error: {errorCreateMsg}</p>
+        </div>
+    {/if}
 </div>
 
 <div class="uk-modal-footer uk-flex uk-flex-row-reverse">

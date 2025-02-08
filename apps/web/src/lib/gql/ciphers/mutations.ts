@@ -1,21 +1,18 @@
 export const CREATE_CIPHER = `
     mutation CreateCipher($input: CreateCipherInput!) {
-        createCipher: Cipher {
-            create: createCipher(input: $input) {
+        cipher {
+            create(input: $input) {
+                __typename
                 ... on CipherCreateSuccess {
-                    __typename
-                    cipher {
-                        id
-                        name
-                        type
-                        key
-                        isFavorite
-                        data
-                        created
-                    }
+                    id
+                    name
+                    type
+                    key
+                    isFavorite
+                    data
+                    created
                 }
-                ... on CipherCreateForbidden {
-                    __typename
+                ... on CipherCreateFailed {
                     message
                 }
             }
