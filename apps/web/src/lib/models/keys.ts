@@ -73,7 +73,7 @@ export abstract class AESHMACKey extends BaseKey {
   ): Promise<Uint8Array<ArrayBuffer>> {
     const iv = crypto.getRandomValues(new Uint8Array(16));
 
-    // buffer is includes 128-bit mac.
+    // buffer includes 128-bit mac.
     const encBuffer = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: iv },
       await this.getAESKey(),
@@ -90,7 +90,7 @@ export abstract class AESHMACKey extends BaseKey {
 }
 
 /**
- * A key that can protect Key and extract a from a ProtectedKey.
+ * A key that can protect Key and extract from a ProtectedKey.
  */
 export abstract class Key extends AESHMACKey {
   async protectKey(key: Key | AESHMACKey): Promise<ProtectedKey> {
@@ -122,6 +122,9 @@ export abstract class Key extends AESHMACKey {
   ): Key | AESHMACKey;
 }
 
+/**
+ * Key to protect and extract a Symmetric Key.
+ */
 export class StretchedMasterKey extends Key {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
@@ -138,6 +141,9 @@ export class StretchedMasterKey extends Key {
   }
 }
 
+/**
+ * Key to protect and extract a Cipher Key.
+ */
 export class SymmetricKey extends Key {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
@@ -154,6 +160,9 @@ export class SymmetricKey extends Key {
   }
 }
 
+/**
+ * Key to encrypt and decrypt a cipher data.
+ */
 export class CipherKey extends AESHMACKey {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
@@ -182,12 +191,18 @@ abstract class ProtectedKey extends BaseKey {
   }
 }
 
+/**
+ * Encrypted and signed symmetric key.
+ */
 export class ProtectedSymmetricKey extends ProtectedKey {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
   }
 }
 
+/**
+ * Encrypted and signed cipher key.
+ */
 export class ProtectedCipherKey extends ProtectedKey {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);

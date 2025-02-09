@@ -1,7 +1,6 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 import {
   CipherKey,
-  Key,
   ProtectedSymmetricKey,
   StretchedMasterKey,
   SymmetricKey,

@@ -14,11 +14,11 @@ export enum CipherType {
   SECURE_NOTE = "SECURE_NOTE",
 }
 
-interface CipherDataArgs {
+type CipherDataArgs = {
   type: CipherType;
   key: string;
   name: string;
-}
+};
 
 export abstract class Cipher {
   type: CipherType;
