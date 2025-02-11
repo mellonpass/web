@@ -3,8 +3,8 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
-    import { CipherSecureNote } from "$lib/models/ciphers";
     import { createCipher } from "$lib/services/ciphers";
+    import { CipherType, type Cipher } from "$lib/types";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -49,13 +49,15 @@
             const pck = await sk.protectKey(ck);
 
             const encoder = new TextEncoder();
-            const cipher = new CipherSecureNote({
+            const cipher: Cipher = {
+                type: CipherType.SECURE_NOTE,
                 key: pck.toBase64(),
                 name: await ck.encrypt(encoder.encode(cipherName.value)),
+                isFavorite: false,
                 data: {
                     note: await ck.encrypt(encoder.encode(cipherNote.value!)),
                 }
-            });
+            };
 
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {

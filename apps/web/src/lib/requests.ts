@@ -41,19 +41,22 @@ export async function requests({
   throw { error: data.error, code: data?.code, statusCode: response.status };
 }
 
+export enum GQLOperation {
+  Query = "query",
+  Mutation = "mutation",
+}
+
 export async function gqlClient({
-  operation,
   query,
   variables = undefined,
   headers = undefined,
 }: {
-  operation: string;
   query: string;
   variables?: object | undefined;
   headers?: HeadersInit | undefined;
 }) {
   return await requests({
-    method: operation == "query" ? "GET" : "POST",
+    method: "POST",
     url: `${PUBLIC_SERVER_URL}/graphql`,
     payload: { query: query, variables: variables },
     headers: headers,

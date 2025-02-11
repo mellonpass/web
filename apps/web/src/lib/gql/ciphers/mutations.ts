@@ -19,3 +19,27 @@ export const CREATE_CIPHER = `
         }
     }
 `;
+
+export const GET_CIPHERS = `
+    query GetGiphers($first: Int!, $after: String) {
+        ciphers(first: $first, after: $after) {
+            edges {
+                cursor
+                node {
+                    created
+                    data
+                    id
+                    isFavorite
+                    key
+                    name
+                    ownerId
+                    type
+                }
+            }
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+`;

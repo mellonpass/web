@@ -2,6 +2,8 @@
     import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
+    import { getCiphers } from "$lib/services/ciphers";
+    import type { CipherItem } from "$lib/types";
     import { getContext, onMount, setContext } from "svelte";
 
     if (localStorage.getItem("mk") != null) {
@@ -15,9 +17,14 @@
     }
 
     let isUnlock = $state(false);
+    let ciphers: Array<CipherItem> = $state([]);
 
-    onMount(() => {
+    onMount(async () => {
         isUnlock = getContext("epsk") != null;
+
+        if (isUnlock) {
+            ciphers = await getCiphers();
+        }
     });
 
 </script>
@@ -29,7 +36,9 @@
             <VaultSideNav />
         </div>
         <div class="x-vault-main uk-width-expand">
-            <VaultMain />
+            {#key ciphers}
+                <VaultMain bind:ciphers={ciphers}/>
+            {/key}
         </div>
     {:else}
         <VaultLock />

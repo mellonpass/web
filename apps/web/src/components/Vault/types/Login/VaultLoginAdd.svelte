@@ -3,13 +3,13 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
-    import { CipherLogin } from "$lib/models/ciphers";
     import { createCipher } from "$lib/services/ciphers";
+    import { CipherType, type Cipher } from "$lib/types";
 
     let passwordToggle = $state(false);
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
-    
+
     const cipherName = $state({
         name: "cipher-name",
         value: "Login",
@@ -57,14 +57,16 @@
             const pck = await sk.protectKey(ck);
 
             const encoder = new TextEncoder();
-            const cipher = new CipherLogin({
+            const cipher: Cipher = {
+                type: CipherType.LOGIN,
                 key: pck.toBase64(),
                 name: await ck.encrypt(encoder.encode(cipherName.value)),
+                isFavorite: false,
                 data: {
                     username: await ck.encrypt(encoder.encode(cipherUsername.value!)),
                     password: await ck.encrypt(encoder.encode(cipherPassword.value!)),
                 }
-            });
+            };
 
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {

@@ -1,16 +1,17 @@
 <script lang="ts">
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-
-    import { ciphers } from "$lib/mock/ciphers";
-    import type { Cipher } from "$lib/types";
+    import type { CipherItem } from "$lib/types";
+    
     import { onMount } from "svelte";
+
+    let { ciphers = $bindable() } = $props()
 
     let search: string | null = $state(null);
     let selectedItem: { id: string; type: string; } | null = $state(null);
 
     // Copy ciphers array to create difference reference.
-    let vaultListItems: Array<Cipher> = $state(JSON.parse(JSON.stringify(ciphers)));
+    let vaultListItems: Array<CipherItem> = $state(ciphers);
     const filteredVaultListItem = $derived.by(() => {
         const res = vaultListItems.filter(
             item => search ? item.name.toLowerCase().includes(search) : true
@@ -22,18 +23,18 @@
 
     onMount(() => {
         if (filteredVaultListItem.length != 0) {
-            const firstItem = findVaultItem(filteredVaultListItem[0].id);
+            const firstItem = findVaultItem(filteredVaultListItem[0].id!);
             if (firstItem) {
                 firstItem.selected = true;
                 selectedItem = {
-                    id: firstItem.id,
+                    id: firstItem.id!,
                     type: firstItem.type,
                 };
             }
         }
     });
 
-    const findVaultItem = (itemId: string): Cipher | undefined => {
+    const findVaultItem = (itemId: string): CipherItem | undefined => {
         return vaultListItems.find(item => item.id == itemId);
     };
 
@@ -45,7 +46,7 @@
         if (item) {
             item.selected = !item.selected;
             selectedItem = {
-                id: item.id,
+                id: item.id!,
                 type: item.type,
             };
         }
@@ -69,7 +70,8 @@
                                 </div>
                                 <div class="uk-width-expand uk-margin-left">
                                     <div class="uk-text-default">{item.name}</div>
-                                    <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
+                                    <!-- TODO: form a content -->
+                                    <!-- <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div> -->
                                 </div>
                             </div>
                         </a>
