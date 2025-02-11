@@ -14,11 +14,6 @@
         localStorage.removeItem("epsk");
     }
 
-    if (localStorage.getItem("token") != null) {
-        setContext("token", localStorage.getItem("token"));
-        localStorage.removeItem("token");
-    }
-
     let isUnlock = $state(false);
 
     onMount(() => {

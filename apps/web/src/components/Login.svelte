@@ -49,7 +49,6 @@
             const loginHash = await generateLoginhash(mk, masterPasswordInput.value!);
             const response = await loginAccount(emailInput.value!, loginHash);
 
-            localStorage.setItem("token", JSON.stringify(response.data.token));
             localStorage.setItem("mk", arrayBufferToHex(mk));
             localStorage.setItem("epsk", response.data.psk);
 
