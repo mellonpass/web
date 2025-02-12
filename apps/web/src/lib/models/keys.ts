@@ -1,4 +1,5 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
+import { ProtectedData } from "./data";
 
 abstract class BaseKey {
   protected aeskeyBuffer: Uint8Array<ArrayBuffer>;
@@ -52,7 +53,7 @@ export abstract class AESHMACKey extends BaseKey {
     super(keybuffer);
   }
 
-  protected async hmacSignKey(
+  protected async hmacSign(
     key: Uint8Array<ArrayBuffer>
   ): Promise<Uint8Array<ArrayBuffer>> {
     const macKey = await this.getMACKey();
@@ -60,7 +61,7 @@ export abstract class AESHMACKey extends BaseKey {
     return new Uint8Array(buffer);
   }
 
-  protected async hmacVerifyKey(
+  protected async hmacVerify(
     signature: Uint8Array<ArrayBuffer>,
     data: Uint8Array<ArrayBuffer>
   ): Promise<boolean> {
@@ -82,10 +83,31 @@ export abstract class AESHMACKey extends BaseKey {
 
     const buffer = new Uint8Array(encBuffer);
     // sign result with another 256-bit mac.
-    const mac = await this.hmacSignKey(buffer);
+    const mac = await this.hmacSign(buffer);
 
     // combine data into a single byte.
     return new Uint8Array([...buffer, ...mac, ...iv]);
+  }
+
+  protected async verifyDecrypt(
+    data: Uint8Array<ArrayBuffer>,
+    mac: Uint8Array<ArrayBuffer>,
+    iv: Uint8Array<ArrayBuffer>
+  ): Promise<Uint8Array<ArrayBuffer>> {
+    const valid = await this.hmacVerify(mac, data);
+    if (!valid) {
+      throw new Error("Invalid MAC signature!");
+    }
+
+    const baseKey = await this.getAESKey();
+    // decrypted data key.
+    const buffer = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      baseKey,
+      data
+    );
+
+    return new Uint8Array(buffer);
   }
 }
 
@@ -103,18 +125,12 @@ export abstract class Key extends AESHMACKey {
   ): ProtectedKey;
 
   async extractKey(protectedKey: ProtectedKey): Promise<Key | AESHMACKey> {
-    const result = await this.hmacVerifyKey(protectedKey.mac, protectedKey.key);
-    if (result) {
-      const baseKey = await this.getAESKey();
-      // decrypted symmetric key.
-      const buffer = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: protectedKey.iv },
-        baseKey,
-        protectedKey.key
-      );
-      return this.getKeyType(new Uint8Array(buffer));
-    }
-    throw new Error("Invalid MAC signature!");
+    const decryptedBuffer = await this.verifyDecrypt(
+      protectedKey.key,
+      protectedKey.mac,
+      protectedKey.iv
+    );
+    return this.getKeyType(decryptedBuffer);
   }
 
   protected abstract getKeyType(
@@ -171,6 +187,20 @@ export class CipherKey extends AESHMACKey {
   async encrypt(data: Uint8Array): Promise<string> {
     const buffer = await this.encryptSign(data);
     return btoa(arrayBufferToHex(buffer));
+  }
+
+  async decryptText(encodedData: string): Promise<string> {
+    const data = atob(encodedData);
+    // encrypted data | mac | iv
+    const databuffer = hexToArrayBuffer(data);
+    const pData = new ProtectedData(databuffer);
+    const decryptedBuffer = await this.verifyDecrypt(
+      pData.data,
+      pData.mac,
+      pData.iv
+    );
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedBuffer);
   }
 }
 

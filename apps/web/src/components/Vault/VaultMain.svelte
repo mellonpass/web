@@ -1,40 +1,43 @@
 <script lang="ts">
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-    import type { CipherItem } from "$lib/types";
-    
+    import type { VaultItem } from "$lib/types";
     import { onMount } from "svelte";
-
-    let { ciphers = $bindable() } = $props()
+    
+    let { vaultListItems = $bindable() }: { vaultListItems: Array<VaultItem> } = $props();
 
     let search: string | null = $state(null);
     let selectedItem: { id: string; type: string; } | null = $state(null);
 
     // Copy ciphers array to create difference reference.
-    let vaultListItems: Array<CipherItem> = $state(ciphers);
     const filteredVaultListItem = $derived.by(() => {
+        if (vaultListItems.length == 0) { return [] }
+
         const res = vaultListItems.filter(
             item => search ? item.name.toLowerCase().includes(search) : true
         ).sort(
             (a, b) => a.name.localeCompare(b.name)
         );
+
         return res;
     });
 
     onMount(() => {
-        if (filteredVaultListItem.length != 0) {
-            const firstItem = findVaultItem(filteredVaultListItem[0].id!);
-            if (firstItem) {
-                firstItem.selected = true;
-                selectedItem = {
-                    id: firstItem.id!,
-                    type: firstItem.type,
-                };
+        setTimeout(() => {
+            if (filteredVaultListItem.length > 0) {
+                    const firstItem = findVaultItem(filteredVaultListItem[0].id!);
+                    if (firstItem) {
+                        firstItem.selected = true;
+                        selectedItem = {
+                            id: firstItem.id!,
+                            type: firstItem.type,
+                        };
+                    }
             }
-        }
+        }, 100);
     });
 
-    const findVaultItem = (itemId: string): CipherItem | undefined => {
+    const findVaultItem = (itemId: string): VaultItem | undefined => {
         return vaultListItems.find(item => item.id == itemId);
     };
 
@@ -51,9 +54,9 @@
             };
         }
     };
+    
 
 </script>
-
 
 <div class="x-vault-main-container uk-flex uk-flex-column">
     <VaultNavbar bind:search={search} />
@@ -70,8 +73,8 @@
                                 </div>
                                 <div class="uk-width-expand uk-margin-left">
                                     <div class="uk-text-default">{item.name}</div>
-                                    <!-- TODO: form a content -->
-                                    <!-- <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div> -->
+                                    <!-- TODO: simplify -->
+                                    <div class:uk-text-meta={!item.selected} class="uk-text-small">{item.content.slice(0, 30)}</div>
                                 </div>
                             </div>
                         </a>
@@ -93,6 +96,7 @@
         </div>
     </div>
 </div>
+
 
 
 <style>

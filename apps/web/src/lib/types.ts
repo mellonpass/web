@@ -1,13 +1,13 @@
-interface CipherLoginData {
+export interface CipherLoginData {
   username: string;
   password: string;
 }
 
-interface CipherSecureNoteData {
+export interface CipherSecureNoteData {
   note: string;
 }
 
-type CipherData = CipherLoginData | CipherSecureNoteData;
+export type CipherData = CipherLoginData | CipherSecureNoteData;
 
 export enum CipherType {
   LOGIN = "LOGIN",
@@ -15,6 +15,7 @@ export enum CipherType {
 }
 
 export interface Cipher {
+  id?: string;
   isFavorite: boolean;
   type: CipherType;
   key: string;
@@ -22,7 +23,10 @@ export interface Cipher {
   data: CipherData;
 }
 
-export interface CipherItem extends Cipher {
+export interface VaultItem {
   id: string;
+  type: CipherType;
   selected: boolean;
+  name: string;
+  content: string;
 }

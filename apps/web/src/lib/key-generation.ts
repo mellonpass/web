@@ -1,6 +1,7 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
 import {
   CipherKey,
+  ProtectedCipherKey,
   ProtectedSymmetricKey,
   StretchedMasterKey,
   SymmetricKey,
@@ -108,4 +109,12 @@ export async function extractSymmetricKey(
   const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
   const psk = await ProtectedSymmetricKey.fromBase64(epsk);
   return <SymmetricKey>await smk.extractKey(psk);
+}
+
+export async function extractCipherKey(
+  sk: SymmetricKey,
+  epck: string
+): Promise<CipherKey> {
+  const pck = await ProtectedCipherKey.fromBase64(epck);
+  return <CipherKey>await sk.extractKey(pck);
 }
