@@ -66,7 +66,7 @@ clienthub/
 
 # Scripts
 
-The following scripts are available in the root package.json:
+The following scripts are available in the `aps/web` workspace package.json:
 
 - `npm run dev -w apps/web`: Start the development web server.
 - `npm run check:watch -w apps/web`: Start the realtime svelte-check diagnostics.
