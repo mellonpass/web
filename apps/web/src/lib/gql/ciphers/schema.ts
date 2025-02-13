@@ -21,8 +21,8 @@ export const CREATE_CIPHER = `
 `;
 
 export const GET_CIPHERS = `
-    query GetGiphers($first: Int!, $after: String) {
-        ciphers(first: $first, after: $after) {
+    query GetGiphers($first: Int!, $after: String, $filter: FilterCipher) {
+        ciphers(first: $first, after: $after, filter: $filter) {
             edges {
                 cursor
                 node {

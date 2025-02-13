@@ -1,6 +1,6 @@
-import { CREATE_CIPHER, GET_CIPHERS } from "$lib/gql/ciphers/mutations";
-import { gqlClient, GQLOperation } from "$lib/requests";
-import type { Cipher } from "$lib/types";
+import { CREATE_CIPHER, GET_CIPHERS } from "$lib/gql/ciphers/schema";
+import { gqlClient } from "$lib/requests";
+import { CipherCategory, type Cipher } from "$lib/types";
 
 export const createCipher = async (cipher: Cipher) => {
   return await gqlClient({
@@ -16,10 +16,22 @@ export const createCipher = async (cipher: Cipher) => {
   });
 };
 
-export const getCiphers = async (): Promise<Array<Cipher>> => {
+export const getCiphers = async ({
+  category,
+}: {
+  category: CipherCategory;
+}): Promise<Array<Cipher>> => {
   let result: Array<Cipher> = [];
   let hasNextPage = true;
-  const variables = { first: 100, after: undefined };
+  const variables = {
+    first: 100,
+    after: undefined,
+    filter: {
+      category: category,
+    },
+  };
+
+  console.log(variables);
 
   while (hasNextPage) {
     const response = await gqlClient({

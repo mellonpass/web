@@ -30,3 +30,12 @@ export interface VaultItem {
   name: string;
   content: string;
 }
+
+export enum CipherCategory {
+  ARCHIVES = "ARCHIVES",
+  All = "ALL",
+  FAVORITES = "FAVORITES",
+  LOGINS = "LOGINS",
+  SECURE_NOTES = "SECURE_NOTES",
+  RECENTLY_DELETED = "RECENTLY_DELETED",
+}

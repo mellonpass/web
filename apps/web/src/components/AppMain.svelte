@@ -4,8 +4,9 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import { extractCipherKey, extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { CipherType, type CipherLoginData, type CipherSecureNoteData, type VaultItem } from "$lib/types";
+    import { CipherType, CipherCategory, type CipherLoginData, type CipherSecureNoteData, type VaultItem } from "$lib/types";
     import { getContext, onMount, setContext } from "svelte";
+    import { writable } from 'svelte/store';
 
     interface VaultData {
         id: string;
@@ -28,16 +29,16 @@
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
 
+    let filteredBy = $state(CipherCategory.All);
+  
     let isUnlock = $state(false);
     let vaultItems: Array<VaultItem> = $state([]);
 
-    onMount(async () => {
+    const loadCipher = async (): Promise<Array<VaultItem>> => {
+        const result: Array<VaultItem> = []
 
-        isUnlock = epsk != null;
-        if (!isUnlock) { return; }
-
-        const ciphers = await getCiphers();
-        if (ciphers.length <= 0) { return; }
+        const ciphers = await getCiphers({category: filteredBy});
+        if (ciphers.length <= 0) { return []; }
 
         const sk = await extractSymmetricKey(mk, epsk);
 
@@ -62,8 +63,23 @@
                     vaultData.content = await ck.decryptText(secureNoteData.note);
                     break;
             }
-            vaultItems.push(vaultData as VaultItem);
+            result.push(vaultData as VaultItem);
         }
+        return result;
+    };
+
+    $effect(() => {
+        loadCipher().then(items => {
+            vaultItems = items;
+        });
+    });
+
+    onMount(async () => {
+
+        isUnlock = epsk != null;
+        if (!isUnlock) { return; }
+
+        vaultItems = await loadCipher();
     });
 
 </script>
@@ -72,7 +88,7 @@
 <div class="uk-flex" style="height: 100vh;">
     {#if isUnlock}
         <div class="x-vault-side-nav">
-            <VaultSideNav />
+            <VaultSideNav bind:filteredBy={filteredBy} />
         </div>
         <div class="x-vault-main uk-width-expand">
             {#key vaultItems}
