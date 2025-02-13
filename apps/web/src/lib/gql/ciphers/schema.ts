@@ -43,3 +43,18 @@ export const GET_CIPHERS = `
         }
     }
 `;
+
+export const GET_CIPHER_DETAIL = `
+    query GetcCipherDetail($id: GlobalID!) {
+        cipher(id: $id) {
+            data
+            id
+            isFavorite
+            key
+            name
+            ownerId
+            type
+            created
+        }
+    }
+`;

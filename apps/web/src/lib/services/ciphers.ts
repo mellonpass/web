@@ -1,4 +1,8 @@
-import { CREATE_CIPHER, GET_CIPHERS } from "$lib/gql/ciphers/schema";
+import {
+  CREATE_CIPHER,
+  GET_CIPHER_DETAIL,
+  GET_CIPHERS,
+} from "$lib/gql/ciphers/schema";
 import { gqlClient } from "$lib/requests";
 import { CipherCategory, type Cipher } from "$lib/types";
 
@@ -48,4 +52,13 @@ export const getCiphers = async ({
   }
 
   return result;
+};
+
+export const getCipherById = async (id: string): Promise<Cipher> => {
+  const response = await gqlClient({
+    query: GET_CIPHER_DETAIL,
+    variables: { id: id },
+  });
+
+  return response.data.cipher as Cipher;
 };
