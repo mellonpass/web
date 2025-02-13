@@ -23,11 +23,15 @@ export interface Cipher {
   data: CipherData;
 }
 
-export interface VaultItem {
+export interface VaultData {
   id: string;
   type: CipherType;
-  selected: boolean;
   name: string;
+  selected: boolean;
+  content?: any;
+}
+
+export interface VaultItem extends VaultData {
   content: string;
 }
 

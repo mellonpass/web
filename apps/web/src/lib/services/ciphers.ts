@@ -31,8 +31,6 @@ export const getCiphers = async ({
     },
   };
 
-  console.log(variables);
-
   while (hasNextPage) {
     const response = await gqlClient({
       query: GET_CIPHERS,

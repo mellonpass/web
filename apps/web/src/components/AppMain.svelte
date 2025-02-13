@@ -2,19 +2,11 @@
     import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
-    import { extractCipherKey, extractSymmetricKey } from "$lib/key-generation";
+    import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { CipherType, CipherCategory, type CipherLoginData, type CipherSecureNoteData, type VaultItem } from "$lib/types";
+    import { decryptCipher } from "$lib/symmetric-encryption";
+    import { CipherCategory, type VaultItem } from "$lib/types";
     import { getContext, onMount, setContext } from "svelte";
-    import { writable } from 'svelte/store';
-
-    interface VaultData {
-        id: string;
-        type: CipherType;
-        name: string;
-        selected: boolean;
-        content?: any;
-    }
 
     if (localStorage.getItem("mk") != null) {
         setContext("mk", localStorage.getItem("mk"));
@@ -43,27 +35,8 @@
         const sk = await extractSymmetricKey(mk, epsk);
 
         for (let cipher of ciphers) {
-            const ck = await extractCipherKey(sk, cipher.key);
-
-            const vaultData: VaultData = {
-                id: cipher.id!,
-                type: cipher.type,
-                name: await ck.decryptText(cipher.name),
-                selected: false,
-            };
-
-            switch (cipher.type) {
-                case CipherType.LOGIN:
-                    const loginData = cipher.data as CipherLoginData;
-                    vaultData.content = await ck.decryptText(loginData.username);
-                    break;
-            
-                default:
-                    const secureNoteData = cipher.data as CipherSecureNoteData;
-                    vaultData.content = await ck.decryptText(secureNoteData.note);
-                    break;
-            }
-            result.push(vaultData as VaultItem);
+            const vaultItem = await decryptCipher(sk, cipher);
+            result.push(vaultItem);
         }
         return result;
     };

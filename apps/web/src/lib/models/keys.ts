@@ -1,4 +1,4 @@
-import { arrayBufferToHex, hexToArrayBuffer } from "$lib/utils/bytes";
+import { arrayBufferToHex, hexToArrayBuffer } from "$lib/bytes";
 import { ProtectedData } from "./data";
 
 abstract class BaseKey {
