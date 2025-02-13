@@ -1,7 +1,7 @@
 <script lang="ts">
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { unlock } from "$lib/services/accounts";
-    import { arrayBufferToHex } from "$lib/utils/bytes";
+    import { arrayBufferToHex } from "$lib/bytes";
 
     let mPass = $state("");
     let toggleMpass = $state(false);

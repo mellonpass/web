@@ -3,7 +3,7 @@
 
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { loginAccount } from "$lib/services/accounts";
-    import { arrayBufferToHex } from '$lib/utils/bytes';
+    import { arrayBufferToHex } from '$lib/bytes';
 
     type FormField = {
         name: string;
