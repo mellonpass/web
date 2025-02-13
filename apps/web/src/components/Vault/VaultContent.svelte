@@ -7,10 +7,17 @@
 
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
+    import { extractSymmetricKey } from "$lib/key-generation";
+    import { getCipherById } from "$lib/services/ciphers";
+    import { decryptCipher } from "$lib/symmetric-encryption";
 
     import type { Cipher } from "$lib/types";
+    import { getContext, onMount } from "svelte";
 
     let { vaultId = null } = $props();
+
+    const epsk: string = getContext("epsk");
+    const mk: string = getContext("mk");
 
     const VAULT_MAPPER: { [key: string]: { [key: string]: any } } = {
         "LOGIN": {
@@ -27,7 +34,6 @@
     let componentData = $state({});
 
     let editMode = $state(false);
-    // TODO: Get cipher data from db.
     let cipher: Cipher | null = $state(null);
 
     let VaultComponent = $derived.by(() => {
@@ -38,9 +44,19 @@
         }
     });
 
+    const loadCipherDetail = async () => {
+        const rawCipher = await getCipherById(vaultId);
+        const sk = await extractSymmetricKey(mk, epsk);
+        cipher = await decryptCipher(sk, rawCipher);
+    };
+
     const onSave = () => {
         console.log(componentData);
     };
+    
+    onMount(async () => {
+        await loadCipherDetail();
+    });
 
 </script>
 

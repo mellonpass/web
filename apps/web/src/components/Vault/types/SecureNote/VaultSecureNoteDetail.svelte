@@ -18,7 +18,7 @@
 
 <div class="x-panel uk-border-rounded uk-padding-small">
     <div>
-        {@html marked(cipher.data.note)}
+        {cipher.data.note}
     </div>
 </div>
 

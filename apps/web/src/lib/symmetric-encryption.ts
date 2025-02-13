@@ -85,3 +85,33 @@ export async function decryptCipherForVaultItem(
 
   return vaultData as VaultItem;
 }
+
+export async function decryptCipher(
+  sk: SymmetricKey,
+  cipher: Cipher
+): Promise<Cipher> {
+  const ck = await extractCipherKey(sk, cipher.key);
+  const cipherRaw: Partial<Cipher> = {
+    id: cipher.id!,
+    type: cipher.type,
+    name: await ck.decryptText(cipher.name),
+  };
+
+  switch (cipher.type) {
+    case CipherType.LOGIN:
+      const loginData = cipher.data as CipherLoginData;
+      cipherRaw.data = {
+        username: await ck.decryptText(loginData.username),
+        password: await ck.decryptText(loginData.password),
+      };
+      break;
+    default:
+      const secureNoteData = cipher.data as CipherSecureNoteData;
+      cipherRaw.data = {
+        note: await ck.decryptText(secureNoteData.note),
+      };
+      break;
+  }
+
+  return { ...cipherRaw } as Cipher;
+}
