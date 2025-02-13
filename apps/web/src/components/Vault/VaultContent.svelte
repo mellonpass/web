@@ -45,9 +45,11 @@
     });
 
     const loadCipherDetail = async () => {
-        const rawCipher = await getCipherById(vaultId);
-        const sk = await extractSymmetricKey(mk, epsk);
-        cipher = await decryptCipher(sk, rawCipher);
+        if (vaultId != null) {
+            const rawCipher = await getCipherById(vaultId);
+            const sk = await extractSymmetricKey(mk, epsk);
+            cipher = await decryptCipher(sk, rawCipher);
+        }
     };
 
     const onSave = () => {

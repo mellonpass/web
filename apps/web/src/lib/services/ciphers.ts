@@ -59,6 +59,5 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
     query: GET_CIPHER_DETAIL,
     variables: { id: id },
   });
-
   return response.data.cipher as Cipher;
 };
