@@ -1,7 +1,10 @@
 {
-  "name": "mellonpass-clienthub",
+  "name": "clienthub",
   "version": "1.0.0",
-  "description": "Monorepo for all MellonPass client applications",
+  "description": "Monorepo for all MellonPass client applications and shared packages",
   "author": "Roel Delos Reyes <badcoder28@gmail.com>",
-  "license": "GPL-3.0-only"
+  "license": "GPL-3.0-only",
+  "workspaces": [
+    "apps/web"
+  ]
 }
