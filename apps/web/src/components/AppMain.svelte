@@ -10,12 +10,12 @@
 
     if (localStorage.getItem("mk") != null) {
         setContext("mk", localStorage.getItem("mk"));
-        // localStorage.removeItem("mk");
+        localStorage.removeItem("mk");
     }
 
     if (localStorage.getItem("epsk") != null) {
         setContext("epsk", localStorage.getItem("epsk"));
-        // localStorage.removeItem("epsk");
+        localStorage.removeItem("epsk");
     }
 
     const epsk: string = getContext("epsk");
