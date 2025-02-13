@@ -5,63 +5,73 @@
 
 </script>
 
-<div class="x-side-nav-container uk-padding-small">
-
-    <div class="uk-margin">
+<div class="x-sidenav-container">
+    { /* @ts-ignore */ null }
+    <ul class="uk-nav-default" uk-nav>
         { /* @ts-ignore */ null }
-        <ul class="uk-nav-default" uk-nav>
-            { /* @ts-ignore */ null }
-            <li><a href onclick={() => { filteredBy=CipherCategory.All; }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: thumbnails"></span> All Items</a></li>
-            { /* @ts-ignore */ null }
-            <li><a href onclick={() => { filteredBy=CipherCategory.FAVORITES }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: star"></span> Favorites</a></li>
-        </ul>
-    </div>
-
-    <!-- Categories -->
-    <div class="uk-margin">
+        <li class:x-selected={filteredBy==CipherCategory.All} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.All; }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: thumbnails"></span> All Items</a></li>
         { /* @ts-ignore */ null }
-        <ul class="uk-nav-default" uk-nav>
-            <li class="uk-parent">
-                { /* @ts-ignore */ null }
-                <a href class="uk-text-default uk-text-bold">Categories <span uk-nav-parent-icon></span></a>
-                <ul class="uk-nav-sub">
+        <li class:x-selected={filteredBy==CipherCategory.FAVORITES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.FAVORITES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: star"></span> Favorites</a></li>
+        <div class="uk-margin-bottom"></div>
+        <!-- Categories -->
+        <li>
+            { /* @ts-ignore */ null }
+            <ul class="uk-nav-default" uk-nav>
+                <li class="uk-parent uk-open">
                     { /* @ts-ignore */ null }
-                    <li><a href onclick={() => { filteredBy=CipherCategory.LOGINS }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: sign-in"> </span>Logins</a></li>
-                    { /* @ts-ignore */ null }
-                    <li><a href onclick={() => { filteredBy=CipherCategory.SECURE_NOTES }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: file-text"> </span>Secure Notes</a></li>
+                    <a href class="uk-text-small x-nav-subheader">CATEGORIES <span uk-nav-parent-icon></span></a>
+                    <ul class="uk-nav-sub uk-padding-remove">
+                        { /* @ts-ignore */ null }
+                        <li class:x-selected={filteredBy==CipherCategory.LOGINS} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.LOGINS }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: sign-in"> </span>Logins</a></li>
+                        { /* @ts-ignore */ null }
+                        <li class:x-selected={filteredBy==CipherCategory.SECURE_NOTES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.SECURE_NOTES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: file-text"> </span>Secure Notes</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <div class="uk-margin-bottom"></div>
+        <!-- Tags -->
+        <!-- Uncomment when tags are available in the BE. -->
+        <!-- <li>
+            <div class="uk-margin">
+                <ul class="uk-nav-default" uk-nav>
+                    <li class="uk-parent">
+                        <a href class="uk-text-small uk-text-bold">Tags <span uk-nav-parent-icon></span></a>
+                        <ul class="uk-nav-sub">
+                            // add tag list here
+                        </ul>
+                    </li>
                 </ul>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Tags -->
-     <!-- Uncomment when tags are available in the BE. -->
-    <!-- <div class="uk-margin">
-        <ul class="uk-nav-default" uk-nav>
-            <li class="uk-parent">
-                <a href class="uk-text-default uk-text-bold">Tags <span uk-nav-parent-icon></span></a>
-                <ul class="uk-nav-sub">
-                     // add tag list here
-                </ul>
-            </li>
-        </ul>
-    </div> -->
-
-    <!-- Others -->
-    <div class="uk-margin">
+            </div>
+        </li> -->
+        <!-- Others -->
         { /* @ts-ignore */ null }
-        <ul class="uk-nav-default" uk-nav>
-            { /* @ts-ignore */ null }
-            <li><a href onclick={() => { filteredBy=CipherCategory.ARCHIVES }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: album"></span> Archives</a></li>
-            { /* @ts-ignore */ null }
-            <li><a href onclick={() => { filteredBy=CipherCategory.RECENTLY_DELETED }} class="uk-text-default"><span class="uk-margin-small-right" uk-icon="icon: trash"></span> Recently Deleted</a></li>
-        </ul>
-    </div>
+        <li class:x-selected={filteredBy==CipherCategory.ARCHIVES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.ARCHIVES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: album"></span> Archives</a></li>
+        { /* @ts-ignore */ null }
+        <li class:x-selected={filteredBy==CipherCategory.RECENTLY_DELETED} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.RECENTLY_DELETED }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: trash"></span> Recently Deleted</a></li>
+    </ul>
 </div>
 
 
 <style>
-    .x-side-nav-container a {
+    .x-sidenav-container {
+        padding: 8px;
+    }
+    .x-sidenav-container a {
         color: #424242;
     }
+
+    .x-sidenav-item {
+        padding: 2px 5px 2px 10px;
+    }
+
+    .x-nav-subheader {
+        font-weight: 500;
+        font-size: small;
+    }
+
+    .x-selected {
+        background-color: #d6dce8;
+    }
+
 </style>

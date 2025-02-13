@@ -23,18 +23,16 @@
     });
 
     onMount(() => {
-        setTimeout(() => {
-            if (filteredVaultListItem.length > 0) {
-                    const firstItem = findVaultItem(filteredVaultListItem[0].id!);
-                    if (firstItem) {
-                        firstItem.selected = true;
-                        selectedItem = {
-                            id: firstItem.id!,
-                            type: firstItem.type,
-                        };
-                    }
-            }
-        }, 100);
+        if (filteredVaultListItem.length > 0) {
+                const firstItem = findVaultItem(filteredVaultListItem[0].id!);
+                if (firstItem) {
+                    firstItem.selected = true;
+                    selectedItem = {
+                        id: firstItem.id!,
+                        type: firstItem.type,
+                    };
+                }
+        }
     });
 
     const findVaultItem = (itemId: string): VaultItem | undefined => {
