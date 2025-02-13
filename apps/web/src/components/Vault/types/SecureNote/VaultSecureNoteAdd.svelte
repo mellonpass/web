@@ -5,6 +5,7 @@
     import { getContext } from "svelte";
     import { createCipher } from "$lib/services/ciphers";
     import { CipherType, type Cipher } from "$lib/types";
+  import { encryptCipher } from "$lib/symmetric-encryption";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -46,18 +47,16 @@
         if (e.target.checkValidity()) {
             const ck = await generateCipherKey();
             const sk = await extractSymmetricKey(mk, epsk);
-            const pck = await sk.protectKey(ck);
 
-            const encoder = new TextEncoder();
-            const cipher: Cipher = {
+            const cipher = await encryptCipher({
+                sk: sk,
+                ck: ck,
                 type: CipherType.SECURE_NOTE,
-                key: pck.toBase64(),
-                name: await ck.encrypt(encoder.encode(cipherName.value)),
-                isFavorite: false,
+                name: cipherName.value,
                 data: {
-                    note: await ck.encrypt(encoder.encode(cipherNote.value!)),
+                    note: cipherNote.value!
                 }
-            };
+            });
 
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {
