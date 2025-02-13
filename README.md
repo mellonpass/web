@@ -23,27 +23,35 @@ Make sure you have the following installed on your machine:
 
 1. Cloning the repository:
 
-    ```sh
+    ```
     git clone git@github.com:mellonpass/clienthub.git
     ```
 
 1. Installing dependencies:
 
-    ```sh
+    ```
     npm i --only=dev -w <workspace/path>
     ```
 
     If you want to run a specific workspace application:
 
-    ```sh
+    ```
     npm i --only=dev -w apps/web
     ```
 
 ### Running the application
 
-```sh
-npm run dev -w <workspace/path>
-```
+1. Setup local environment variables.
+
+    ```
+    cp workspace/path/.env.example workspace/path/.env
+    ```
+
+1. Starting the development server:
+
+    ```
+    npm run dev -w <workspace/path>
+    ```
 
 See [Scripts](#scripts) for more details.
 
