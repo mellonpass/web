@@ -33,16 +33,16 @@ Make sure you have the following installed on your machine:
     npm i --only=dev -w <workspace/path>
     ```
 
-    If you want to run the web application:
+    If you want to run a specific workspace application:
 
     ```sh
     npm i --only=dev -w apps/web
     ```
 
-### Running the applications
+### Running the application
 
 ```sh
-npm run <script> -w <workspace/path>
+npm run dev -w <workspace/path>
 ```
 
 See [Scripts](#scripts) for more details.
