@@ -4,7 +4,7 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { decryptCipher } from "$lib/symmetric-encryption";
+    import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
     import { CipherCategory, type VaultItem } from "$lib/types";
     import { getContext, onMount, setContext } from "svelte";
 
@@ -35,7 +35,7 @@
         const sk = await extractSymmetricKey(mk, epsk);
 
         for (let cipher of ciphers) {
-            const vaultItem = await decryptCipher(sk, cipher);
+            const vaultItem = await decryptCipherForVaultItem(sk, cipher);
             result.push(vaultItem);
         }
         return result;

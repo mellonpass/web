@@ -59,7 +59,7 @@ export async function encryptCipher({
   return cipher;
 }
 
-export async function decryptCipher(
+export async function decryptCipherForVaultItem(
   sk: SymmetricKey,
   cipher: Cipher
 ): Promise<VaultItem> {
