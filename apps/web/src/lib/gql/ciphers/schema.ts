@@ -26,14 +26,13 @@ export const GET_CIPHERS = `
             edges {
                 cursor
                 node {
-                    created
                     data
                     id
                     isFavorite
                     key
                     name
-                    ownerId
                     type
+                    created
                 }
             }
             pageInfo {
@@ -52,7 +51,6 @@ export const GET_CIPHER_DETAIL = `
             isFavorite
             key
             name
-            ownerId
             type
             created
         }
