@@ -61,77 +61,75 @@
 
 </script>
 
-{#if vaultId}
-    <div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
-        {#if editMode}
-            <div class="uk-flex">
-                <div class="uk-width-expand">
-                    <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
-                </div>
-                <div>
-                    <button onclick={() => onSave()} class="uk-button uk-button-primary uk-button-small uk-border-rounded">
-                        Save
-                    </button>
-                    <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode}}>
-                        Cancel
-                    </button>
+<div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
+    {#if editMode}
+        <div class="uk-flex">
+            <div class="uk-width-expand">
+                <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
+            </div>
+            <div>
+                <button onclick={() => onSave()} class="uk-button uk-button-primary uk-button-small uk-border-rounded">
+                    Save
+                </button>
+                <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode}}>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    {:else}
+        <div class="uk-flex uk-flex-right">
+            <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
+            <div class="uk-inline x-vertical-center">
+                { /* @ts-ignore */ null}
+                <a
+                    href={null}
+                    uk-icon="icon: more-vertical"
+                    aria-label="more menu"
+                    class="uk-icon-link uk-margin-left"
+                ></a>
+                { /* @ts-ignore */ null}
+                <div uk-dropdown="mode: click">
+                    <ul class="uk-nav uk-dropdown-nav">
+                        <li>
+                            <a href={null} class="uk-text-default">
+                                { /* @ts-ignore */ null}
+                                <span uk-icon="icon: star" class="uk-margin-small-right"></span>
+                                Add to favorites
+                            </a>
+                        </li>
+                        <li class="uk-nav-divider"></li>
+                        <li>
+                            <a href={null} class="uk-text-default">
+                                { /* @ts-ignore */ null}
+                                <span uk-icon="icon: album" class="uk-margin-small-right"></span>
+                                Archive
+                            </a>
+                        </li>
+                        <li>
+                            <a href={null} class="uk-text-default" style="color: #D50000">
+                                { /* @ts-ignore */ null}
+                                <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
+                                Delete
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        {:else}
-            <div class="uk-flex uk-flex-right">
-                <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
-                <div class="uk-inline x-vertical-center">
-                    { /* @ts-ignore */ null}
-                    <a
-                        href={null}
-                        uk-icon="icon: more-vertical"
-                        aria-label="more menu"
-                        class="uk-icon-link uk-margin-left"
-                    ></a>
-                    { /* @ts-ignore */ null}
-                    <div uk-dropdown="mode: click">
-                        <ul class="uk-nav uk-dropdown-nav">
-                            <li>
-                                <a href={null} class="uk-text-default">
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: star" class="uk-margin-small-right"></span>
-                                    Add to favorites
-                                </a>
-                            </li>
-                            <li class="uk-nav-divider"></li>
-                            <li>
-                                <a href={null} class="uk-text-default">
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: album" class="uk-margin-small-right"></span>
-                                    Archive
-                                </a>
-                            </li>
-                            <li>
-                                <a href={null} class="uk-text-default" style="color: #D50000">
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
-                                    Delete
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        {/if}
-    </div>
+        </div>
+    {/if}
+</div>
 
-    { /* @ts-ignore */ null}
-    <div
-        class="x-vault-component uk-flex uk-flex-center uk-width-expand"
-        uk-height-viewport="offset-bottom: .x-edit-panel"
-    >
+{ /* @ts-ignore */ null}
+<div
+class="x-vault-component uk-flex uk-flex-center uk-width-expand"
+uk-height-viewport="offset-bottom: .x-edit-panel"
+>
+    <div class="uk-width-expand uk-flex uk-flex-column uk-flex-between">
         {#key editMode}
-            <div class="uk-width-expand uk-flex uk-flex-column uk-flex-between">
-                <VaultComponent {cipher} bind:data={componentData} />
-            </div>
+            <VaultComponent {cipher} bind:data={componentData} />
         {/key}
     </div>
-{/if}
+</div>
 
 
 <style>

@@ -87,11 +87,11 @@
                 {/if}
             </div>
         </div>
-        <div class="x-vault-content uk-width-expand">
-            {#key selectedItem}
+        {#key selectedItem}
+            <div class="x-vault-content uk-width-expand">
                 <VaultContent vaultId={selectedItem?.id}/>
-            {/key}
-        </div>
+            </div>
+        {/key}
     </div>
 </div>
 
