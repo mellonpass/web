@@ -29,63 +29,64 @@
 
 </script>
 
-<div class="uk-padding-small">
-    { /* @ts-ignore */ null }
-    <div class="uk-grid-small uk-flex-middle" uk-grid>
-        <div class="uk-width-auto">
-            <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
+<div class="uk-panel">
+    <div class="uk-padding-small">
+        { /* @ts-ignore */ null }
+        <div class="uk-grid-small uk-flex-middle" uk-grid>
+            <div class="uk-width-auto">
+                <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
+            </div>
+            <div class="uk-width-expand">
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                    bind:this={titleInputRef}
+                    bind:value={$initData.title}
+                    style="background: none;"
+                    class="uk-input uk-form-large x-editable-input"
+                    type="text"
+                    aria-label="Input"
+                    autofocus
+                >
+            </div>
         </div>
-        <div class="uk-width-expand">
-            <!-- svelte-ignore a11y_autofocus -->
+    </div>
+
+    <div class="x-panel uk-border-rounded">
+        <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
+            <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
             <input
-                bind:this={titleInputRef}
-                bind:value={$initData.title}
-                style="background: none;"
-                class="uk-input uk-form-large x-editable-input"
+                bind:value={$initData.username}
+                class="uk-input x-editable-input"
                 type="text"
                 aria-label="Input"
-                autofocus
             >
+        </div>
+        <hr class="uk-margin-remove">
+        <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
+            <span class="x-vertical-center uk-text-muted uk-margin-right">Password: </span>
+            {#if showPassword}
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                    bind:value={$initData.password}
+                    onfocusin={() => {showPassword = true}}
+                    onfocusout={() => {showPassword = false}}
+                    type="text"
+                    class="uk-input x-editable-input" 
+                    aria-label="Input"
+                    autofocus
+                >
+            {:else}
+                <input
+                    onfocusin={() => {showPassword = true}}
+                    type="text"
+                    class="uk-input x-editable-input" 
+                    aria-label="Input"
+                    value="• • • • • • • • • •"
+                >
+            {/if}
         </div>
     </div>
 </div>
-
-<div class="x-panel uk-border-rounded">
-    <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-        <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
-        <input
-            bind:value={$initData.username}
-            class="uk-input x-editable-input"
-            type="text"
-            aria-label="Input"
-        >
-    </div>
-    <hr class="uk-margin-remove">
-    <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-        <span class="x-vertical-center uk-text-muted uk-margin-right">Password: </span>
-        {#if showPassword}
-            <!-- svelte-ignore a11y_autofocus -->
-            <input
-                bind:value={$initData.password}
-                onfocusin={() => {showPassword = true}}
-                onfocusout={() => {showPassword = false}}
-                type="text"
-                class="uk-input x-editable-input" 
-                aria-label="Input"
-                autofocus
-            >
-        {:else}
-            <input
-                onfocusin={() => {showPassword = true}}
-                type="text"
-                class="uk-input x-editable-input" 
-                aria-label="Input"
-                value="• • • • • • • • • •"
-            >
-        {/if}
-    </div>
-</div>
-
 
 <style>
     .x-panel {

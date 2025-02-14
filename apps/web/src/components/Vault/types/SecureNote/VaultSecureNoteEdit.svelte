@@ -38,37 +38,38 @@
 
 </script>
 
-<div class="uk-padding-small">
-    { /* @ts-ignore */ null}
-    <div class="uk-grid-small uk-flex-middle" uk-grid>
-        <div class="uk-width-auto">
-            <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
-        </div>
-        <div class="uk-width-expand">
-            <!-- svelte-ignore a11y_autofocus -->
-            <input
-                bind:this={titleInputRef}
-                bind:value={$initData.title}
-                style="background: none;"
-                class="uk-input uk-form-large x-editable-input"
-                type="text"
-                aria-label="Input"
-                autofocus
-            >
+<div class="uk-panel">
+    <div class="uk-padding-small">
+        { /* @ts-ignore */ null}
+        <div class="uk-grid-small uk-flex-middle" uk-grid>
+            <div class="uk-width-auto">
+                <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
+            </div>
+            <div class="uk-width-expand">
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                    bind:this={titleInputRef}
+                    bind:value={$initData.title}
+                    style="background: none;"
+                    class="uk-input uk-form-large x-editable-input"
+                    type="text"
+                    aria-label="Input"
+                    autofocus
+                >
+            </div>
         </div>
     </div>
-</div>
 
-<div class="x-panel uk-border-rounded">
-    <textarea
-        id="note"
-        bind:this={textInputRef}
-        bind:value={$initData.note}
-        placeholder="This is the beginning of a note."
-        class="uk-textarea uk-border-rounded uk-width-1-1 uk-padding-small">
-    </textarea>
+    <div class="x-panel uk-border-rounded">
+        <textarea
+            id="note"
+            bind:this={textInputRef}
+            bind:value={$initData.note}
+            placeholder="This is the beginning of a note."
+            class="uk-textarea uk-border-rounded uk-width-1-1 uk-padding-small">
+        </textarea>
+    </div>
 </div>
-
 
 <style>
 

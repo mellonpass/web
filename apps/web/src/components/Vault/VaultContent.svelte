@@ -1,5 +1,4 @@
 <script lang="ts">
-    
     import IconButton from "$components/Buttons/IconButton.svelte";
 
     import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
@@ -63,7 +62,7 @@
 </script>
 
 {#if vaultId}
-    <div class:x-editing-mode={editMode} class="uk-padding-small">
+    <div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
         {#if editMode}
             <div class="uk-flex">
                 <div class="uk-width-expand">
@@ -121,19 +120,23 @@
         {/if}
     </div>
 
-    <div class="x-vault-component uk-flex uk-flex-center uk-width-expand">
-        <div class="uk-width-expand">
-            {#key editMode}
+    { /* @ts-ignore */ null}
+    <div
+        class="x-vault-component uk-flex uk-flex-center uk-width-expand"
+        uk-height-viewport="offset-bottom: .x-edit-panel"
+    >
+        {#key editMode}
+            <div class="uk-width-expand uk-flex uk-flex-column uk-flex-between">
                 <VaultComponent {cipher} bind:data={componentData} />
-            {/key}
-        </div>
+            </div>
+        {/key}
     </div>
 {/if}
 
 
 <style>
     .x-vault-component {
-        padding: 5px 15px;
+        padding: 0 15px;
     }
 
     .x-editing-mode {
