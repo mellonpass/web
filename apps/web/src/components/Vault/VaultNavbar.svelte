@@ -103,7 +103,9 @@
             { /* @ts-ignore */ null }
             <button type="button" aria-label="close modal" onclick={() => {UIkit.modal("#vault-modal").hide()}} uk-close></button>
         </div>
-        <ModalComponent />
+        {#key selectedModal}
+            <ModalComponent />
+        {/key}
     </div>
 </div>
 
