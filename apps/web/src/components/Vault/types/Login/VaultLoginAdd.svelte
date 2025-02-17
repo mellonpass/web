@@ -4,8 +4,9 @@
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
     import { createCipher } from "$lib/services/ciphers";
-    import { CipherType, type Cipher } from "$lib/types";
-  import { encryptCipher } from "$lib/symmetric-encryption";
+    import { CipherType } from "$lib/types";
+    import { encryptCipher } from "$lib/symmetric-encryption";
+    import { newVaultItemSignal } from "$lib/stores";
 
     let passwordToggle = $state(false);
     let errorCreate = $state(false);
@@ -70,6 +71,17 @@
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {
                 case "CipherCreateSuccess": {
+                    const createdCipher = response.data.cipher.create;
+
+                    // Alert new vault item.
+                    $newVaultItemSignal = {
+                        id: createdCipher.id,
+                        type: CipherType.LOGIN,
+                        name: cipherName.value,
+                        content: cipherUsername.value!,
+                        selected: true
+                    };
+
                     UIkit.modal("#vault-modal").hide();
 
                     setTimeout(() => {
