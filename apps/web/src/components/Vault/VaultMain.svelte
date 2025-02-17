@@ -12,7 +12,6 @@
 
     const newVaultItemSignalUnsubscriber = newVaultItemSignal.subscribe(newVaultItem => {
         if (newVaultItem) {
-            console.log(newVaultItem);
             const newItem = newVaultItem as VaultItem;
             vaultListItems.forEach(item => item.selected = false);
             vaultListItems.push(newItem);
