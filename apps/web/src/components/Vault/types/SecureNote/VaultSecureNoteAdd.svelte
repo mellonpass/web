@@ -6,6 +6,7 @@
     import { createCipher } from "$lib/services/ciphers";
     import { CipherType, type Cipher } from "$lib/types";
   import { encryptCipher } from "$lib/symmetric-encryption";
+  import { newVaultItemSignal } from "$lib/stores";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -61,6 +62,17 @@
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {
                 case "CipherCreateSuccess": {
+                    const createdCipher = response.data.cipher.create;
+
+                    // Alert new vault item.
+                    $newVaultItemSignal = {
+                        id: createdCipher.id,
+                        type: CipherType.LOGIN,
+                        name: cipherName.value,
+                        content: cipherNote.value!,
+                        selected: true
+                    };
+
                     UIkit.modal("#vault-modal").hide();
 
                     setTimeout(() => {

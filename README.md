@@ -83,7 +83,6 @@ The following scripts are available in the `aps/web` workspace package.json:
 
 To contribute, follow these steps:
 
-- Fork the repository.
 - Create a new branch (`git checkout -b feat/your-feature`).
 - Make your changes.
 - Commit your changes. See [conventional-commits](https://gist.github.com/roelzkie15/3fe7635c542aee64c568535eb8ea25d3) for composing commit messages.

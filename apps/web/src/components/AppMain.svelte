@@ -42,17 +42,20 @@
     };
 
     $effect(() => {
-        loadCipher().then(items => {
-            vaultItems = items;
-        });
+        if (isUnlock) {
+            loadCipher().then(items => {
+                vaultItems = items;
+            });
+        }
     });
 
     onMount(async () => {
 
         isUnlock = epsk != null;
-        if (!isUnlock) { return; }
+        if (isUnlock) {
+            vaultItems = await loadCipher();
+        }
 
-        vaultItems = await loadCipher();
     });
 
 </script>

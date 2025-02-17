@@ -1,13 +1,27 @@
 <script lang="ts">
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
+    import { newVaultItemSignal } from "$lib/stores";
     import type { VaultItem } from "$lib/types";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     
     let { vaultListItems = $bindable() }: { vaultListItems: Array<VaultItem> } = $props();
 
     let search: string | null = $state(null);
     let selectedItem: { id: string; type: string; } | null = $state(null);
+
+    const newVaultItemSignalUnsubscriber = newVaultItemSignal.subscribe(newVaultItem => {
+        if (newVaultItem) {
+            const newItem = newVaultItem as VaultItem;
+            vaultListItems.forEach(item => item.selected = false);
+            vaultListItems.push(newItem);
+            selectedItem = {
+                id: newItem.id!,
+                type: newItem.type,
+            }
+            $newVaultItemSignal = null;
+        }
+    });
 
     // Copy ciphers array to create difference reference.
     const filteredVaultListItem = $derived.by(() => {
@@ -20,19 +34,6 @@
         );
 
         return res;
-    });
-
-    onMount(() => {
-        if (filteredVaultListItem.length > 0) {
-                const firstItem = findVaultItem(filteredVaultListItem[0].id!);
-                if (firstItem) {
-                    firstItem.selected = true;
-                    selectedItem = {
-                        id: firstItem.id!,
-                        type: firstItem.type,
-                    };
-                }
-        }
     });
 
     const findVaultItem = (itemId: string): VaultItem | undefined => {
@@ -52,7 +53,23 @@
             };
         }
     };
-    
+
+    onMount(() => {
+        if (filteredVaultListItem.length > 0) {
+                const firstItem = findVaultItem(filteredVaultListItem[0].id!);
+                if (firstItem) {
+                    firstItem.selected = true;
+                    selectedItem = {
+                        id: firstItem.id!,
+                        type: firstItem.type,
+                    };
+                }
+        }
+    });
+
+    onDestroy(() => {
+        newVaultItemSignalUnsubscriber();
+    });
 
 </script>
 
