@@ -1,7 +1,11 @@
 import { get, writable, type Writable } from "svelte/store";
-import { type Cipher, type VaultItem } from "./types";
+import { CipherCategory, type Cipher, type VaultItem } from "./types";
 
 export const newVaultItemSignal: Writable<VaultItem | null> = writable(null);
+
+export const categoryFilter: Writable<CipherCategory> = writable(
+  CipherCategory.All
+);
 
 const _CipherStore = () => {
   const store = writable([] as Array<Cipher>);

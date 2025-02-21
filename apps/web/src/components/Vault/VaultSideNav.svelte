@@ -1,7 +1,6 @@
 <script lang="ts">
+    import { categoryFilter } from "$lib/stores";
     import { CipherCategory } from "$lib/types";
-
-    let { filteredBy = $bindable() } = $props();
 
 </script>
 
@@ -9,9 +8,9 @@
     { /* @ts-ignore */ null }
     <ul class="uk-nav-default" uk-nav>
         { /* @ts-ignore */ null }
-        <li class:x-selected={filteredBy==CipherCategory.All} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.All; }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: thumbnails"></span> All Items</a></li>
+        <li class:x-selected={$categoryFilter==CipherCategory.All} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.All; }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: thumbnails"></span> All Items</a></li>
         { /* @ts-ignore */ null }
-        <li class:x-selected={filteredBy==CipherCategory.FAVORITES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.FAVORITES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: star"></span> Favorites</a></li>
+        <li class:x-selected={$categoryFilter==CipherCategory.FAVORITES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.FAVORITES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: star"></span> Favorites</a></li>
         <div class="uk-margin-bottom"></div>
         <!-- Categories -->
         <li>
@@ -22,9 +21,9 @@
                     <a href class="uk-text-small x-nav-subheader">CATEGORIES <span uk-nav-parent-icon></span></a>
                     <ul class="uk-nav-sub uk-padding-remove">
                         { /* @ts-ignore */ null }
-                        <li class:x-selected={filteredBy==CipherCategory.LOGINS} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.LOGINS }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: sign-in"> </span>Logins</a></li>
+                        <li class:x-selected={$categoryFilter==CipherCategory.LOGINS} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.LOGINS }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: sign-in"> </span>Logins</a></li>
                         { /* @ts-ignore */ null }
-                        <li class:x-selected={filteredBy==CipherCategory.SECURE_NOTES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.SECURE_NOTES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: file-text"> </span>Secure Notes</a></li>
+                        <li class:x-selected={$categoryFilter==CipherCategory.SECURE_NOTES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.SECURE_NOTES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: file-text"> </span>Secure Notes</a></li>
                     </ul>
                 </li>
             </ul>
@@ -46,9 +45,9 @@
         </li> -->
         <!-- Others -->
         { /* @ts-ignore */ null }
-        <li class:x-selected={filteredBy==CipherCategory.ARCHIVES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.ARCHIVES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: album"></span> Archives</a></li>
+        <li class:x-selected={$categoryFilter==CipherCategory.ARCHIVES} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.ARCHIVES }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: album"></span> Archives</a></li>
         { /* @ts-ignore */ null }
-        <li class:x-selected={filteredBy==CipherCategory.RECENTLY_DELETED} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { filteredBy=CipherCategory.RECENTLY_DELETED }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: trash"></span> Recently Deleted</a></li>
+        <li class:x-selected={$categoryFilter==CipherCategory.RECENTLY_DELETED} class="x-sidenav-item uk-border-rounded"><a href onclick={() => { $categoryFilter=CipherCategory.RECENTLY_DELETED }} class="uk-text-small"><span class="uk-margin-small-right" uk-icon="icon: trash"></span> Recently Deleted</a></li>
     </ul>
 </div>
 
