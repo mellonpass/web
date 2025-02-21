@@ -63,13 +63,17 @@
         const sk = await extractSymmetricKey(mk, epsk);
         let cipher = null;
 
+        let baseCipherData = {
+            sk: sk,
+            ck: ck,
+            name: componentData.name,
+            type: componentData.type,
+        };
+
         switch (componentData.type) {
             case CipherType.LOGIN:
                 cipher = await encryptCipher({
-                    sk: sk,
-                    ck: ck,
-                    name: componentData.name,
-                    type: CipherType.LOGIN,
+                    ...baseCipherData,
                     data: {
                         username: componentData.username,
                         password: componentData.password
@@ -78,10 +82,7 @@
                 break;
             case CipherType.SECURE_NOTE:
                 cipher = await encryptCipher({
-                    sk: sk,
-                    ck: ck,
-                    name: componentData.name,
-                    type: CipherType.LOGIN,
+                    ...baseCipherData,
                     data: {
                         note: componentData.note,
                     }
