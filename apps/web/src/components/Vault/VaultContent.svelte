@@ -4,11 +4,11 @@
 
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
-    import { extractSymmetricKey } from "$lib/key-generation";
+    import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { cipherStore } from "$lib/stores";
-    import { decryptCipher } from "$lib/symmetric-encryption";
+    import { decryptCipher, encryptCipher } from "$lib/symmetric-encryption";
 
-    import type { Cipher } from "$lib/types";
+    import { CipherType, type Cipher } from "$lib/types";
     import { getContext, onMount } from "svelte";
 
     let { vaultId = null } = $props();
@@ -28,9 +28,10 @@
     };
 
     // Data assigned on component edit.
-    let componentData = $state({});
+    let componentData: any = $state({});
 
     let editMode = $state(false);
+    let formErrors = $state([]);
     let cipher: Cipher | null = $state(null);
 
     let VaultComponent = $derived.by(() => {
@@ -49,8 +50,46 @@
         }
     };
 
-    const onSave = () => {
-        console.log(componentData);
+    const onSave = async (e: any) => {
+        e.preventDefault();
+
+        formErrors = [];
+        if (componentData.errors.length > 0) {
+            formErrors = componentData.errors;
+            return;
+        }
+
+        const ck = await generateCipherKey();
+        const sk = await extractSymmetricKey(mk, epsk);
+        let cipher = null;
+
+        switch (componentData.type) {
+            case CipherType.LOGIN:
+                cipher = await encryptCipher({
+                    sk: sk,
+                    ck: ck,
+                    name: componentData.name,
+                    type: CipherType.LOGIN,
+                    data: {
+                        username: componentData.username,
+                        password: componentData.password
+                    }
+                });
+                break;
+            case CipherType.SECURE_NOTE:
+                cipher = await encryptCipher({
+                    sk: sk,
+                    ck: ck,
+                    name: componentData.name,
+                    type: CipherType.LOGIN,
+                    data: {
+                        note: componentData.note,
+                    }
+                });
+                break;
+        }
+
+        console.log(cipher);
     };
 
     onMount(async () => {
@@ -67,7 +106,7 @@
                     <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
                 </div>
                 <div>
-                    <button onclick={() => onSave()} class="uk-button uk-button-primary uk-button-small uk-border-rounded">
+                    <button form="vault-form" class="uk-button uk-button-primary uk-button-small uk-border-rounded">
                         Save
                     </button>
                     <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode}}>
@@ -123,11 +162,28 @@
 
 { /* @ts-ignore */ null}
 <div class="x-vault-component uk-flex uk-flex-center uk-width-expand" style="height: 93%;">
-    <div class="uk-width-expand uk-height-1-1">
-        {#key editMode}
+    {#key editMode}
+        <form
+            onsubmit={onSave}
+            id="vault-form"
+            class="uk-width-expand uk-flex uk-flex-column uk-height-1-1" 
+            novalidate
+        >
+            {#if formErrors.length > 0}
+                <div class="uk-padding-small uk-text-small">
+                    { /* @ts-ignore */ null }
+                    <div class="uk-alert-danger" uk-alert>
+                        <ul>
+                            {#each formErrors as error}
+                                <li>{error}</li>
+                            {/each}
+                        </ul>
+                    </div>
+                </div>
+            {/if}
             <VaultComponent {cipher} bind:data={componentData} />
-        {/key}
-    </div>
+        </form>
+    {/key}
 </div>
 
 

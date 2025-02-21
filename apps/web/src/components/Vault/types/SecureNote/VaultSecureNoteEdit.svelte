@@ -8,9 +8,9 @@
     let textInputRef: HTMLTextAreaElement;
 
     const initData = writable({
-        // Encrypt from cipher to initData.
         id: cipher.id,
-        title: cipher.name,
+        type: cipher.type,
+        name: cipher.name,
         note: cipher.data.note,
     });
 
@@ -29,6 +29,15 @@
     // component data for saving.
     initData.subscribe((value) => {
         data = value;
+
+        data.errors = [];
+        if (value.name == "") {
+            data.errors.push("Name is required.");
+        }
+
+        if (value.note == "") {
+            data.errors.push("Note is required.");
+        }
 
         if (textInputRef) {
             adjustTextAreaHeight();
@@ -49,7 +58,7 @@
                 <!-- svelte-ignore a11y_autofocus -->
                 <input
                     bind:this={titleInputRef}
-                    bind:value={$initData.title}
+                    bind:value={$initData.name}
                     style="background: none;"
                     class="uk-input uk-form-large x-editable-input"
                     type="text"

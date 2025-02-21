@@ -1,23 +1,35 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { writable } from 'svelte/store';
 
     let { cipher, data = $bindable({}) } = $props();
 
     let showPassword = $state(false);
 
-    const initData = writable({
-        // Encrypt from cipher to initData.
+    const loginData = writable({
         id: cipher.id,
-        title: cipher.name,
+        type: cipher.type,
+        name: cipher.name,
         username: cipher.data.username,
         password: cipher.data.password,
     });
 
-    // Capture initData changes and assign to
+    // Capture loginData changes and assign to
     // component data for saving.
-    initData.subscribe((value) => {
+    const loginDataUnsubscriber = loginData.subscribe((value) => {
         data = value;
+
+        // Inject error data.
+        data.errors = []
+        if (value.name == "") {
+            data.errors.push("Name is required.");
+        }
+        if (value.username == "") {
+            data.errors.push("Username is required.");
+        }
+        if (value.password == "") {
+            data.errors.push("Password is required.");
+        }
     });
 
     let titleInputRef: HTMLInputElement;
@@ -25,6 +37,10 @@
     onMount(() => {
         titleInputRef.focus();
         titleInputRef.select();
+    });
+
+    onDestroy(() => {
+        loginDataUnsubscriber();
     });
 
 </script>
@@ -40,12 +56,13 @@
                 <!-- svelte-ignore a11y_autofocus -->
                 <input
                     bind:this={titleInputRef}
-                    bind:value={$initData.title}
+                    bind:value={$loginData.name}
                     style="background: none;"
                     class="uk-input uk-form-large x-editable-input"
                     type="text"
                     aria-label="Input"
                     autofocus
+                    required
                 >
             </div>
         </div>
@@ -55,10 +72,11 @@
         <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
             <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
             <input
-                bind:value={$initData.username}
+                bind:value={$loginData.username}
                 class="uk-input x-editable-input"
                 type="text"
                 aria-label="Input"
+                required
             >
         </div>
         <hr class="uk-margin-remove">
@@ -67,13 +85,14 @@
             {#if showPassword}
                 <!-- svelte-ignore a11y_autofocus -->
                 <input
-                    bind:value={$initData.password}
+                    bind:value={$loginData.password}
                     onfocusin={() => {showPassword = true}}
                     onfocusout={() => {showPassword = false}}
                     type="text"
                     class="uk-input x-editable-input" 
                     aria-label="Input"
                     autofocus
+                    required
                 >
             {:else}
                 <input
@@ -82,6 +101,7 @@
                     class="uk-input x-editable-input" 
                     aria-label="Input"
                     value="• • • • • • • • • •"
+                    readonly
                 >
             {/if}
         </div>
