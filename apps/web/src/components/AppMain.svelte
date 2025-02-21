@@ -21,12 +21,12 @@
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
-  
+
     let isUnlock = $state(false);
     let vaultItems: Array<VaultItem> = $state([]);
 
-    const loadCipher = async (): Promise<Array<VaultItem>> => {
-        const ciphers = await getCiphers({category: $categoryFilter});
+    const loadAllCiphers = async (): Promise<Array<VaultItem>> => {
+        const ciphers = await getCiphers({category: CipherCategory.All});
         $cipherStore = ciphers;
 
         if ($cipherStore.length <= 0) { return []; }
@@ -70,7 +70,7 @@
     onMount(async () => {
         isUnlock = epsk != null;
         if (isUnlock) {
-            vaultItems = await loadCipher();
+            vaultItems = await loadAllCiphers();
         }
     });
 

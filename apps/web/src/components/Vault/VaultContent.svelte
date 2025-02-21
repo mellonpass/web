@@ -54,7 +54,7 @@
     const onSave = () => {
         console.log(componentData);
     };
-    
+
     onMount(async () => {
         await loadCipherDetail();
     });
