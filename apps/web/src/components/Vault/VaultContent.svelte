@@ -1,6 +1,4 @@
 <script lang="ts">
-    import IconButton from "$components/Buttons/IconButton.svelte";
-
     import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
     import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
 
@@ -79,7 +77,9 @@
             </div>
         {:else}
             <div class="uk-flex uk-flex-right">
-                <IconButton onclick={() => {editMode = !editMode}} icon="pencil" text="Edit"/>
+                <button onclick={() => {editMode = !editMode}} class="uk-button uk-button-default uk-button-small uk-border-rounded">
+                   Edit
+                </button>
                 <div class="uk-inline x-vertical-center">
                     { /* @ts-ignore */ null}
                     <a
@@ -122,11 +122,8 @@
 {/if}
 
 { /* @ts-ignore */ null}
-<div
-class="x-vault-component uk-flex uk-flex-center uk-width-expand"
-uk-height-viewport="offset-bottom: .x-edit-panel"
->
-    <div class="uk-width-expand uk-flex uk-flex-column uk-flex-between">
+<div class="x-vault-component uk-flex uk-flex-center uk-width-expand" style="height: 93%;">
+    <div class="uk-width-expand uk-height-1-1">
         {#key editMode}
             <VaultComponent {cipher} bind:data={componentData} />
         {/key}
