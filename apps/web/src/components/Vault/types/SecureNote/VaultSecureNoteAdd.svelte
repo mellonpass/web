@@ -5,8 +5,8 @@
     import { getContext } from "svelte";
     import { createCipher } from "$lib/services/ciphers";
     import { CipherType, type Cipher } from "$lib/types";
-  import { encryptCipher } from "$lib/symmetric-encryption";
-  import { newVaultItemSignal } from "$lib/stores";
+    import { encryptCipher } from "$lib/symmetric-encryption";
+    import { cipherStore, newVaultItemSignal } from "$lib/stores";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -63,6 +63,7 @@
             switch (response.data.cipher.create.__typename) {
                 case "CipherCreateSuccess": {
                     const createdCipher = response.data.cipher.create;
+                    cipherStore.add(createdCipher as Cipher);
 
                     // Alert new vault item.
                     $newVaultItemSignal = {

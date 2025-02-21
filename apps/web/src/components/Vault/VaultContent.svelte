@@ -7,7 +7,7 @@
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
     import { extractSymmetricKey } from "$lib/key-generation";
-    import { getCipherById } from "$lib/services/ciphers";
+    import { cipherStore } from "$lib/stores";
     import { decryptCipher } from "$lib/symmetric-encryption";
 
     import type { Cipher } from "$lib/types";
@@ -45,7 +45,7 @@
 
     const loadCipherDetail = async () => {
         if (vaultId != null) {
-            const rawCipher = await getCipherById(vaultId);
+            const rawCipher = cipherStore.get(vaultId)!;
             const sk = await extractSymmetricKey(mk, epsk);
             cipher = await decryptCipher(sk, rawCipher);
         }

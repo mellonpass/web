@@ -4,9 +4,9 @@
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { getContext } from "svelte";
     import { createCipher } from "$lib/services/ciphers";
-    import { CipherType } from "$lib/types";
+    import { CipherType, type Cipher } from "$lib/types";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { newVaultItemSignal } from "$lib/stores";
+    import { cipherStore, newVaultItemSignal } from "$lib/stores";
 
     let passwordToggle = $state(false);
     let errorCreate = $state(false);
@@ -72,6 +72,7 @@
             switch (response.data.cipher.create.__typename) {
                 case "CipherCreateSuccess": {
                     const createdCipher = response.data.cipher.create;
+                    cipherStore.add(createdCipher as Cipher);
 
                     // Alert new vault item.
                     $newVaultItemSignal = {
