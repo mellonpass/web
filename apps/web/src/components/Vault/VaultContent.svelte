@@ -103,8 +103,7 @@
                 cipherStore.edit(updatedCipher);
 
                 const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
-                updatedVaultItem.selected = true;
-                vaultItemStore.edit(updatedVaultItem)
+                vaultItemStore.edit({...updatedVaultItem, selected: true})
 
                 loadCipherDetail();
                 editMode = !editMode;

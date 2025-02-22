@@ -34,15 +34,20 @@
     };
 
     const vaultItemStoreUnsubscriber = vaultItemStore.subscribe(vaultItems => {
-        if (vaultItems.length > 0) {
-            const previousSelectedItem = $vaultItemStore.find(item => item.id == selectedItem!.id);
-            if (previousSelectedItem) {
-                previousSelectedItem.selected = false;
-            }
+        if (vaultItems.length > 0 && selectedItem) {
+            // For new vault items, they're assigned as selected upon creation
+            // but not selected yet on this component. Current selected item in
+            // this component is assigned to the `selectedItem`.
+            const selectedItems = $vaultItemStore.filter(item => item.selected);
 
-            const currentSelected = $vaultItemStore.find(item => item.selected);
-            if (currentSelected) {
-                selectItem(currentSelected.id);
+            // If there are more than 1 items with selected=true, new vault items were added.
+            // Pick the newly created vault item and select it on this component using
+            // `selectItem` function.
+            if (selectedItems.length > 1) {
+                const newItem = selectedItems.find(item => item.id != selectedItem!.id);
+                selectItem(newItem!.id);
+            } else {
+                selectItem(selectedItem!.id)
             }
         }
     });
