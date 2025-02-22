@@ -7,7 +7,7 @@
 
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
+    import { categoryFilter, cipherStore, newVaultItem, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
     import { type Cipher, CipherCategory, CipherType, type VaultItem } from "$lib/types";
 
@@ -89,6 +89,11 @@
         selectVaultItem();
     });
 
+    const newVaultItemUnsubscribe = newVaultItem.subscribe(vaultItem => {
+        $categoryFilter = CipherCategory.All;
+        $selectedVaultItem = vaultItem;
+    });
+
     onMount(async () => {
         isUnlock = epsk != null;
         if (isUnlock) {
@@ -98,6 +103,7 @@
 
     onDestroy(() => {
         categoryFilterUnsubscriber();
+        newVaultItemUnsubscribe();
     });
 
 </script>

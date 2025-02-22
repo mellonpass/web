@@ -2,7 +2,7 @@
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
     import { searchFilter, selectedVaultItem, vaultItemStore } from "$lib/stores";
-    import type { VaultItem } from "$lib/types";
+    import { type VaultItem } from "$lib/types";
     import { onDestroy } from "svelte";
 
     let vaultItems: Array<VaultItem> = $state([]);

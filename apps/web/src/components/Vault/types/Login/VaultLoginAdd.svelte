@@ -3,7 +3,7 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { createCipher } from "$lib/services/ciphers";
-    import { cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
+    import { cipherStore, newVaultItem, vaultItemStore } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
     import { CipherType, type VaultItem } from "$lib/types";
     import { getContext } from "svelte";
@@ -74,14 +74,14 @@
                     const createdCipher = response.data.cipher.create;
                     cipherStore.add(createdCipher);
 
-                    const newVaultItem: VaultItem = {
+                    const newLoginItem: VaultItem = {
                         id: createdCipher.id,
                         type: CipherType.LOGIN,
                         name: cipherName.value,
                         content: cipherUsername.value!,
                     }
-                    $selectedVaultItem = newVaultItem;
-                    vaultItemStore.add(newVaultItem);
+                    $newVaultItem = newLoginItem;
+                    vaultItemStore.add(newLoginItem);
 
                     UIkit.modal("#vault-modal").hide();
 
