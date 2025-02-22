@@ -2,11 +2,11 @@
     import UIkit from "uikit";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { getContext } from "svelte";
     import { createCipher } from "$lib/services/ciphers";
-    import { CipherType, type Cipher } from "$lib/types";
+    import { cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { cipherStore, vaultItemStore } from "$lib/stores";
+    import { CipherType, type Cipher, type VaultItem } from "$lib/types";
+    import { getContext } from "svelte";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -64,13 +64,15 @@
                 case "Cipher": {
                     const createdCipher = response.data.cipher.create;
                     cipherStore.add(createdCipher as Cipher);
-                    vaultItemStore.add({
+
+                    const newVaultItem: VaultItem = {
                         id: createdCipher.id,
-                        type: CipherType.LOGIN,
+                        type: CipherType.SECURE_NOTE,
                         name: cipherName.value,
                         content: cipherNote.value!,
-                        selected: true
-                    });
+                    }
+                    $selectedVaultItem = newVaultItem;
+                    vaultItemStore.add(newVaultItem);
 
                     UIkit.modal("#vault-modal").hide();
 

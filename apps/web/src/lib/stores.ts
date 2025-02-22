@@ -5,6 +5,8 @@ export const categoryFilter: Writable<CipherCategory> = writable(
   CipherCategory.All
 );
 
+export const selectedVaultItem: Writable<VaultItem | null> = writable(null);
+
 const _CipherStore = () => {
   const store = writable([] as Array<Cipher>);
 

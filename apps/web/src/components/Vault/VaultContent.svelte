@@ -10,11 +10,9 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { updateCipher } from "$lib/services/ciphers";
-    import { cipherStore, vaultItemStore } from "$lib/stores";
+    import { cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipher, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
     import { CipherType, type Cipher } from "$lib/types";
-
-    let { vaultId = null } = $props();
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
@@ -46,8 +44,8 @@
     });
 
     const loadCipherDetail = async () => {
-        if (vaultId != null) {
-            const rawCipher = cipherStore.get(vaultId)!;
+        if ($selectedVaultItem != null) {
+            const rawCipher = cipherStore.get($selectedVaultItem.id)!;
             const sk = await extractSymmetricKey(mk, epsk);
             cipher = await decryptCipher(sk, rawCipher);
         }
@@ -94,7 +92,7 @@
                 break;
         }
 
-        const cipherInput: Cipher = {..._cipher, id: vaultId} as Cipher;
+        const cipherInput: Cipher = {..._cipher, id: $selectedVaultItem!.id} as Cipher;
 
         const response = await updateCipher(cipherInput!);
         switch (response.data.cipher.update.__typename) {
@@ -103,7 +101,8 @@
                 cipherStore.edit(updatedCipher);
 
                 const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
-                vaultItemStore.edit({...updatedVaultItem, selected: true})
+                $selectedVaultItem = updatedVaultItem;
+                vaultItemStore.edit(updatedVaultItem)
 
                 loadCipherDetail();
                 editMode = !editMode;

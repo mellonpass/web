@@ -29,7 +29,6 @@ export interface VaultData {
   id: string;
   type: CipherType;
   name: string;
-  selected: boolean;
   content?: any;
 }
 
