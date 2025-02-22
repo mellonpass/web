@@ -21,6 +21,8 @@ export interface Cipher {
   key: string;
   name: string;
   data: CipherData;
+  created?: Date | null;
+  updated?: Date | null;
 }
 
 export interface VaultData {

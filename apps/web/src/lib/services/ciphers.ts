@@ -2,6 +2,7 @@ import {
   CREATE_CIPHER,
   GET_CIPHER_DETAIL,
   GET_CIPHERS,
+  UPDATE_CIPHER,
 } from "$lib/gql/ciphers/schema";
 import { gqlClient } from "$lib/requests";
 import { CipherCategory, type Cipher } from "$lib/types";
@@ -60,4 +61,18 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
     variables: { id: id },
   });
   return response.data.cipher as Cipher;
+};
+
+export const updateCipher = async (cipher: Cipher) => {
+  return await gqlClient({
+    query: UPDATE_CIPHER,
+    variables: {
+      input: {
+        id: cipher.id,
+        key: cipher.key,
+        name: cipher.name,
+        data: cipher.data,
+      },
+    },
+  });
 };

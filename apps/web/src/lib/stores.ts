@@ -17,12 +17,17 @@ const _CipherStore = () => {
       ciphers.push(cipher);
       store.set(ciphers);
     },
+    edit: (cipher: Cipher) => {
+      const ciphers = get(store);
+      let index = ciphers.findIndex((item) => item.id == cipher.id);
+      if (index !== -1) {
+        ciphers[index] = cipher;
+        store.set(ciphers);
+      }
+    },
     get: (id: string) => {
       const ciphers = get(store);
-      let index = ciphers.findIndex((i) => i.id == id);
-      if (index !== -1) {
-        return ciphers[index];
-      }
+      return ciphers.find((i) => i.id == id);
     },
   };
 };

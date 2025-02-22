@@ -3,16 +3,40 @@ export const CREATE_CIPHER = `
         cipher {
             create(input: $input) {
                 __typename
-                ... on CipherCreateSuccess {
+                ... on Cipher {
                     id
+                    key
                     name
                     type
-                    key
                     isFavorite
                     data
                     created
+                    updated
                 }
                 ... on CipherCreateFailed {
+                    message
+                }
+            }
+        }
+    }
+`;
+
+export const UPDATE_CIPHER = `
+    mutation UpdateCipher($input: UpdateCipherInput!) {
+        cipher {
+            update(input: $input) {
+                __typename
+                ... on Cipher {
+                    id
+                    key
+                    name
+                    type
+                    isFavorite
+                    data
+                    created
+                    updated
+                }
+                ... on CipherUpdateFailed {
                     message
                 }
             }
@@ -33,6 +57,7 @@ export const GET_CIPHERS = `
                     name
                     type
                     created
+                    updated
                 }
             }
             pageInfo {
@@ -53,6 +78,7 @@ export const GET_CIPHER_DETAIL = `
             name
             type
             created
+            updated
         }
     }
 `;
