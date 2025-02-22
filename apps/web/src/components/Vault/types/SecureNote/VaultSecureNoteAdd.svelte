@@ -6,7 +6,7 @@
     import { createCipher } from "$lib/services/ciphers";
     import { CipherType, type Cipher } from "$lib/types";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { cipherStore, newVaultItemSignal } from "$lib/stores";
+    import { cipherStore, vaultItemStore } from "$lib/stores";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
@@ -64,15 +64,13 @@
                 case "Cipher": {
                     const createdCipher = response.data.cipher.create;
                     cipherStore.add(createdCipher as Cipher);
-
-                    // Alert new vault item.
-                    $newVaultItemSignal = {
+                    vaultItemStore.add({
                         id: createdCipher.id,
                         type: CipherType.LOGIN,
                         name: cipherName.value,
                         content: cipherNote.value!,
                         selected: true
-                    };
+                    });
 
                     UIkit.modal("#vault-modal").hide();
 

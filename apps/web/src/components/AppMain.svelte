@@ -4,7 +4,7 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { categoryFilter, cipherStore } from "$lib/stores";
+    import { categoryFilter, cipherStore, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
     import { CipherCategory, CipherType, type Cipher, type VaultItem } from "$lib/types";
     import { getContext, onDestroy, onMount, setContext } from "svelte";
@@ -23,7 +23,6 @@
     const mk: string = getContext("mk");
 
     let isUnlock = $state(false);
-    let vaultItems: Array<VaultItem> = $state([]);
 
     const loadAllCiphers = async (): Promise<Array<VaultItem>> => {
         const ciphers = await getCiphers({category: CipherCategory.All});
@@ -46,23 +45,23 @@
     const categoryFilterUnsubscriber = categoryFilter.subscribe(async (category) => {
         switch(category) {
             case CipherCategory.All:
-                vaultItems = await decryptCiphers($cipherStore);
+                $vaultItemStore = await decryptCiphers($cipherStore);
                 break;
             case CipherCategory.FAVORITES:
                 const favorites = $cipherStore.filter(item => item.isFavorite);
-                vaultItems = await decryptCiphers(favorites);
+                $vaultItemStore = await decryptCiphers(favorites);
                 break;
             case CipherCategory.LOGINS:
                 const logins = $cipherStore.filter(item => item.type == CipherType.LOGIN);
-                vaultItems = await decryptCiphers(logins);
+                $vaultItemStore = await decryptCiphers(logins);
                 break;
             case CipherCategory.SECURE_NOTES:
                 const notes = $cipherStore.filter(item => item.type == CipherType.SECURE_NOTE);
-                vaultItems = await decryptCiphers(notes);
+                $vaultItemStore = await decryptCiphers(notes);
                 break;
             case CipherCategory.ARCHIVES:
             case CipherCategory.RECENTLY_DELETED:
-                vaultItems = [];
+                $vaultItemStore = [];
                 break;
         }
     });
@@ -70,7 +69,7 @@
     onMount(async () => {
         isUnlock = epsk != null;
         if (isUnlock) {
-            vaultItems = await loadAllCiphers();
+            $vaultItemStore = await loadAllCiphers();
         }
     });
 
@@ -87,9 +86,7 @@
             <VaultSideNav/>
         </div>
         <div class="x-vault-main uk-width-expand">
-            {#key vaultItems}
-                <VaultMain bind:vaultListItems={vaultItems}/>
-            {/key}
+            <VaultMain/>
         </div>
     {:else}
         <VaultLock />

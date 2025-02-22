@@ -1,52 +1,31 @@
 <script lang="ts">
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-    import { newVaultItemSignal } from "$lib/stores";
-    import type { VaultItem } from "$lib/types";
+    import { vaultItemStore } from "$lib/stores";
     import { onDestroy, onMount } from "svelte";
-    
-    let { vaultListItems = $bindable() }: { vaultListItems: Array<VaultItem> } = $props();
 
     let search: string | null = $state(null);
     let selectedItem: { id: string; type: string; } | null = $state(null);
 
-    const newVaultItemSignalUnsubscriber = newVaultItemSignal.subscribe(newVaultItem => {
-        if (newVaultItem) {
-            const newItem = newVaultItem as VaultItem;
-            vaultListItems.forEach(item => item.selected = false);
-            vaultListItems.push(newItem);
-            selectedItem = {
-                id: newItem.id!,
-                type: newItem.type,
-            }
-            $newVaultItemSignal = null;
-        }
-    });
-
     // Copy ciphers array to create difference reference.
     const filteredVaultListItem = $derived.by(() => {
-        if (vaultListItems.length == 0) { return [] }
+        if ($vaultItemStore.length == 0) { return [] }
 
-        const res = vaultListItems.filter(
+        const res = $vaultItemStore.filter(
             item => search ? item.name.toLowerCase().includes(search) : true
         ).sort(
             (a, b) => a.name.localeCompare(b.name)
         );
-
+        
         return res;
     });
 
-    const findVaultItem = (itemId: string): VaultItem | undefined => {
-        return vaultListItems.find(item => item.id == itemId);
-    };
-
-    const onItemSelect = (itemId: string) => {
-        // Use the vaultListItems to modify it's content and not the 
-        // derived filteredVaultListItem.
-        vaultListItems.forEach(item => item.selected = false);
-        const item = findVaultItem(itemId);
+    const selectItem = (itemId: string) => {
+        // unselect vault items first.
+        $vaultItemStore.forEach(item => item.selected = false);
+        const item = $vaultItemStore.find(item => item.id == itemId);
         if (item) {
-            item.selected = !item.selected;
+            item.selected = true;
             selectedItem = {
                 id: item.id!,
                 type: item.type,
@@ -54,21 +33,28 @@
         }
     };
 
-    onMount(() => {
-        if (filteredVaultListItem.length > 0) {
-                const firstItem = findVaultItem(filteredVaultListItem[0].id!);
-                if (firstItem) {
-                    firstItem.selected = true;
-                    selectedItem = {
-                        id: firstItem.id!,
-                        type: firstItem.type,
-                    };
-                }
+    const vaultItemStoreUnsubscriber = vaultItemStore.subscribe(vaultItems => {
+        if (vaultItems.length > 0) {
+            const previousSelectedItem = $vaultItemStore.find(item => item.id == selectedItem!.id);
+            if (previousSelectedItem) {
+                previousSelectedItem.selected = false;
+            }
+
+            const currentSelected = $vaultItemStore.find(item => item.selected);
+            if (currentSelected) {
+                selectItem(currentSelected.id);
+            }
         }
     });
 
+    onMount(() => {
+        setTimeout(() => {
+            selectItem(filteredVaultListItem[0].id);
+        }, 100);
+    });
+
     onDestroy(() => {
-        newVaultItemSignalUnsubscriber();
+        vaultItemStoreUnsubscriber();
     });
 
 </script>
@@ -81,7 +67,7 @@
             <ul class="uk-list uk-margin-top">
                 {#each filteredVaultListItem as item (item.id)}
                     <li class:x-selected={item.selected} class="x-uk-list-item uk-border-rounded">
-                        <a href={null} class="uk-link-reset" onclick={() => {onItemSelect(item.id)}}>
+                        <a href={null} class="uk-link-reset" onclick={() => {selectItem(item.id)}}>
                             <div class="uk-flex">
                                 <div class="uk-width-auto">
                                     <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
