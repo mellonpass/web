@@ -70,7 +70,7 @@
 
             const response = await createCipher(cipher);
             switch (response.data.cipher.create.__typename) {
-                case "CipherCreateSuccess": {
+                case "Cipher": {
                     const createdCipher = response.data.cipher.create;
                     cipherStore.add(createdCipher as Cipher);
 
