@@ -10,8 +10,8 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { updateCipher } from "$lib/services/ciphers";
-    import { cipherStore } from "$lib/stores";
-    import { decryptCipher, encryptCipher } from "$lib/symmetric-encryption";
+    import { cipherStore, vaultItemStore } from "$lib/stores";
+    import { decryptCipher, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
     import { CipherType, type Cipher } from "$lib/types";
 
     let { vaultId = null } = $props();
@@ -101,6 +101,11 @@
             case "Cipher":
                 const updatedCipher = response.data.cipher.update as Cipher;
                 cipherStore.edit(updatedCipher);
+
+                const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
+                updatedVaultItem.selected = true;
+                vaultItemStore.edit(updatedVaultItem)
+
                 loadCipherDetail();
                 editMode = !editMode;
                 break;
