@@ -1,24 +1,11 @@
 <script lang="ts">
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
-    import { selectedVaultItem, vaultItemStore } from "$lib/stores";
+    import { searchFilter, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import type { VaultItem } from "$lib/types";
-    import { onMount } from "svelte";
+    import { onDestroy } from "svelte";
 
-    let search: string | null = $state(null);
-
-    // Copy ciphers array to create difference reference.
-    const filteredVaultListItem = $derived.by(() => {
-        if ($vaultItemStore.length == 0) { return [] }
-
-        const res = $vaultItemStore.filter(
-            item => search ? item.name.toLowerCase().includes(search) : true
-        ).sort(
-            (a, b) => a.name.localeCompare(b.name)
-        );
-        
-        return res;
-    });
+    let vaultItems: Array<VaultItem> = $state([]);
 
     const selectItem = (vaultItem: VaultItem) => {
         if (vaultItem) {
@@ -26,22 +13,39 @@
         }
     };
 
-    onMount(() => {
-        setTimeout(() => {
-            $selectedVaultItem = filteredVaultListItem[0];
-        }, 100);
+    const searchFilterUnsubscribe = searchFilter.subscribe(value => {
+        if (["", null].includes(value)) { 
+            vaultItems = $vaultItemStore;
+        } else {
+            vaultItems = vaultItems.filter(
+                item => value ? item.name.toLowerCase().includes(value) : true
+            )
+        };
+
+        if (vaultItems.length > 0) {
+            selectItem(vaultItems[0]);
+        }
+    });
+
+    const vaultItemStoreUnsubscribe = vaultItemStore.subscribe(items => {
+        vaultItems = items;
+    });
+
+    onDestroy(() => {
+        vaultItemStoreUnsubscribe();
+        searchFilterUnsubscribe();
     });
 
 </script>
 
 {#if $selectedVaultItem}
     <div class="x-vault-main-container uk-flex uk-flex-column">
-        <VaultNavbar bind:search={search} />
+        <VaultNavbar/>
         { /* @ts-ignore */ null }
         <div class="uk-flex" uk-height-viewport="offset-top: true">
             <div class="x-vault-list">
                 <ul class="uk-list uk-margin-top">
-                    {#each filteredVaultListItem as item (item.id)}
+                    {#each vaultItems as item (item.id)}
                         <li class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
                             <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
                                 <div class="uk-flex">
@@ -59,8 +63,8 @@
                     {/each}
                 </ul>
                 <div class="uk-text-center">
-                    {#if filteredVaultListItem.length > 0}
-                        <span class="uk-text-meta">{filteredVaultListItem.length} item{filteredVaultListItem.length > 1 ? "s" : "" }</span>
+                    {#if vaultItems.length > 0}
+                        <span class="uk-text-meta">{vaultItems.length} item{vaultItems.length > 1 ? "s" : "" }</span>
                     {:else}
                         <span class="uk-text-meta">No items to show.</span>    
                     {/if}

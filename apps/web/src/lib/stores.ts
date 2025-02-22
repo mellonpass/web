@@ -6,6 +6,7 @@ export const categoryFilter: Writable<CipherCategory> = writable(
 );
 
 export const selectedVaultItem: Writable<VaultItem | null> = writable(null);
+export const searchFilter: Writable<string | null> = writable(null);
 
 const _CipherStore = () => {
   const store = writable([] as Array<Cipher>);

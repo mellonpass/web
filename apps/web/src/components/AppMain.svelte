@@ -1,13 +1,15 @@
 <script lang="ts">
+    import { getContext, onDestroy, onMount, setContext } from "svelte";
+
     import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
+
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
-    import { categoryFilter, cipherStore, vaultItemStore } from "$lib/stores";
+    import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
-    import { CipherCategory, CipherType, type Cipher, type VaultItem } from "$lib/types";
-    import { getContext, onDestroy, onMount, setContext } from "svelte";
+    import { type Cipher, CipherCategory, CipherType, type VaultItem } from "$lib/types";
 
     if (localStorage.getItem("mk") != null) {
         setContext("mk", localStorage.getItem("mk"));
@@ -24,12 +26,25 @@
 
     let isUnlock = $state(false);
 
-    const loadAllCiphers = async (): Promise<Array<VaultItem>> => {
+    const selectVaultItem = () => {
+        if ($vaultItemStore.length > 0) {
+            if ($selectedVaultItem == null) {
+                $selectedVaultItem = $vaultItemStore[0];
+            } else {
+                if (!$vaultItemStore.find(item => item.id == $selectedVaultItem!.id)) {
+                    $selectedVaultItem = $vaultItemStore[0];
+                }
+            }
+        }
+    };
+
+    const loadAllCiphers = async () => {
         const ciphers = await getCiphers({category: CipherCategory.All});
         $cipherStore = ciphers;
 
         if ($cipherStore.length <= 0) { return []; }
-        return await decryptCiphers($cipherStore);
+        $vaultItemStore = await decryptCiphers($cipherStore);
+        selectVaultItem();
     };
 
     const decryptCiphers = async (ciphers: Array<Cipher>): Promise<Array<VaultItem>> => {
@@ -43,33 +58,41 @@
     };
 
     const categoryFilterUnsubscriber = categoryFilter.subscribe(async (category) => {
+        let filteredItems: Array<VaultItem> = [];
         switch(category) {
             case CipherCategory.All:
-                $vaultItemStore = await decryptCiphers($cipherStore);
+                filteredItems = await decryptCiphers($cipherStore);
                 break;
             case CipherCategory.FAVORITES:
                 const favorites = $cipherStore.filter(item => item.isFavorite);
-                $vaultItemStore = await decryptCiphers(favorites);
+                filteredItems = await decryptCiphers(favorites);
                 break;
             case CipherCategory.LOGINS:
                 const logins = $cipherStore.filter(item => item.type == CipherType.LOGIN);
-                $vaultItemStore = await decryptCiphers(logins);
+                filteredItems = await decryptCiphers(logins);
                 break;
             case CipherCategory.SECURE_NOTES:
                 const notes = $cipherStore.filter(item => item.type == CipherType.SECURE_NOTE);
-                $vaultItemStore = await decryptCiphers(notes);
+                filteredItems = await decryptCiphers(notes);
                 break;
             case CipherCategory.ARCHIVES:
             case CipherCategory.RECENTLY_DELETED:
-                $vaultItemStore = [];
+                filteredItems = [];
                 break;
         }
+
+        if (filteredItems.length > 0) {
+            filteredItems = filteredItems.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        $vaultItemStore = filteredItems;
+        selectVaultItem();
     });
 
     onMount(async () => {
         isUnlock = epsk != null;
         if (isUnlock) {
-            $vaultItemStore = await loadAllCiphers();
+            await loadAllCiphers();
         }
     });
 

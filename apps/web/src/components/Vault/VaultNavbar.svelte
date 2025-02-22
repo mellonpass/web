@@ -1,11 +1,11 @@
 <script lang="ts">
-    import UIkit from 'uikit';
     import gravatar from 'gravatar';
+    import UIkit from 'uikit';
 
     import VaultLoginAdd from '$components/Vault/types/Login/VaultLoginAdd.svelte';
     import VaultSecureNoteAdd from '$components/Vault/types/SecureNote/VaultSecureNoteAdd.svelte';
+    import { searchFilter } from '$lib/stores';
 
-    let { search = $bindable()} = $props();
     let selectedModal: string | null = $state(null);
 
     const ModalMapper: { [key: string]: any } = {
@@ -25,7 +25,7 @@
         <div class="uk-inline uk-width-1-1">
             { /* @ts-ignore */ null }
             <span class="uk-form-icon" uk-icon="icon: search"></span>
-            <input name="search" bind:value={search} class="uk-input uk-form-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
+            <input name="search" bind:value={$searchFilter} class="uk-input uk-form-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
         </div>
     </div>
     <div class="uk-flex uk-flex-right">

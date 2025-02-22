@@ -68,7 +68,6 @@ export async function decryptCipherForVaultItem(
     id: cipher.id!,
     type: cipher.type,
     name: await ck.decryptText(cipher.name),
-    selected: false,
   };
 
   switch (cipher.type) {
