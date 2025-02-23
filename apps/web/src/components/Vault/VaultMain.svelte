@@ -17,7 +17,7 @@
         if (["", null].includes(value)) { 
             vaultItems = $vaultItemStore;
         } else {
-            vaultItems = vaultItems.filter(
+            vaultItems = $vaultItemStore.filter(
                 item => value ? item.name.toLowerCase().includes(value) : true
             )
         };
@@ -29,6 +29,11 @@
 
     const vaultItemStoreUnsubscribe = vaultItemStore.subscribe(items => {
         vaultItems = items;
+
+        // Remove selected vault item.
+        if (vaultItems.length == 0) {
+            $selectedVaultItem = null;
+        }
     });
 
     onDestroy(() => {
@@ -38,9 +43,8 @@
 
 </script>
 
-{#if $selectedVaultItem}
-    <div class="x-vault-main-container uk-flex uk-flex-column">
-        <VaultNavbar/>
+<div class="x-vault-main-container uk-flex uk-flex-column">
+    <VaultNavbar/>
         { /* @ts-ignore */ null }
         <div class="uk-flex" uk-height-viewport="offset-top: true">
             <div class="x-vault-list">
@@ -70,16 +74,15 @@
                     {/if}
                 </div>
             </div>
-            {#key $selectedVaultItem}
-                <div class="x-vault-content uk-width-expand">
-                    <VaultContent/>
-                </div>
-            {/key}
+            {#if $selectedVaultItem}
+                {#key $selectedVaultItem}
+                    <div class="x-vault-content uk-width-expand">
+                        <VaultContent/>
+                    </div>
+                {/key}
+            {/if}
         </div>
-    </div>
-{/if}
-
-
+</div>
 
 <style>
     .x-uk-list-item {
