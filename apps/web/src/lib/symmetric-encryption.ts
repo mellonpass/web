@@ -1,4 +1,5 @@
 import {
+  CipherStatus,
   CipherType,
   type Cipher,
   type CipherData,
@@ -16,12 +17,16 @@ export async function encryptCipher({
   name,
   type,
   data,
+  status,
+  isFavorite,
 }: {
   sk: SymmetricKey;
   ck: CipherKey;
   name: string;
   type: CipherType;
   data: CipherData;
+  status: CipherStatus;
+  isFavorite: boolean;
 }): Promise<Cipher> {
   const pck = await sk.protectKey(ck);
   const encoder = new TextEncoder();
@@ -52,7 +57,8 @@ export async function encryptCipher({
     type: type,
     key: pck.toBase64(),
     name: await ck.encrypt(encoder.encode(name)),
-    isFavorite: false,
+    isFavorite: isFavorite,
+    status: status,
     data: encrpytedData,
   };
 
@@ -93,6 +99,8 @@ export async function decryptCipher(
   const cipherRaw: Partial<Cipher> = {
     id: cipher.id!,
     type: cipher.type,
+    isFavorite: cipher.isFavorite,
+    status: cipher.status,
     name: await ck.decryptText(cipher.name),
   };
 

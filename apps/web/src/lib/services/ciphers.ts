@@ -16,7 +16,7 @@ export const createCipher = async (cipher: Cipher) => {
         key: cipher.key,
         name: cipher.name,
         data: cipher.data,
-        isFavorite: false,
+        isFavorite: cipher.isFavorite,
       },
     },
   });

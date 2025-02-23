@@ -5,7 +5,7 @@
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, type Cipher, type VaultItem } from "$lib/types";
+    import { CipherStatus, CipherType, type Cipher, type VaultItem } from "$lib/types";
     import { getContext } from "svelte";
 
     let errorCreate = $state(false);
@@ -54,6 +54,8 @@
                 ck: ck,
                 type: CipherType.SECURE_NOTE,
                 name: cipherName.value,
+                isFavorite: false,
+                status: CipherStatus.ACTIVE,
                 data: {
                     note: cipherNote.value!
                 }

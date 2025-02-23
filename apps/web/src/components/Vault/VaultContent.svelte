@@ -68,6 +68,8 @@
         let baseCipherData = {
             sk: sk,
             ck: ck,
+            status: cipher!.status,
+            isFavorite: cipher!.isFavorite,
             name: componentData.name,
             type: componentData.type,
         };

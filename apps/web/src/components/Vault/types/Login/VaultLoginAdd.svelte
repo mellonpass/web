@@ -5,7 +5,7 @@
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, type VaultItem } from "$lib/types";
+    import { CipherStatus, CipherType, type VaultItem } from "$lib/types";
     import { getContext } from "svelte";
 
     let passwordToggle = $state(false);
@@ -62,6 +62,8 @@
                 ck: ck,
                 name: cipherName.value,
                 type: CipherType.LOGIN,
+                isFavorite: false,
+                status: CipherStatus.ACTIVE,
                 data: {
                     username: cipherUsername.value!,
                     password: cipherPassword.value!

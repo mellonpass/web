@@ -14,7 +14,7 @@ export enum CipherType {
   SECURE_NOTE = "SECURE_NOTE",
 }
 
-enum CipherStatus {
+export enum CipherStatus {
   ACTIVE = "ACTIVE",
   ARCHIVED = "ARCHIVED",
   DELETED = "DELETED",
@@ -27,7 +27,7 @@ export interface Cipher {
   key: string;
   name: string;
   data: CipherData;
-  status?: CipherStatus | null;
+  status: CipherStatus;
   created?: Date | null;
   updated?: Date | null;
 }
