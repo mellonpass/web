@@ -33,22 +33,48 @@
 
     let editMode = $state(false);
     let formErrors: Array<string> = $state([]);
-    let cipher: Cipher | null = $state(null);
+    let rawCipher: Cipher | null = $state(null);
 
     let VaultComponent = $derived.by(() => {
-        if (cipher != null) {
+        if (rawCipher != null) {
             // @ts-ignore TODO: remove ts-ignore if default cipher is defined.
-            let component = VAULT_MAPPER[cipher.type];
+            let component = VAULT_MAPPER[rawCipher.type];
             return editMode ? component.edit : component.details;
         }
     });
 
     const loadCipherDetail = async () => {
         if ($selectedVaultItem != null) {
-            const rawCipher = cipherStore.get($selectedVaultItem.id)!;
+            const encryptedCipher = cipherStore.get($selectedVaultItem.id)!;
             const sk = await extractSymmetricKey(mk, epsk);
-            cipher = await decryptCipher(sk, rawCipher);
+            rawCipher = await decryptCipher(sk, encryptedCipher);
         }
+    };
+
+    const handleUpdateCipher = async (cipherInput: Cipher) => {
+        const response = await updateCipher(cipherInput!);
+        switch (response.data.cipher.update.__typename) {
+            case "Cipher":
+                const updatedCipher = response.data.cipher.update as Cipher;
+                cipherStore.edit(updatedCipher);
+
+                const sk = await extractSymmetricKey(mk, epsk);
+                const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
+                $selectedVaultItem = updatedVaultItem;
+                vaultItemStore.edit(updatedVaultItem)
+
+                loadCipherDetail();
+                editMode = !editMode;
+                break;
+            default:
+                formErrors.push(response.data.cipher.update.message);
+                break;
+        }
+    };
+
+    const updateFavorite = async () => {
+        const encryptedCipher = cipherStore.get($selectedVaultItem!.id)!;
+        await handleUpdateCipher({...encryptedCipher, isFavorite: !encryptedCipher.isFavorite});
     };
 
     const onSave = async (e: any) => {
@@ -68,8 +94,8 @@
         let baseCipherData = {
             sk: sk,
             ck: ck,
-            status: cipher!.status,
-            isFavorite: cipher!.isFavorite,
+            status: rawCipher!.status,
+            isFavorite: rawCipher!.isFavorite,
             name: componentData.name,
             type: componentData.type,
         };
@@ -95,24 +121,7 @@
         }
 
         const cipherInput: Cipher = {..._cipher, id: $selectedVaultItem!.id} as Cipher;
-
-        const response = await updateCipher(cipherInput!);
-        switch (response.data.cipher.update.__typename) {
-            case "Cipher":
-                const updatedCipher = response.data.cipher.update as Cipher;
-                cipherStore.edit(updatedCipher);
-
-                const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
-                $selectedVaultItem = updatedVaultItem;
-                vaultItemStore.edit(updatedVaultItem)
-
-                loadCipherDetail();
-                editMode = !editMode;
-                break;
-            default:
-                formErrors.push(response.data.cipher.update.message);
-                break;
-        }
+        await handleUpdateCipher(cipherInput);
     };
 
     onMount(async () => {
@@ -121,7 +130,7 @@
 
 </script>
 
-{#if cipher}
+{#if rawCipher}
     <div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
         {#if editMode}
             <div class="uk-flex">
@@ -154,10 +163,15 @@
                     <div uk-dropdown="mode: click">
                         <ul class="uk-nav uk-dropdown-nav">
                             <li>
-                                <a href={null} class="uk-text-default">
+                                <a
+                                    onclick={updateFavorite}
+                                    href={null}
+                                    class="uk-text-default"
+                                    class:x-favorite={rawCipher.isFavorite}
+                                >
                                     { /* @ts-ignore */ null}
                                     <span uk-icon="icon: star" class="uk-margin-small-right"></span>
-                                    Add to favorites
+                                    Favorite
                                 </a>
                             </li>
                             <li class="uk-nav-divider"></li>
@@ -204,7 +218,7 @@
                     </div>
                 </div>
             {/if}
-            <VaultComponent {cipher} bind:data={componentData} />
+            <VaultComponent cipher={rawCipher} bind:data={componentData} />
         </form>
     {/key}
 </div>
@@ -218,6 +232,10 @@
     .x-editing-mode {
         background: #f1f1f1;
         border-bottom: 1px solid #E0E0E0;
+    }
+
+    .x-favorite, .x-favorite:hover {
+        color: #FBC02D;
     }
 
 </style>
