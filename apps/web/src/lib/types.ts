@@ -14,6 +14,12 @@ export enum CipherType {
   SECURE_NOTE = "SECURE_NOTE",
 }
 
+enum CipherStatus {
+  ACTIVE = "ACTIVE",
+  ARCHIVED = "ARCHIVED",
+  DELETED = "DELETED",
+}
+
 export interface Cipher {
   id?: string;
   isFavorite: boolean;
@@ -21,6 +27,7 @@ export interface Cipher {
   key: string;
   name: string;
   data: CipherData;
+  status?: CipherStatus | null;
   created?: Date | null;
   updated?: Date | null;
 }
@@ -42,5 +49,5 @@ export enum CipherCategory {
   FAVORITES = "FAVORITES",
   LOGINS = "LOGINS",
   SECURE_NOTES = "SECURE_NOTES",
-  RECENTLY_DELETED = "RECENTLY_DELETED",
+  RECENTLY_DELETED = "DELETED",
 }

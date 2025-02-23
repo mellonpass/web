@@ -8,8 +8,9 @@ export const CREATE_CIPHER = `
                     key
                     name
                     type
-                    isFavorite
                     data
+                    isFavorite
+                    status
                     created
                     updated
                 }
@@ -31,8 +32,9 @@ export const UPDATE_CIPHER = `
                     key
                     name
                     type
-                    isFavorite
                     data
+                    isFavorite
+                    status
                     created
                     updated
                 }
@@ -50,12 +52,13 @@ export const GET_CIPHERS = `
             edges {
                 cursor
                 node {
-                    data
                     id
-                    isFavorite
                     key
                     name
                     type
+                    isFavorite
+                    data
+                    status
                     created
                     updated
                 }
@@ -71,12 +74,13 @@ export const GET_CIPHERS = `
 export const GET_CIPHER_DETAIL = `
     query GetcCipherDetail($id: GlobalID!) {
         cipher(id: $id) {
-            data
             id
-            isFavorite
             key
             name
             type
+            isFavorite
+            data
+            status
             created
             updated
         }

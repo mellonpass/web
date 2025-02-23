@@ -16,6 +16,7 @@ export const createCipher = async (cipher: Cipher) => {
         key: cipher.key,
         name: cipher.name,
         data: cipher.data,
+        isFavorite: false,
       },
     },
   });
@@ -72,6 +73,7 @@ export const updateCipher = async (cipher: Cipher) => {
         key: cipher.key,
         name: cipher.name,
         data: cipher.data,
+        isFavorite: cipher.isFavorite,
       },
     },
   });
