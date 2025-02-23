@@ -44,6 +44,7 @@
 
         if ($cipherStore.length <= 0) { return []; }
         $vaultItemStore = await decryptCiphers($cipherStore);
+        $vaultItemStore = $vaultItemStore.sort((a, b) => a.name.localeCompare(b.name));
         selectVaultItem();
     };
 
@@ -90,8 +91,11 @@
     });
 
     const newVaultItemUnsubscribe = newVaultItem.subscribe(vaultItem => {
+        if (vaultItem) {
+            $selectedVaultItem = vaultItem;
+            vaultItemStore.add(vaultItem!);
+        }
         $categoryFilter = CipherCategory.All;
-        $selectedVaultItem = vaultItem;
     });
 
     onMount(async () => {

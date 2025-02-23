@@ -6,6 +6,7 @@
     import { onDestroy } from "svelte";
 
     let vaultItems: Array<VaultItem> = $state([]);
+    let vaultListElements : Array<HTMLElement> = $state([]);
 
     const selectItem = (vaultItem: VaultItem) => {
         if (vaultItem) {
@@ -28,11 +29,20 @@
     });
 
     const vaultItemStoreUnsubscribe = vaultItemStore.subscribe(items => {
-        vaultItems = items;
+        vaultItems = items.sort((a, b) => a.name.localeCompare(b.name));;
 
         // Remove selected vault item.
         if (vaultItems.length == 0) {
             $selectedVaultItem = null;
+        } else {
+            if ($selectedVaultItem) {
+                const selectedItemIndex = vaultItems.findIndex(i => i.id == $selectedVaultItem!.id);
+                if (selectedItemIndex != -1) {
+                    setTimeout(() => {
+                        vaultListElements[selectedItemIndex].scrollIntoView({ behavior: "instant", block: "center" });
+                    }, 200);
+                }
+            }
         }
     });
 
@@ -50,7 +60,7 @@
             <div class="x-vault-list">
                 <ul class="uk-list uk-margin-top">
                     {#each vaultItems as item (item.id)}
-                        <li class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
+                        <li bind:this={vaultListElements[vaultItems.findIndex(i => i.id == item.id)]} class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
                             <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
                                 <div class="uk-flex">
                                     <div class="uk-width-auto">
