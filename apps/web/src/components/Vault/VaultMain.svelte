@@ -6,7 +6,6 @@
     import { onDestroy } from "svelte";
 
     let vaultItems: Array<VaultItem> = $state([]);
-    let vaultListElements : Array<HTMLElement> = $state([]);
 
     const selectItem = (vaultItem: VaultItem) => {
         if (vaultItem) {
@@ -35,13 +34,11 @@
         if (vaultItems.length == 0) {
             $selectedVaultItem = null;
         } else {
-            if ($selectedVaultItem) {
-                const selectedItemIndex = vaultItems.findIndex(i => i.id == $selectedVaultItem!.id);
-                if (selectedItemIndex != -1) {
-                    setTimeout(() => {
-                        vaultListElements[selectedItemIndex].scrollIntoView({ behavior: "instant", block: "center" });
-                    }, 200);
-                }
+            if ($selectedVaultItem != null) {
+                setTimeout(() => {
+                    const focusElement = document.getElementById($selectedVaultItem!.id);
+                    focusElement?.scrollIntoView({behavior: "instant", block: "center"});
+                }, 200);
             }
         }
     });
@@ -60,7 +57,7 @@
             <div class="x-vault-list">
                 <ul class="uk-list uk-margin-top">
                     {#each vaultItems as item (item.id)}
-                        <li bind:this={vaultListElements[vaultItems.findIndex(i => i.id == item.id)]} class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
+                        <li id={item.id} class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
                             <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
                                 <div class="uk-flex">
                                     <div class="uk-width-auto">
@@ -76,7 +73,7 @@
                         </li>
                     {/each}
                 </ul>
-                <div class="uk-text-center">
+                <div class="uk-padding-bottom-small uk-text-center">
                     {#if vaultItems.length > 0}
                         <span class="uk-text-meta">{vaultItems.length} item{vaultItems.length > 1 ? "s" : "" }</span>
                     {:else}

@@ -90,6 +90,7 @@
         selectVaultItem();
     });
 
+    // Called when there is a new vault item added.
     const newVaultItemUnsubscribe = newVaultItem.subscribe(vaultItem => {
         if (vaultItem) {
             $selectedVaultItem = vaultItem;
