@@ -251,6 +251,24 @@
                     </div>
                 </div>
             {/if}
+
+            {#if rawCipher}
+                {#if rawCipher.status == CipherStatus.ARCHIVED}
+                    { /* @ts-ignore */ null }
+                    <div class="uk-alert uk-text-bold" uk-alert>
+                        <p>This vault item is archived.</p>
+                    </div>
+                {/if}
+
+                {#if rawCipher.status == CipherStatus.DELETED}
+                    { /* @ts-ignore */ null }
+                    <div class="uk-alert-danger uk-text-bold" uk-alert>
+                        <p>This vault item is scheduled to be deleted.</p>
+                    </div>
+                {/if}
+            {/if}
+
+
             <VaultComponent cipher={rawCipher} bind:data={componentData} />
         </form>
     {/key}
