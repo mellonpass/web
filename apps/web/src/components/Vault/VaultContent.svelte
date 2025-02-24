@@ -155,13 +155,15 @@
             </div>
         {:else}
             <div class="uk-flex uk-flex-right">
-                <button
-                    onclick={() => {editMode = !editMode; formErrors = [];}}
-                    class:uk-margin-small-right={rawCipher.status != CipherStatus.ACTIVE}
-                    class="uk-button uk-button-default uk-button-small uk-border-rounded"
-                >
-                   Edit
-                </button>
+                {#if rawCipher.status != CipherStatus.DELETED}
+                    <button
+                        onclick={() => {editMode = !editMode; formErrors = [];}}
+                        class:uk-margin-small-right={rawCipher.status != CipherStatus.ACTIVE}
+                        class="uk-button uk-button-default uk-button-small uk-border-rounded"
+                    >
+                    Edit
+                    </button>
+                {/if}
 
                 {#if rawCipher.status == CipherStatus.ACTIVE}
                     <!-- More menu -->
@@ -201,7 +203,12 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href={null} class="uk-text-default" style="color: #D50000">
+                                    <a
+                                        onclick={() => updateStatus(CipherStatus.DELETED)}
+                                        href={null}
+                                        class="uk-text-default"
+                                        style="color: #D50000"
+                                    >
                                         { /* @ts-ignore */ null}
                                         <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
                                         Delete
