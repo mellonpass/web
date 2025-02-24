@@ -9,10 +9,10 @@
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { updateCipher } from "$lib/services/ciphers";
+    import { updateCipher, updateCipherStatus } from "$lib/services/ciphers";
     import { cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipher, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, type Cipher } from "$lib/types";
+    import { CipherStatus, CipherType, type Cipher } from "$lib/types";
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
@@ -51,11 +51,10 @@
         }
     };
 
-    const handleUpdateCipher = async (cipherInput: Cipher) => {
-        const response = await updateCipher(cipherInput!);
-        switch (response.data.cipher.update.__typename) {
+    const handleUpdateResponse = async (responsePayload: any) => {
+        switch (responsePayload.__typename) {
             case "Cipher":
-                const updatedCipher = response.data.cipher.update as Cipher;
+                const updatedCipher = responsePayload as Cipher;
                 cipherStore.edit(updatedCipher);
 
                 const sk = await extractSymmetricKey(mk, epsk);
@@ -67,15 +66,22 @@
                 editMode = !editMode;
                 break;
             default:
-                formErrors.push(response.data.cipher.update.message);
+                formErrors.push(responsePayload.message);
                 break;
         }
     };
 
     const updateFavorite = async () => {
         const encryptedCipher = cipherStore.get($selectedVaultItem!.id)!;
-        await handleUpdateCipher({...encryptedCipher, isFavorite: !encryptedCipher.isFavorite});
+        const response = await updateCipher({...encryptedCipher, isFavorite: !encryptedCipher.isFavorite});
+        await handleUpdateResponse(response.data.cipher.update);
     };
+
+    const updateStatus = async(status: CipherStatus) => {
+        const encryptedCipher = cipherStore.get($selectedVaultItem!.id)!;
+        const response = await updateCipherStatus(encryptedCipher.id!, status);
+        await handleUpdateResponse(response.data.cipher.updateStatus);
+    }
 
     const onSave = async (e: any) => {
         e.preventDefault();
@@ -121,7 +127,8 @@
         }
 
         const cipherInput: Cipher = {..._cipher, id: $selectedVaultItem!.id} as Cipher;
-        await handleUpdateCipher(cipherInput);
+        const response = await updateCipher(cipherInput);
+        await handleUpdateResponse(response.data.cipher.update);
     };
 
     onMount(async () => {
@@ -148,50 +155,69 @@
             </div>
         {:else}
             <div class="uk-flex uk-flex-right">
-                <button onclick={() => {editMode = !editMode; formErrors = [];}} class="uk-button uk-button-default uk-button-small uk-border-rounded">
+                <button
+                    onclick={() => {editMode = !editMode; formErrors = [];}}
+                    class:uk-margin-small-right={rawCipher.status != CipherStatus.ACTIVE}
+                    class="uk-button uk-button-default uk-button-small uk-border-rounded"
+                >
                    Edit
                 </button>
-                <div class="uk-inline x-vertical-center">
-                    { /* @ts-ignore */ null}
-                    <a
-                        href={null}
-                        uk-icon="icon: more-vertical"
-                        aria-label="more menu"
-                        class="uk-icon-link uk-margin-left"
-                    ></a>
-                    { /* @ts-ignore */ null}
-                    <div uk-dropdown="mode: click">
-                        <ul class="uk-nav uk-dropdown-nav">
-                            <li>
-                                <a
-                                    onclick={updateFavorite}
-                                    href={null}
-                                    class="uk-text-default"
-                                    class:x-favorite={rawCipher.isFavorite}
-                                >
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: star" class="uk-margin-small-right"></span>
-                                    Favorite
-                                </a>
-                            </li>
-                            <li class="uk-nav-divider"></li>
-                            <li>
-                                <a href={null} class="uk-text-default">
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: album" class="uk-margin-small-right"></span>
-                                    Archive
-                                </a>
-                            </li>
-                            <li>
-                                <a href={null} class="uk-text-default" style="color: #D50000">
-                                    { /* @ts-ignore */ null}
-                                    <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
-                                    Delete
-                                </a>
-                            </li>
-                        </ul>
+
+                {#if rawCipher.status == CipherStatus.ACTIVE}
+                    <!-- More menu -->
+                    <div class="uk-inline x-vertical-center">
+                        { /* @ts-ignore */ null}
+                        <a
+                            href={null}
+                            uk-icon="icon: more-vertical"
+                            aria-label="more menu"
+                            class="uk-icon-link uk-margin-left"
+                        ></a>
+                        { /* @ts-ignore */ null}
+                        <div uk-dropdown="mode: click">
+                            <ul class="uk-nav uk-dropdown-nav">
+                                <li>
+                                    <a
+                                        onclick={updateFavorite}
+                                        href={null}
+                                        class="uk-text-default"
+                                        class:x-favorite={rawCipher.isFavorite}
+                                    >
+                                        { /* @ts-ignore */ null}
+                                        <span uk-icon="icon: star" class="uk-margin-small-right"></span>
+                                        Favorite
+                                    </a>
+                                </li>
+                                <li class="uk-nav-divider"></li>
+                                <li>
+                                    <a
+                                        onclick={() => updateStatus(CipherStatus.ARCHIVED)}
+                                        href={null}
+                                        class="uk-text-default"
+                                    >
+                                        { /* @ts-ignore */ null}
+                                        <span uk-icon="icon: album" class="uk-margin-small-right"></span>
+                                        Archive
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href={null} class="uk-text-default" style="color: #D50000">
+                                        { /* @ts-ignore */ null}
+                                        <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
+                                        Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
+                {:else}
+                    <button
+                    onclick={() => updateStatus(CipherStatus.ACTIVE)}
+                        class="uk-button uk-button-default uk-button-small uk-border-rounded"
+                    >
+                        Restore
+                    </button>
+                {/if}
             </div>
         {/if}
     </div>

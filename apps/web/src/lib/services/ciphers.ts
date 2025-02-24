@@ -3,9 +3,10 @@ import {
   GET_CIPHER_DETAIL,
   GET_CIPHERS,
   UPDATE_CIPHER,
+  UPDATE_CIPHER_STATUS,
 } from "$lib/gql/ciphers/schema";
 import { gqlClient } from "$lib/requests";
-import { CipherCategory, type Cipher } from "$lib/types";
+import { CipherCategory, CipherStatus, type Cipher } from "$lib/types";
 
 export const createCipher = async (cipher: Cipher) => {
   return await gqlClient({
@@ -17,6 +18,18 @@ export const createCipher = async (cipher: Cipher) => {
         name: cipher.name,
         data: cipher.data,
         isFavorite: cipher.isFavorite,
+      },
+    },
+  });
+};
+
+export const updateCipherStatus = async (id: string, status: CipherStatus) => {
+  return await gqlClient({
+    query: UPDATE_CIPHER_STATUS,
+    variables: {
+      input: {
+        id: id,
+        status: status,
       },
     },
   });

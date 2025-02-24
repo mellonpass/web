@@ -46,6 +46,30 @@ export const UPDATE_CIPHER = `
     }
 `;
 
+export const UPDATE_CIPHER_STATUS = `
+    mutation UpdateCipherStatus($input: UpdateCipherStatusInput!) {
+        cipher {
+            updateStatus(input: $input) {
+                __typename
+                ... on Cipher {
+                    id
+                    key
+                    name
+                    type
+                    data
+                    isFavorite
+                    status
+                    created
+                    updated
+                }
+                ... on CipherUpdateFailed {
+                    message
+                }
+            }
+        }
+    }
+`;
+
 export const GET_CIPHERS = `
     query GetGiphers($first: Int!, $after: String, $filter: FilterCipher) {
         ciphers(first: $first, after: $after, filter: $filter) {
