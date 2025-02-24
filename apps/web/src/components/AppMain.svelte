@@ -9,7 +9,7 @@
     import { getCiphers } from "$lib/services/ciphers";
     import { categoryFilter, cipherStore, newVaultItem, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
-    import { type Cipher, CipherCategory, CipherType, type VaultItem } from "$lib/types";
+    import { type Cipher, CipherCategory, CipherStatus, CipherType, type VaultItem } from "$lib/types";
 
     if (localStorage.getItem("mk") != null) {
         setContext("mk", localStorage.getItem("mk"));
@@ -43,7 +43,7 @@
         $cipherStore = ciphers;
 
         if ($cipherStore.length <= 0) { return []; }
-        $vaultItemStore = await decryptCiphers($cipherStore);
+        $vaultItemStore = await decryptCiphers($cipherStore.filter(item => item.status == CipherStatus.ACTIVE));
         $vaultItemStore = $vaultItemStore.sort((a, b) => a.name.localeCompare(b.name));
         selectVaultItem();
     };
@@ -62,23 +62,28 @@
         let filteredItems: Array<VaultItem> = [];
         switch(category) {
             case CipherCategory.All:
-                filteredItems = await decryptCiphers($cipherStore);
+                const allItems = $cipherStore.filter(item => item.status == CipherStatus.ACTIVE);
+                filteredItems = await decryptCiphers(allItems);
                 break;
             case CipherCategory.FAVORITES:
-                const favorites = $cipherStore.filter(item => item.isFavorite);
+                const favorites = $cipherStore.filter(item => item.isFavorite && item.status == CipherStatus.ACTIVE);
                 filteredItems = await decryptCiphers(favorites);
                 break;
             case CipherCategory.LOGINS:
-                const logins = $cipherStore.filter(item => item.type == CipherType.LOGIN);
+                const logins = $cipherStore.filter(item => item.type == CipherType.LOGIN && item.status == CipherStatus.ACTIVE);
                 filteredItems = await decryptCiphers(logins);
                 break;
             case CipherCategory.SECURE_NOTES:
-                const notes = $cipherStore.filter(item => item.type == CipherType.SECURE_NOTE);
+                const notes = $cipherStore.filter(item => item.type == CipherType.SECURE_NOTE && item.status == CipherStatus.ACTIVE);
                 filteredItems = await decryptCiphers(notes);
                 break;
             case CipherCategory.ARCHIVES:
+                const archives = $cipherStore.filter(item => item.status == CipherStatus.ARCHIVED);
+                filteredItems = await decryptCiphers(archives);
+                break;
             case CipherCategory.RECENTLY_DELETED:
-                filteredItems = [];
+                const deleted = $cipherStore.filter(item => item.status == CipherStatus.DELETED);
+                filteredItems = await decryptCiphers(deleted);
                 break;
         }
 
@@ -107,8 +112,8 @@
     });
 
     onDestroy(() => {
-        categoryFilterUnsubscriber();
         newVaultItemUnsubscribe();
+        categoryFilterUnsubscriber();
     });
 
 </script>

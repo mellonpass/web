@@ -10,9 +10,9 @@
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { updateCipher, updateCipherStatus } from "$lib/services/ciphers";
-    import { cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
+    import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipher, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherStatus, CipherType, type Cipher } from "$lib/types";
+    import { CipherCategory, CipherStatus, CipherType, type Cipher } from "$lib/types";
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
@@ -75,12 +75,30 @@
         const encryptedCipher = cipherStore.get($selectedVaultItem!.id)!;
         const response = await updateCipher({...encryptedCipher, isFavorite: !encryptedCipher.isFavorite});
         await handleUpdateResponse(response.data.cipher.update);
+
+        if (!encryptedCipher.isFavorite) {
+            $categoryFilter = CipherCategory.FAVORITES;
+        } else {
+            $categoryFilter = CipherCategory.All;
+        }
     };
 
     const updateStatus = async(status: CipherStatus) => {
         const encryptedCipher = cipherStore.get($selectedVaultItem!.id)!;
         const response = await updateCipherStatus(encryptedCipher.id!, status);
         await handleUpdateResponse(response.data.cipher.updateStatus);
+
+        if (status == CipherStatus.ACTIVE) {
+            $categoryFilter = CipherCategory.All;
+        }
+
+        if (status == CipherStatus.ARCHIVED) {
+            $categoryFilter = CipherCategory.ARCHIVES;
+        }
+
+        if (status == CipherStatus.DELETED) {
+            $categoryFilter = CipherCategory.RECENTLY_DELETED;
+        }
     }
 
     const onSave = async (e: any) => {
