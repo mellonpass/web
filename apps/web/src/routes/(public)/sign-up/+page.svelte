@@ -141,6 +141,10 @@
     <p>
         By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
     </p>
+
+    <p class="uk-text-center uk-text-meta">
+        <a href="/login">Already have an account?</a>
+    </p>
 {:else}
     <header>
         <h2 class="uk-text-center">Check your email</h2>

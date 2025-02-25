@@ -127,4 +127,8 @@
     <div class="uk-margin">
         <button class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
+
+    <p class="uk-text-center">
+        <a href="/sign-up">Create an account</a>
+    </p>
 </form>
