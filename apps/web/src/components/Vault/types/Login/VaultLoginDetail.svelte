@@ -1,6 +1,8 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
 
+    import vaultImage from "$lib/assets/vaultImage.png";
+
     let { cipher } = $props();
     let copied = $state(false);
 
@@ -22,7 +24,7 @@
             { /* @ts-ignore */ null }
             <div class="uk-grid-small uk-flex-middle" uk-grid>
                 <div class="uk-width-auto">
-                    <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
+                    <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
                 </div>
                 <div class="uk-width-expand">
                     <h3 class="uk-card-title uk-margin-remove-bottom">{cipher.name}</h3>

@@ -1,9 +1,13 @@
 <script lang="ts">
+    import { onDestroy } from "svelte";
+
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
+
+    import vaultImage from "$lib/assets/vaultImage.png";
     import { searchFilter, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { type VaultItem } from "$lib/types";
-    import { onDestroy } from "svelte";
+
 
     let vaultItems: Array<VaultItem> = $state([]);
 
@@ -61,7 +65,7 @@
                             <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
                                 <div class="uk-flex">
                                     <div class="uk-width-auto">
-                                        <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src="https://placehold.jp/150x150.png" width="40" height="40">
+                                        <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src={vaultImage} width="50" height="40">
                                     </div>
                                     <div class="uk-width-expand uk-margin-left">
                                         <div class="uk-text-default">{item.name}</div>
