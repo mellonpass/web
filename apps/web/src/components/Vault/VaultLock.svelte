@@ -1,7 +1,8 @@
 <script lang="ts">
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
-    import { unlock } from "$lib/services/accounts";
+    import { logoutAccount, unlock } from "$lib/services/accounts";
     import { arrayBufferToHex } from "$lib/bytes";
+  import { invalidateAll } from "$app/navigation";
 
     let mPass = $state("");
     let toggleMpass = $state(false);
@@ -10,6 +11,11 @@
     let errorMsg = $state();
 
     const whoami = JSON.parse(localStorage.getItem("whoami")!);
+
+    const handleLogout = async () => {
+        await logoutAccount();
+        invalidateAll();
+    };
 
     const onSubmit = async () => {
         invalid = mPass == null || mPass.length == 0;
@@ -89,16 +95,21 @@
                 <div class="uk-margin">
                     <button class="uk-button uk-button-primary uk-border-rounded uk-width-1-1">Unlock</button>
                 </div>
-
-                <div class="uk-margin uk-text-center uk-text-default">
-                    <p>or</p>
-                </div>
-
-                <div class="uk-margin">
-                    <button class="uk-button uk-button-default uk-border-rounded uk-width-1-1">Logout</button>
-                </div>
-
             </form>
+
+            <div class="uk-margin uk-text-center uk-text-default">
+                <p>or</p>
+            </div>
+
+            <div class="uk-margin">
+                <button
+                    onclick={handleLogout}
+                    class="uk-button uk-button-default uk-border-rounded uk-width-1-1"
+                >
+                    Logout
+                </button>
+            </div>
+
         </div>
     </div>
 </section>
