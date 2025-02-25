@@ -64,6 +64,14 @@ export const loginAccount = async (email: string, loginHash: string) => {
   });
 };
 
+export const logoutAccount = async () => {
+  return await requests({
+    method: "POST",
+    url: `${PUBLIC_SERVER_URL}/accounts/logout`,
+    options: { credentials: "include" },
+  });
+};
+
 export const whoami = async () => {
   return await requests({
     method: "GET",

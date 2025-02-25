@@ -59,6 +59,10 @@
     };
 
     const categoryFilterUnsubscriber = categoryFilter.subscribe(async (category) => {
+        if (!isUnlock) {
+            return [];
+        }
+
         let filteredItems: Array<VaultItem> = [];
         switch(category) {
             case CipherCategory.All:

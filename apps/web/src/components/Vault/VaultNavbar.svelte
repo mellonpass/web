@@ -2,9 +2,12 @@
     import gravatar from 'gravatar';
     import UIkit from 'uikit';
 
+    import { invalidateAll } from '$app/navigation';
+
     import VaultLoginAdd from '$components/Vault/types/Login/VaultLoginAdd.svelte';
     import VaultSecureNoteAdd from '$components/Vault/types/SecureNote/VaultSecureNoteAdd.svelte';
     import { searchFilter } from '$lib/stores';
+    import { logoutAccount } from '$lib/services/accounts';
 
     let selectedModal: string | null = $state(null);
 
@@ -17,6 +20,17 @@
 
     const whoami = JSON.parse(localStorage.getItem("whoami")!);
     let gravatar_url = gravatar.url(whoami.identity, {s: '100', r: 'pg', d: 'retro'});
+
+    const handleLogout = async () => {
+        await logoutAccount();
+        // Forces to re-run load functions, and retrieve whoami to check
+        // if user is authenticated or not.
+        invalidateAll();
+    };
+
+    const handleLock = async () => {
+        window.location.assign("/");
+    };
 
 </script>
 
@@ -83,10 +97,25 @@
                         </div>
                     </li>
                     <hr>
-                    { /* @ts-ignore */ null }
-                    <li class="uk-text-default"><a href={null}><span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout</a></li>
-                    { /* @ts-ignore */ null }
-                    <li class="uk-text-default"><a href={null}><span class="uk-margin-small-right" uk-icon="lock"></span>Lock now</a></li>
+                    
+                    <li class="uk-text-default">
+                        <a
+                            onclick={handleLogout}
+                            href={null}
+                        >
+                            { /* @ts-ignore */ null }
+                            <span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout
+                        </a>
+                    </li>
+                    <li class="uk-text-default">
+                        <a
+                            onclick={handleLock}
+                            href={null}
+                        >
+                            { /* @ts-ignore */ null }
+                            <span class="uk-margin-small-right" uk-icon="lock"></span>Lock now
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
