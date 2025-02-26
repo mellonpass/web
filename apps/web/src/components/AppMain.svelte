@@ -59,7 +59,7 @@
     };
 
     const categoryFilterUnsubscriber = categoryFilter.subscribe(async (category) => {
-        if (!isUnlock) {
+        if (!isUnlock || $cipherStore.length < 1) {
             return [];
         }
 
