@@ -1,6 +1,8 @@
 import { arrayBufferToHex, hexToArrayBuffer } from "$lib/bytes";
 import { ProtectedData } from "./data";
 
+const BIT_SIZE = 8;
+
 abstract class BaseKey {
   protected aeskeyBuffer: Uint8Array<ArrayBuffer>;
   protected mackeyBuffer: Uint8Array<ArrayBuffer>;
@@ -17,7 +19,7 @@ abstract class BaseKey {
     return await crypto.subtle.importKey(
       "raw",
       this.aeskeyBuffer,
-      { name: "AES-GCM" },
+      { name: "AES-CTR" },
       false,
       ["encrypt", "decrypt"]
     );
@@ -54,10 +56,10 @@ export abstract class AESHMACKey extends BaseKey {
   }
 
   protected async hmacSign(
-    key: Uint8Array<ArrayBuffer>
+    data: Uint8Array<ArrayBuffer>
   ): Promise<Uint8Array<ArrayBuffer>> {
     const macKey = await this.getMACKey();
-    const buffer = await crypto.subtle.sign("HMAC", macKey, key);
+    const buffer = await crypto.subtle.sign("HMAC", macKey, data);
     return new Uint8Array(buffer);
   }
 
@@ -73,16 +75,15 @@ export abstract class AESHMACKey extends BaseKey {
     data: Uint8Array<ArrayBuffer> | Uint8Array
   ): Promise<Uint8Array<ArrayBuffer>> {
     const iv = crypto.getRandomValues(new Uint8Array(16));
+    const counterLength = iv.byteLength * BIT_SIZE;
 
-    // buffer includes 128-bit mac.
     const encBuffer = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: iv },
+      { name: "AES-CTR", counter: iv, length: counterLength },
       await this.getAESKey(),
       data
     );
 
     const buffer = new Uint8Array(encBuffer);
-    // sign result with another 256-bit mac.
     const mac = await this.hmacSign(buffer);
 
     // combine data into a single byte.
@@ -100,9 +101,10 @@ export abstract class AESHMACKey extends BaseKey {
     }
 
     const baseKey = await this.getAESKey();
+    const counterLength = iv.byteLength * BIT_SIZE;
     // decrypted data key.
     const buffer = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: iv },
+      { name: "AES-CTR", counter: iv, length: counterLength },
       baseKey,
       data
     );
