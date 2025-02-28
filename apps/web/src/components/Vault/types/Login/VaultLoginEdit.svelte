@@ -2,6 +2,8 @@
     import { onDestroy, onMount } from "svelte";
     import { writable } from 'svelte/store';
 
+    import vaultImage from "$lib/assets/vaultImage.png";
+
     let { cipher, data = $bindable({}) } = $props();
 
     let showPassword = $state(false);
@@ -50,7 +52,7 @@
         { /* @ts-ignore */ null }
         <div class="uk-grid-small uk-flex-middle" uk-grid>
             <div class="uk-width-auto">
-                <img class="uk-border-round" width="60" height="60" src="https://placehold.jp/150x150.png" alt="Avatar">
+                <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
             </div>
             <div class="uk-width-expand">
                 <!-- svelte-ignore a11y_autofocus -->
