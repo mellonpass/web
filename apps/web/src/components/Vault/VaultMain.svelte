@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
@@ -7,7 +7,7 @@
     import vaultImage from "$lib/assets/vaultImage.png";
     import { searchFilter, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { type VaultItem } from "$lib/types";
-
+    import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
 
     let vaultItems: Array<VaultItem> = $state([]);
 
@@ -47,6 +47,36 @@
         }
     });
 
+    onMount(() => {
+        const max_idle_time = 10; // In minute.
+        let idleTime: number = 0; // In minute.
+
+        const incrementIdleTime = () => {
+            idleTime++;
+            if (idleTime > max_idle_time) {
+                alert();
+                window.location.reload();
+            }
+        };
+
+        function resetIdleTime() {
+            idleTime = 0;
+        }
+
+        document.addEventListener('mousemove', resetIdleTime);
+        document.addEventListener('keypress', resetIdleTime);
+
+        const interval: number = setInterval(() => {
+            incrementIdleTime();
+        }, 60_000); // Increase per minute.
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('mousemove', resetIdleTime);
+            document.removeEventListener('keypress', resetIdleTime);
+        };
+    });
+
     onDestroy(() => {
         vaultItemStoreUnsubscribe();
         searchFilterUnsubscribe();
@@ -54,45 +84,50 @@
 
 </script>
 
-<div class="x-vault-main-container uk-flex uk-flex-column">
-    <VaultNavbar/>
-        { /* @ts-ignore */ null }
-        <div class="uk-flex" uk-height-viewport="offset-top: true">
-            <div class="x-vault-list">
-                <ul class="uk-list uk-margin-top">
-                    {#each vaultItems as item (item.id)}
-                        <li id={item.id} class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
-                            <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
-                                <div class="uk-flex">
-                                    <div class="uk-width-auto">
-                                        <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src={vaultImage} width="50" height="40">
+<div class="uk-flex" style="height: 100%;">
+    <div class="x-vault-side-nav">
+        <VaultSideNav/>
+    </div>
+    <div class="x-vault-main-container uk-flex uk-flex-column uk-width-expand">
+        <VaultNavbar/>
+            { /* @ts-ignore */ null }
+            <div class="uk-flex" uk-height-viewport="offset-top: true">
+                <div class="x-vault-list">
+                    <ul class="uk-list uk-margin-top">
+                        {#each vaultItems as item (item.id)}
+                            <li id={item.id} class:x-selected={item.id == $selectedVaultItem!.id} class="x-uk-list-item uk-border-rounded">
+                                <a href={null} class="uk-link-reset" onclick={() => {selectItem(item)}}>
+                                    <div class="uk-flex">
+                                        <div class="uk-width-auto">
+                                            <img alt="gravatar" class="uk-height-1-1 uk-object-cover uk-border-rounded" src={vaultImage} width="50" height="40">
+                                        </div>
+                                        <div class="uk-width-expand uk-margin-left">
+                                            <div class="uk-text-default">{item.name}</div>
+                                            <!-- TODO: simplify -->
+                                            <div class:uk-text-meta={item.id != $selectedVaultItem!.id} class="uk-text-small">{item.content.slice(0, 30)}</div>
+                                        </div>
                                     </div>
-                                    <div class="uk-width-expand uk-margin-left">
-                                        <div class="uk-text-default">{item.name}</div>
-                                        <!-- TODO: simplify -->
-                                        <div class:uk-text-meta={item.id != $selectedVaultItem!.id} class="uk-text-small">{item.content.slice(0, 30)}</div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                    {/each}
-                </ul>
-                <div class="uk-padding-bottom-small uk-text-center">
-                    {#if vaultItems.length > 0}
-                        <span class="uk-text-meta">{vaultItems.length} item{vaultItems.length > 1 ? "s" : "" }</span>
-                    {:else}
-                        <span class="uk-text-meta">No items to show.</span>    
-                    {/if}
-                </div>
-            </div>
-            {#if $selectedVaultItem}
-                {#key $selectedVaultItem}
-                    <div class="x-vault-content uk-width-expand">
-                        <VaultContent/>
+                                </a>
+                            </li>
+                        {/each}
+                    </ul>
+                    <div class="uk-padding-bottom-small uk-text-center">
+                        {#if vaultItems.length > 0}
+                            <span class="uk-text-meta">{vaultItems.length} item{vaultItems.length > 1 ? "s" : "" }</span>
+                        {:else}
+                            <span class="uk-text-meta">No items to show.</span>    
+                        {/if}
                     </div>
-                {/key}
-            {/if}
-        </div>
+                </div>
+                {#if $selectedVaultItem}
+                    {#key $selectedVaultItem}
+                        <div class="x-vault-content uk-width-expand">
+                            <VaultContent/>
+                        </div>
+                    {/key}
+                {/if}
+            </div>
+    </div>
 </div>
 
 <style>
@@ -108,6 +143,14 @@
     .x-uk-list-item.x-selected {
         color: white;
         background: #2962FF;
+    }
+
+    .x-vault-side-nav {
+        width: 235px;
+        height: 100%;
+        overflow: scroll;
+        background: #EEEEEE;
+        border-right: 1px solid #E0E0E0;
     }
 
     .x-vault-main-container {
