@@ -1,6 +1,5 @@
 <script lang="ts">
     import vaultImage from "$lib/assets/vaultImage.png";
-
     let { cipher } = $props();
 </script>
 
@@ -18,9 +17,7 @@
     </div>
 
     <div class="x-panel uk-border-rounded uk-padding-small">
-        <div>
-            {cipher.data.note}
-        </div>
+        {@html cipher.data.note}
     </div>
 </div>
 
@@ -28,5 +25,7 @@
     .x-panel {
         background-color: white;
         border: solid 1px whitesmoke;
+        white-space: pre;
     }
+
 </style>

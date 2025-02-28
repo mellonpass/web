@@ -103,8 +103,10 @@
                                         </div>
                                         <div class="uk-width-expand uk-margin-left">
                                             <div class="uk-text-default">{item.name}</div>
-                                            <!-- TODO: simplify -->
-                                            <div class:uk-text-meta={item.id != $selectedVaultItem!.id} class="uk-text-small">{item.content.slice(0, 30)}</div>
+                                            <div class:uk-text-meta={item.id != $selectedVaultItem!.id} class="uk-text-small">{
+                                                // If there is a new line (\n) show only the first line and limit to 20 chars.
+                                                (item.content.indexOf("\n") >= 0 ? item.content.slice(0, item.content.indexOf("\n")) : item.content).slice(0, 20)
+                                            }</div>
                                         </div>
                                     </div>
                                 </a>
