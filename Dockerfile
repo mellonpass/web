@@ -8,7 +8,8 @@ COPY package*.json ./
 RUN npm ci -w apps/web
 RUN npm i -w apps/web
 
-COPY .env.production ./
+# .env.production is created on ci/cd actions.
+COPY .env.production ./apps/web
 
 RUN npm run build -w apps/web
 
