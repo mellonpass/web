@@ -8,6 +8,8 @@ COPY package*.json ./
 RUN npm ci -w apps/web
 RUN npm i -w apps/web
 
+COPY .env.production ./
+
 RUN npm run build -w apps/web
 
 FROM scratch
