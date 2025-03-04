@@ -33,4 +33,4 @@ jobs:
           tags: ghcr.io/${{ github.repository }}/web:${{ github.ref_name }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache: true
-          cache-repository: ghcr.io/${{ github.repository }}/cache
+          cache-repository: ghcr.io/${{ github.repository }}/web/cache
