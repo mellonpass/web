@@ -1,0 +1,35 @@
+name: Build image
+
+on:
+  push:
+    branches: ["production"]
+
+jobs:
+  build:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Preparing metadata
+        uses: docker/metadata-action@v3
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+      - name: Logging in to ghrc.io
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: 'Create env file'
+        run: |
+          touch .env.production
+          echo ${{ env.PUBLIC_SERVER_URL }} > .env
+      - name: Build and upload docker image on ghrc.io
+        uses: int128/kaniko-action@v1
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache: true
+          cache-repository: ghcr.io/${{ github.repository }}/cache
