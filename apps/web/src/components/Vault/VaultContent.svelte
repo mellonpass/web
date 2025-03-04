@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Icon from "@iconify/svelte";
 
     import { getContext, onMount } from "svelte";
     import { fade } from "svelte/transition";
@@ -186,13 +187,13 @@
                 {#if rawCipher.status == CipherStatus.ACTIVE}
                     <!-- More menu -->
                     <div class="uk-inline x-vertical-center">
-                        { /* @ts-ignore */ null}
                         <a
                             href={null}
-                            uk-icon="icon: more-vertical"
                             aria-label="more menu"
-                            class="uk-icon-link uk-margin-left"
-                        ></a>
+                            class="uk-icon-link uk-margin-small-left"
+                        >
+                            <Icon icon="hugeicons:more-vertical-circle-01" width="24" height="24" />
+                        </a>
                         { /* @ts-ignore */ null}
                         <div uk-dropdown="mode: click">
                             <ul class="uk-nav uk-dropdown-nav">
@@ -203,8 +204,7 @@
                                         class="uk-text-default"
                                         class:x-favorite={rawCipher.isFavorite}
                                     >
-                                        { /* @ts-ignore */ null}
-                                        <span uk-icon="icon: star" class="uk-margin-small-right"></span>
+                                        <Icon class="uk-margin-small-right" icon="hugeicons:star" width="24" height="24" />
                                         Favorite
                                     </a>
                                 </li>
@@ -215,8 +215,7 @@
                                         href={null}
                                         class="uk-text-default"
                                     >
-                                        { /* @ts-ignore */ null}
-                                        <span uk-icon="icon: album" class="uk-margin-small-right"></span>
+                                        <Icon  class="uk-margin-small-right" icon="hugeicons:archive" width="24" height="24" />
                                         Archive
                                     </a>
                                 </li>
@@ -227,8 +226,7 @@
                                         class="uk-text-default"
                                         style="color: #D50000"
                                     >
-                                        { /* @ts-ignore */ null}
-                                        <span uk-icon="icon: minus-circle" class="uk-margin-small-right"></span>
+                                        <Icon class="uk-margin-small-right" icon="hugeicons:remove-circle" width="24" height="24" />
                                         Delete
                                     </a>
                                 </li>

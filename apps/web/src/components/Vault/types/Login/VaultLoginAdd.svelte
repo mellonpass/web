@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Icon from "@iconify/svelte";
     import UIkit from "uikit";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
@@ -163,14 +164,13 @@
                         type="{passwordToggle ? 'text' : 'password'}"
                         required
                     >
-                    { /* @ts-ignore */ null}
                     <a
                         aria-label="eye-icon"
                         class="uk-form-icon uk-form-icon-flip"
                         href={null}
-                        uk-icon="icon: {passwordToggle ? 'eye-slash' : 'eye'}"
                         onclick={() => {passwordToggle = !passwordToggle}}
                     >
+                        <Icon icon="hugeicons:{passwordToggle ? 'view-off-slash' : 'view'}" width="24" height="24" />
                     </a>
                 </div>
             </div>

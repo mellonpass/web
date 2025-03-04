@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Icon from "@iconify/svelte";
+
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
     import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
@@ -132,13 +134,12 @@
                 name="master-password"
                 bind:value={mpFieldVal}
             >
-            { /* @ts-ignore */ null }
             <a
                 href={null}
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
-                uk-icon="icon: {mpFieldToogle ? 'eye-slash' : 'eye'}"
                 onclick={() => {mpFieldToogle = !mpFieldToogle}}>
+                <Icon icon="hugeicons:{mpFieldToogle ? 'view-off-slash' : 'view'}" width="24" height="24" />
             </a>
         </div>
 
@@ -171,9 +172,9 @@
                 href={null}
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
-                uk-icon="icon: {mpcFieldToogle ? 'eye-slash' : 'eye'}"
                 onclick={() => {mpcFieldToogle = !mpcFieldToogle}}
             >
+                <Icon icon="hugeicons:{mpcFieldToogle ? 'view-off-slash' : 'view'}" width="24" height="24" />
             </a>
             <input
                 class="uk-input"

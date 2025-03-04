@@ -1,8 +1,10 @@
 <script lang="ts">
+    import Icon from "@iconify/svelte";
+
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { logoutAccount, unlock } from "$lib/services/accounts";
     import { arrayBufferToHex } from "$lib/bytes";
-  import { invalidateAll } from "$app/navigation";
+    import { invalidateAll } from "$app/navigation";
 
     let mPass = $state("");
     let toggleMpass = $state(false);
@@ -70,14 +72,13 @@
                             autocomplete="off"
                             required
                         >
-                        { /* @ts-ignore */ null }
                         <a
                             href={null}
                             aria-label="eye-icon"
                             class="uk-form-icon uk-form-icon-flip"
-                            uk-icon="icon: {toggleMpass ? "eye": "eye-slash"}"
                             onclick={() => { toggleMpass = !toggleMpass }}
                         >
+                            <Icon icon="hugeicons:{toggleMpass ? 'view-off-slash' : 'view'}" width="24" height="24" />
                         </a>
                     </div>
                     {#if invalid}

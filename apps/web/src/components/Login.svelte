@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import Icon from "@iconify/svelte";
+
+    import { page } from '$app/state';
 
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { loginAccount } from "$lib/services/accounts";
@@ -52,7 +54,7 @@
             localStorage.setItem("mk", arrayBufferToHex(mk));
             localStorage.setItem("epsk", response.data.psk);
 
-            window.location.assign($page.url.searchParams.get("next") ?? "/");
+            window.location.assign(page.url.searchParams.get("next") ?? "/");
         }
     };
 </script>
@@ -94,14 +96,13 @@
         </div>
 
         <div class="uk-inline uk-width-100">
-            { /* @ts-ignore */ null }
             <a
                 aria-label="eye-icon"
                 class="uk-form-icon uk-form-icon-flip"
                 href={null}
-                uk-icon="icon: {masterPasswordInput.toggle ? 'eye-slash' : 'eye'}"
                 onclick={() => {masterPasswordInput.toggle = !masterPasswordInput.toggle}}
             >
+                <Icon icon="hugeicons:{masterPasswordInput.toggle ? 'view-off-slash' : 'view'}" width="24" height="24" />
             </a>
             <input
                 bind:value={masterPasswordInput.value}

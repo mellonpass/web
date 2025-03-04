@@ -1,6 +1,7 @@
 <script lang="ts">
     import gravatar from 'gravatar';
     import UIkit from 'uikit';
+    import Icon from "@iconify/svelte";
 
     import { invalidateAll } from '$app/navigation';
 
@@ -37,8 +38,9 @@
 <nav class="x-navbar uk-flex uk-padding-small">
     <div class="uk-width-expand x-vertical-center">
         <div class="uk-inline uk-width-1-1">
-            { /* @ts-ignore */ null }
-            <span class="uk-form-icon" uk-icon="icon: search"></span>
+            <span class="uk-form-icon">
+                <Icon icon="hugeicons:search-01" width="24" height="24" />
+            </span>
             <input name="search" bind:value={$searchFilter} class="uk-input uk-form-small uk-border-pill" type="text" placeholder="Search vault" aria-label="Input" autocomplete="off" style="height: 35px;">
         </div>
     </div>
@@ -57,8 +59,8 @@
                                 selectedModal = "login";
                                 UIkit.dropdown("#new-item-dropdown").hide();
                             }}>
-                            { /* @ts-ignore */ null }
-                            <span class="uk-margin-small-right" uk-icon="sign-in"></span>Login
+                            <Icon class="uk-margin-small-right"  icon="hugeicons:login-method" width="24" height="24" />
+                            Login
                         </a>
                     </li>
                     <li class="uk-text-default">
@@ -71,7 +73,8 @@
                                 UIkit.dropdown("#new-item-dropdown").hide();
                             }}>
                             { /* @ts-ignore */ null }
-                            <span class="uk-margin-small-right" uk-icon="file-text"></span>Secure note
+                            <Icon class="uk-margin-small-right"  icon="hugeicons:notebook" width="24" height="24" />
+                            Secure note
                         </a>
                     </li>
                 </ul>
@@ -103,8 +106,8 @@
                             onclick={handleLogout}
                             href={null}
                         >
-                            { /* @ts-ignore */ null }
-                            <span class="uk-margin-small-right" uk-icon="sign-out"></span>Logout
+                            <Icon class="uk-margin-small-right" icon="hugeicons:logout-01" width="24" height="24" />
+                            Logout
                         </a>
                     </li>
                     <li class="uk-text-default">
@@ -112,8 +115,8 @@
                             onclick={handleLock}
                             href={null}
                         >
-                            { /* @ts-ignore */ null }
-                            <span class="uk-margin-small-right" uk-icon="lock"></span>Lock now
+                            <Icon class="uk-margin-small-right" icon="hugeicons:square-lock-02" width="24" height="24" />
+                            Lock now
                         </a>
                     </li>
                 </ul>
