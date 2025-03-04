@@ -29,7 +29,8 @@ jobs:
         uses: int128/kaniko-action@v1
         with:
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          # temporarily use web tag.
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}/web
           labels: ${{ steps.metadata.outputs.labels }}
           cache: true
           cache-repository: ghcr.io/${{ github.repository }}/cache
