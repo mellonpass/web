@@ -4,7 +4,7 @@
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
 
-    import vaultImage from "$lib/assets/vaultImage.png";
+    import vaultImage from "$lib/assets/images/vaultImage.png";
     import { searchFilter, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { type VaultItem } from "$lib/types";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";

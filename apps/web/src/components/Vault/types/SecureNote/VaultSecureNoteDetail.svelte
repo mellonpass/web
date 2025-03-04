@@ -1,5 +1,5 @@
 <script lang="ts">
-    import vaultImage from "$lib/assets/vaultImage.png";
+    import vaultImage from "$lib/assets/images/vaultImage.png";
     let { cipher } = $props();
 </script>
 

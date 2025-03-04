@@ -1,7 +1,7 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
 
-    import vaultImage from "$lib/assets/vaultImage.png";
+    import vaultImage from "$lib/assets/images/vaultImage.png";
 
     let { cipher } = $props();
     let copied = $state(false);

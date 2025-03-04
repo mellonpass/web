@@ -2,7 +2,7 @@
     import { onDestroy, onMount } from "svelte";
     import { writable } from 'svelte/store';
 
-    import vaultImage from "$lib/assets/vaultImage.png";
+    import vaultImage from "$lib/assets/images/vaultImage.png";
 
     let { cipher, data = $bindable({}) } = $props();
 
