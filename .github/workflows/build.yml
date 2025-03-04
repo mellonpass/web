@@ -25,6 +25,7 @@ jobs:
         run: |
           touch .env.production
           echo PUBLIC_SERVER_URL=${{ vars.PUBLIC_SERVER_URL }} >> .env.production
+          cat .env.production
       - name: Build and upload docker image on ghrc.io
         uses: int128/kaniko-action@v1
         with:
