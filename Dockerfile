@@ -18,3 +18,5 @@ FROM scratch
 WORKDIR /code
 
 COPY --from=build-stage /code/node_modules/web/build .
+
+CMD ["bash"]
