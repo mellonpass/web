@@ -13,10 +13,10 @@ COPY .env.production ./apps/web
 
 RUN npm run build -w apps/web
 
-FROM scratch
+FROM nginx:alpine
 
 WORKDIR /code
 
 COPY --from=build-stage /code/node_modules/web/build .
 
-CMD ["bash"]
+CMD ["nginx", "-g", "daemon off;"]
