@@ -35,19 +35,12 @@ export const updateCipherStatus = async (id: string, status: CipherStatus) => {
   });
 };
 
-export const getCiphers = async ({
-  category,
-}: {
-  category: CipherCategory;
-}): Promise<Array<Cipher>> => {
+export const getCiphers = async (): Promise<Array<Cipher>> => {
   let result: Array<Cipher> = [];
   let hasNextPage = true;
   const variables = {
     first: 100,
     after: undefined,
-    filter: {
-      category: category,
-    },
   };
 
   while (hasNextPage) {

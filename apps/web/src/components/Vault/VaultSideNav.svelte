@@ -22,7 +22,7 @@
         </li>
         <div class="uk-margin-bottom"></div>
         <!-- Categories -->
-        <li class="x-category-list">
+        <li>
             { /* @ts-ignore */ null }
             <ul class="uk-nav-default" uk-nav>
                 <li class="uk-parent uk-open">
@@ -89,16 +89,13 @@
     }
 
     .x-nested-sidenav-item {
-        padding: 5px 0px;
+        padding: 6px 10px;
     }
 
     .x-nav-subheader {
         font-weight: 500;
         font-size: small;
-    }
-
-    .x-category-list {
-        padding: 0 8px;
+        padding: 6px 10px;
     }
 
     .x-selected {

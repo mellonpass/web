@@ -71,8 +71,8 @@ export const UPDATE_CIPHER_STATUS = `
 `;
 
 export const GET_CIPHERS = `
-    query GetGiphers($first: Int!, $after: String, $filter: FilterCipher) {
-        ciphers(first: $first, after: $after, filter: $filter) {
+    query GetGiphers($first: Int!, $after: String) {
+        ciphers(first: $first, after: $after) {
             edges {
                 cursor
                 node {
