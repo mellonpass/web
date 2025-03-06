@@ -1,7 +1,9 @@
-FROM node:22-alpine AS build-stage
+FROM node:alpine AS build-stage
 
 WORKDIR /code
 
+# use ARG later to dynamically specify workspace build
+# on ci/cd actions.
 COPY apps/web ./apps/web
 COPY package*.json ./
 
@@ -17,6 +19,6 @@ FROM nginx:alpine
 
 WORKDIR /code
 
-COPY --from=build-stage /code/node_modules/web/build .
+COPY --from=build-stage /code/node_modules/web/build /usr/share/nginx/html/
 
 CMD ["nginx", "-g", "daemon off;"]
