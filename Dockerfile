@@ -19,6 +19,7 @@ FROM nginx:alpine
 
 WORKDIR /code
 
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-stage /code/node_modules/web/build /usr/share/nginx/html/
 
 CMD ["nginx", "-g", "daemon off;"]
