@@ -12,8 +12,10 @@
         id: cipher.id,
         type: cipher.type,
         name: cipher.name,
-        username: cipher.data.username,
-        password: cipher.data.password,
+        data: {
+            username: cipher.data.username,
+            password: cipher.data.password,
+        }
     });
 
     // Capture loginData changes and assign to
@@ -26,10 +28,10 @@
         if (value.name == "") {
             data.errors.push("Name is required.");
         }
-        if (value.username == "") {
+        if (value.data.username == "") {
             data.errors.push("Username is required.");
         }
-        if (value.password == "") {
+        if (value.data.password == "") {
             data.errors.push("Password is required.");
         }
     });
@@ -74,7 +76,7 @@
         <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
             <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
             <input
-                bind:value={$loginData.username}
+                bind:value={$loginData.data.username}
                 class="uk-input x-editable-input"
                 type="text"
                 aria-label="Input"
@@ -87,7 +89,7 @@
             {#if showPassword}
                 <!-- svelte-ignore a11y_autofocus -->
                 <input
-                    bind:value={$loginData.password}
+                    bind:value={$loginData.data.password}
                     onfocusin={() => {showPassword = true}}
                     onfocusout={() => {showPassword = false}}
                     type="text"

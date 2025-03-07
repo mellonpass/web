@@ -13,7 +13,9 @@
         id: cipher.id,
         type: cipher.type,
         name: cipher.name,
-        note: cipher.data.note,
+        data: {
+            note: cipher.data.note,
+        }
     });
 
     const adjustTextAreaHeight = () => {
@@ -37,7 +39,7 @@
             data.errors.push("Name is required.");
         }
 
-        if (value.note == "") {
+        if (value.data.note == "") {
             data.errors.push("Note is required.");
         }
 
@@ -75,7 +77,7 @@
         <textarea
             id="note"
             bind:this={textInputRef}
-            bind:value={$initData.note}
+            bind:value={$initData.data.note}
             placeholder="This is the beginning of a note."
             class="uk-textarea uk-border-rounded uk-width-1-1 uk-padding-small">
         </textarea>
