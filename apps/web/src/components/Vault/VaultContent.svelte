@@ -169,7 +169,7 @@
                     <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
                 </div>
                 <div>
-                    <button form="vault-form" class="uk-button uk-button-primary uk-button-small uk-border-rounded">
+                    <button disabled={onSaveSubmitted} form="vault-form" class="uk-button uk-button-primary uk-button-small uk-border-rounded">
                         Save
                     </button>
                     <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode; formErrors = [];}}>
