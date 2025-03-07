@@ -10,8 +10,8 @@
         </div>
     </header>
 
-    <div class="uk-flex uk-flex-center">
-        <section class="uk-width-1-3">
+    <div class="uk-flex uk-flex-center uk-padding">
+        <section class="uk-width-1-3@l uk-width-1-2@m uk-width-1-1@s">
             {@render children()}
         </section>
     </div>
