@@ -10,7 +10,7 @@
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { updateCipher } from "$lib/services/ciphers";
+    import { restoreCipherFromDelete, updateCipher, updateCipherToDelete } from "$lib/services/ciphers";
     import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultContent, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
     import { CipherCategory, VaultStatus, type Cipher, type CipherData, type VaultContentData } from "$lib/types";
@@ -109,19 +109,31 @@
 
     const updateStatus = async(status: VaultStatus) => {
         const cipher = await encryptVaultContentForUpdate({status: status});
-        const response = await updateCipher(cipher);
-        await handleUpdateResponse(response.data.cipher.update);
 
-        if (status == VaultStatus.ACTIVE) {
-            $categoryFilter = CipherCategory.All;
-        }
-
-        if (status == VaultStatus.ARCHIVED) {
-            $categoryFilter = CipherCategory.ARCHIVES;
-        }
-
-        if (status == VaultStatus.DELETED) {
-            $categoryFilter = CipherCategory.RECENTLY_DELETED;
+        switch (status) {
+            case VaultStatus.ACTIVE:
+                // Check if current vault content data status is either archived or deleted.
+                // If deleted, do a restore operation.
+                if (vaultContentData?.status == VaultStatus.ARCHIVED) {
+                    var response = await updateCipher(cipher);
+                    await handleUpdateResponse(response.data.cipher.update);
+                } else {
+                    var response = await restoreCipherFromDelete(cipher);
+                    await handleUpdateResponse(response.data.cipher.restoreCipherFromDelete);
+                }
+                $categoryFilter = CipherCategory.All;
+                break;
+            case VaultStatus.ARCHIVED:
+                var response = await updateCipher(cipher);
+                await handleUpdateResponse(response.data.cipher.update);
+                $categoryFilter = CipherCategory.ARCHIVES;
+                break;
+            case VaultStatus.DELETED:
+                var response = await updateCipherToDelete(cipher);
+                await handleUpdateResponse(response.data.cipher.updateToDelete);
+                $categoryFilter = CipherCategory.RECENTLY_DELETED;
+            default:
+                break;
         }
     }
 

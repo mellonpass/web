@@ -46,23 +46,44 @@ export const UPDATE_CIPHER = `
     }
 `;
 
-export const UPDATE_CIPHER_STATUS = `
-    mutation UpdateCipherStatus($input: UpdateCipherStatusInput!) {
+export const UPDATE_CIPHER_TO_DELETE = `
+    mutation UpdateCiperToDelete($input: UpdateCipherInput!) {
         cipher {
-            updateStatus(input: $input) {
+            updateToDelete(input: $input) {
                 __typename
                 ... on Cipher {
                     id
-                    key
                     name
-                    type
                     data
                     isFavorite
+                    key
                     status
-                    created
-                    updated
+                    type
                 }
                 ... on CipherUpdateFailed {
+                    message
+                }
+            }
+        }
+    }
+`;
+
+export const RESTORE_CIPHER_FROM_DELETE = `
+    mutation RestoreCipherFromDelete($input: UpdateCipherInput!) {
+        cipher {
+            restoreCipherFromDelete(input: $input) {
+                __typename
+                ... on Cipher {
+                    id
+                    name
+                    data
+                    isFavorite
+                    key
+                    status
+                    type
+                }
+                ... on CipherUpdateFailed {
+                    __typename
                     message
                 }
             }

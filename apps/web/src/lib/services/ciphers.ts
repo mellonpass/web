@@ -2,11 +2,12 @@ import {
   CREATE_CIPHER,
   GET_CIPHER_DETAIL,
   GET_CIPHERS,
+  RESTORE_CIPHER_FROM_DELETE,
   UPDATE_CIPHER,
-  UPDATE_CIPHER_STATUS,
+  UPDATE_CIPHER_TO_DELETE,
 } from "$lib/gql/ciphers/schema";
 import { gqlClient } from "$lib/requests";
-import { CipherStatus, type Cipher } from "$lib/types";
+import { type Cipher } from "$lib/types";
 
 export const createCipher = async (cipher: Cipher) => {
   return await gqlClient({
@@ -19,18 +20,6 @@ export const createCipher = async (cipher: Cipher) => {
         data: cipher.data,
         isFavorite: cipher.isFavorite,
         status: cipher.status,
-      },
-    },
-  });
-};
-
-export const updateCipherStatus = async (id: string, status: CipherStatus) => {
-  return await gqlClient({
-    query: UPDATE_CIPHER_STATUS,
-    variables: {
-      input: {
-        id: id,
-        status: status,
       },
     },
   });
@@ -74,6 +63,38 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
 export const updateCipher = async (cipher: Cipher) => {
   return await gqlClient({
     query: UPDATE_CIPHER,
+    variables: {
+      input: {
+        id: cipher.id,
+        key: cipher.key,
+        isFavorite: cipher.isFavorite,
+        name: cipher.name,
+        status: cipher.status,
+        data: cipher.data,
+      },
+    },
+  });
+};
+
+export const updateCipherToDelete = async (cipher: Cipher) => {
+  return await gqlClient({
+    query: UPDATE_CIPHER_TO_DELETE,
+    variables: {
+      input: {
+        id: cipher.id,
+        key: cipher.key,
+        isFavorite: cipher.isFavorite,
+        name: cipher.name,
+        status: cipher.status,
+        data: cipher.data,
+      },
+    },
+  });
+};
+
+export const restoreCipherFromDelete = async (cipher: Cipher) => {
+  return await gqlClient({
+    query: RESTORE_CIPHER_FROM_DELETE,
     variables: {
       input: {
         id: cipher.id,
