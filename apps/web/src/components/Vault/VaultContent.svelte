@@ -10,11 +10,10 @@
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { updateCipher, updateCipherStatus } from "$lib/services/ciphers";
+    import { updateCipher } from "$lib/services/ciphers";
     import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultContent, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherCategory, CipherType, VaultStatus, type Cipher, type CipherData, type CipherLoginData, type CipherSecureNoteData, type VaultContentData } from "$lib/types";
-  import Error from "../../routes/+error.svelte";
+    import { CipherCategory, VaultStatus, type Cipher, type CipherData, type VaultContentData } from "$lib/types";
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
@@ -36,6 +35,8 @@
     let editMode = $state(false);
     let formErrors: Array<string> = $state([]);
     let vaultContentData: VaultContentData | null = $state(null);
+
+    let onSaveSubmitted = $state(false);
 
     let VaultComponent = $derived.by(() => {
         if (vaultContentData != null) {
@@ -127,15 +128,19 @@
     const onSave = async (e: any) => {
         e.preventDefault();
 
+        onSaveSubmitted = true;
+
         formErrors = [];
         if (componentData.errors.length > 0) {
             formErrors = componentData.errors;
+            onSaveSubmitted = false;
             return;
         }
 
         const cipher: Cipher = await encryptVaultContentForUpdate({name: componentData.name, data: componentData.data});
         const response = await updateCipher(cipher);
         await handleUpdateResponse(response.data.cipher.update);
+        onSaveSubmitted = false;
     };
 
     onMount(async () => {

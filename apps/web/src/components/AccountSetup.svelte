@@ -67,6 +67,8 @@
         }
     });
 
+    let formSubmitted = $state(false);
+
     const handleMphInput = (e: any) => {
         if (mphFieldVal.length > HINT_LIMIT) {
             mphFieldVal = mphFieldVal.slice(0, HINT_LIMIT);
@@ -76,12 +78,15 @@
     const onFormSubmit = async (e: any) => {
         e.preventDefault();
 
+        formSubmitted = true;
+
         mpFieldInvalid = mpFieldVal == null ? true : mpFieldInvalid;
         mpcFieldInvalid = mpcFieldVal == null ? true : mpcFieldInvalid;
 
         const invalidFields = (mpFieldInvalid || mpcFieldInvalid);
 
         if (invalidFields) {
+            formSubmitted = false;
             return;
         }
 
@@ -102,6 +107,7 @@
         } catch (error: any) {
             setupAccountError = error.error;
         }
+        formSubmitted = false;
     };
 
     $effect(() => {
@@ -121,18 +127,20 @@
 </header>
 
 <form class="uk-margin-medium" onsubmit={onFormSubmit} novalidate>
-    { /* @ts-ignore */ null }
-    <div class="uk-alert-danger" uk-alert>
+    {#if setupAccountError}
         { /* @ts-ignore */ null }
-        <a
-            onclick={()=> setupAccountError = null}
-            href={null}
-            class="uk-alert-close"
-            aria-label="close-alert"
-            uk-close
-        ></a>
-        <p>{ setupAccountError }</p>
-    </div>
+        <div class="uk-alert-danger" uk-alert>
+            { /* @ts-ignore */ null }
+            <a
+                onclick={()=> setupAccountError = null}
+                href={null}
+                class="uk-alert-close"
+                aria-label="close-alert"
+                uk-close
+            ></a>
+            <p>{ setupAccountError }</p>
+        </div>
+    {/if}
 
     <div class="uk-margin">
         <div class="uk-margin-small">
@@ -224,7 +232,7 @@
     </div>
 
     <div class="uk-margin">
-        <button class="uk-button uk-button-primary uk-width-1-1">Create account</button>
+        <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Create account</button>
     </div>
 </form>
 

@@ -33,6 +33,7 @@
     };
 
     let loginError = $state(null);
+    let formSubmitted = $state(false);
 
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
@@ -41,7 +42,7 @@
 
     const onFormSubmit = async (e: any) => {
         e.preventDefault();
-
+        formSubmitted = true;
         for (const key of Object.keys(formFields)) {
             const el = e.target.elements[key];
             const field = formFields[key];
@@ -61,6 +62,7 @@
                 loginError = error.error
             }
         }
+        formSubmitted = false;
     };
 </script>
 
@@ -141,7 +143,7 @@
     </div>
 
     <div class="uk-margin">
-        <button class="uk-button uk-button-primary uk-width-1-1">Login</button>
+        <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
 
     <p class="uk-text-center">

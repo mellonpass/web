@@ -40,6 +40,8 @@
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
 
+    let formSubmitted = $state(false);
+
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
@@ -47,6 +49,8 @@
 
     const onFormSubmit = async (e: any) => {
         e.preventDefault();
+
+        formSubmitted = true;
 
         for (const key of Object.keys(formFields)) {
             const el = e.target.elements[key];
@@ -108,7 +112,7 @@
                 }
             }
         }
-
+        formSubmitted = false;
     };
 
 </script>
@@ -193,7 +197,7 @@
 
 <div class="uk-modal-footer uk-flex uk-flex-row-reverse">
     <div class="uk-margin">
-        <button form="loginForm" type="submit" class="uk-button uk-button-primary uk-border-rounded">Save</button>
+        <button disabled={formSubmitted} form="loginForm" type="submit" class="uk-button uk-button-primary uk-border-rounded">Save</button>
         <button onclick={() => {UIkit.modal("#vault-modal").hide()}}  class="uk-button uk-button-default uk-border-rounded">Cancel</button>
     </div>
 </div>

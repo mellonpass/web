@@ -34,6 +34,8 @@
     ]);
     const emailField = $derived(formFields.find(field => field.id === "email"));
     const nameField = $derived(formFields.find(field => field.id === "name"));
+    
+    let formSubmitted = $state(false);
 
     // checks if name is non-whitespace.
     const validateName = () => {
@@ -43,6 +45,8 @@
 
     const handleSignUpSubmit = async (e: any) => {
         e.preventDefault();
+
+        formSubmitted = true;
 
         const form = e.currentTarget;
         const data = new FormData(form);
@@ -54,6 +58,7 @@
         }
         // if any of the fields are invalid, reject submit.
         if (Object.values(invalidityMapper).some(invalid => invalid)) {
+            formSubmitted = false;
             return;
         }
 
@@ -76,6 +81,7 @@
                 }
             }
         }
+        formSubmitted = false;
     }
 
     const handleInputFocusOut = async (e: any) => {
@@ -104,7 +110,7 @@
         {/* @ts-ignore */ null}
         <div class="uk-alert-danger" uk-alert>
             {/* @ts-ignore */ null}
-            <a href={null} class="uk-alert-close" aria-label="alert-close" uk-close={true}></a>
+            <a href={null} onclick={() => serverErrors.length = 0} class="uk-alert-close" aria-label="alert-close" uk-close={true}></a>
             <p>{error.message}</p>
         </div>
     {/each}
@@ -133,11 +139,11 @@
             {/each}
 
             <div class="uk-margin">
-                <button class="uk-button uk-button-primary uk-width-1-1">Continue</button>
+                <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
             </div>
         </div>
     </form>
-    
+
     <p>
         By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
     </p>

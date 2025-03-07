@@ -31,6 +31,8 @@
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
 
+    let formSubmitted = $state(false);
+
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
@@ -38,6 +40,8 @@
 
     const onFormSubmit = async (e: any) => {
         e.preventDefault();
+
+        formSubmitted = true;
 
         for (const key of Object.keys(formFields)) {
             const el = e.target.elements[key];
@@ -99,7 +103,7 @@
                 }
             }
         }
-
+        formSubmitted = false;
     };
 
 </script>
