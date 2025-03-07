@@ -54,7 +54,6 @@
         const incrementIdleTime = () => {
             idleTime++;
             if (idleTime > max_idle_time) {
-                alert();
                 window.location.reload();
             }
         };
