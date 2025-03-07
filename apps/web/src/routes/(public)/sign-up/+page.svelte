@@ -144,9 +144,10 @@
         </div>
     </form>
 
-    <p>
+    <!-- Temporarily remove this part. -->
+    <!-- <p>
         By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
-    </p>
+    </p> -->
 
     <p class="uk-text-center uk-text-meta">
         <a href="/login">Already have an account?</a>
