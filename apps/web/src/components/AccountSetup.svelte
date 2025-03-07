@@ -36,6 +36,8 @@
     // master password hint field attrs.
     let mphFieldVal = $state("");
 
+    let setupAccountError = $state(null);
+
     let progressBarVal = $derived.by(() => {
         let points = 0;
         for (const [name, regex] of Object.entries(mpRules)) {
@@ -97,9 +99,8 @@
         try {
             await setupAccount(verifiedEmail, loginHash, psk.toBase64(), mphFieldVal);
             window.location.assign('/login');
-        } catch (error) {
-            // TODO: Show error page here.
-            throw error;
+        } catch (error: any) {
+            setupAccountError = error.error;
         }
     };
 
@@ -120,6 +121,19 @@
 </header>
 
 <form class="uk-margin-medium" onsubmit={onFormSubmit} novalidate>
+    { /* @ts-ignore */ null }
+    <div class="uk-alert-danger" uk-alert>
+        { /* @ts-ignore */ null }
+        <a
+            onclick={()=> setupAccountError = null}
+            href={null}
+            class="uk-alert-close"
+            aria-label="close-alert"
+            uk-close
+        ></a>
+        <p>{ setupAccountError }</p>
+    </div>
+
     <div class="uk-margin">
         <div class="uk-margin-small">
             <label for="master-password">Master password</label>
