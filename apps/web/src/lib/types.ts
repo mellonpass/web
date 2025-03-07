@@ -20,27 +20,39 @@ export enum CipherStatus {
   DELETED = "DELETED",
 }
 
+export enum VaultStatus {
+  ACTIVE = "ACTIVE",
+  ARCHIVED = "ARCHIVED",
+  DELETED = "DELETED",
+}
+
 export interface Cipher {
   id?: string;
-  isFavorite: boolean;
+  isFavorite: string;
   type: CipherType;
   key: string;
   name: string;
   data: CipherData;
-  status: CipherStatus;
+  status: string;
   created?: Date | null;
   updated?: Date | null;
 }
 
 export interface VaultData {
   id: string;
+  isFavorite: boolean;
   type: CipherType;
   name: string;
+  status: VaultStatus;
   content?: any;
 }
 
 export interface VaultItem extends VaultData {
   content: string;
+}
+
+export interface VaultContentData extends VaultData {
+  data: CipherData;
 }
 
 export enum CipherCategory {

@@ -32,6 +32,8 @@
         "master-password": masterPasswordInput
     };
 
+    let loginError = $state(null);
+
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
         field.invalid = !e.target.checkValidity();
@@ -49,12 +51,15 @@
         if (e.target.checkValidity()) {
             const mk = await generateMasterKey(emailInput.value!, masterPasswordInput.value!);
             const loginHash = await generateLoginhash(mk, masterPasswordInput.value!);
-            const response = await loginAccount(emailInput.value!, loginHash);
-
-            localStorage.setItem("mk", arrayBufferToHex(mk));
-            localStorage.setItem("epsk", response.data.psk);
-
-            window.location.assign(page.url.searchParams.get("next") ?? "/");
+            
+            try {
+                const response = await loginAccount(emailInput.value!, loginHash);
+                localStorage.setItem("mk", arrayBufferToHex(mk));
+                localStorage.setItem("epsk", response.data.psk);
+                window.location.assign(page.url.searchParams.get("next") ?? "/");
+            } catch (error: any) {
+                loginError = error.error
+            }
         }
     };
 </script>
@@ -65,6 +70,16 @@
 </header>
 
 <form class="uk-margin-medium" onsubmit={onFormSubmit} novalidate>
+
+    {#if loginError}
+        { /* @ts-ignore */ null }
+        <div class="uk-alert-danger" uk-alert>
+            { /* @ts-ignore */ null }
+            <a href={null} onclick={() => loginError = null} class="uk-alert-close" aria-label="close-alert" uk-close></a>
+            <p>{loginError}</p>
+        </div>
+    {/if}
+
     <div class="uk-margin">
         <div class="uk-margin-small">
             <label for="email">Email</label>

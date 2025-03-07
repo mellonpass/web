@@ -8,7 +8,7 @@
     import { getCiphers } from "$lib/services/ciphers";
     import { categoryFilter, cipherStore, newVaultItem, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
-    import { type Cipher, CipherCategory, CipherStatus, CipherType, type VaultItem } from "$lib/types";
+    import { type Cipher, CipherCategory, CipherStatus, CipherType, type VaultItem, VaultStatus } from "$lib/types";
 
 
     if (localStorage.getItem("mk") != null) {
@@ -43,7 +43,10 @@
         $cipherStore = ciphers;
 
         if ($cipherStore.length <= 0) { return []; }
-        $vaultItemStore = await decryptCiphers($cipherStore.filter(item => item.status == CipherStatus.ACTIVE));
+        $vaultItemStore = await decryptCiphers($cipherStore);
+        // Prioritize ACTIVE vault items to show.
+        $vaultItemStore = $vaultItemStore.filter(item => item.status == VaultStatus.ACTIVE);
+        // Sort vault items.
         $vaultItemStore = $vaultItemStore.sort((a, b) => a.name.localeCompare(b.name));
         selectVaultItem();
     };
@@ -63,39 +66,30 @@
             return [];
         }
 
-        let filteredItems: Array<VaultItem> = [];
+        $vaultItemStore = await decryptCiphers($cipherStore);
+
         switch(category) {
             case CipherCategory.All:
-                const allItems = $cipherStore.filter(item => item.status == CipherStatus.ACTIVE);
-                filteredItems = await decryptCiphers(allItems);
+                $vaultItemStore = $vaultItemStore.filter(item => item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.FAVORITES:
-                const favorites = $cipherStore.filter(item => item.isFavorite && item.status == CipherStatus.ACTIVE);
-                filteredItems = await decryptCiphers(favorites);
+                $vaultItemStore = $vaultItemStore.filter(item => item.isFavorite && item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.LOGINS:
-                const logins = $cipherStore.filter(item => item.type == CipherType.LOGIN && item.status == CipherStatus.ACTIVE);
-                filteredItems = await decryptCiphers(logins);
+                $vaultItemStore = $vaultItemStore.filter(item => item.type == CipherType.LOGIN && item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.SECURE_NOTES:
-                const notes = $cipherStore.filter(item => item.type == CipherType.SECURE_NOTE && item.status == CipherStatus.ACTIVE);
-                filteredItems = await decryptCiphers(notes);
+                $vaultItemStore = $vaultItemStore.filter(item => item.type == CipherType.SECURE_NOTE && item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.ARCHIVES:
-                const archives = $cipherStore.filter(item => item.status == CipherStatus.ARCHIVED);
-                filteredItems = await decryptCiphers(archives);
+                $vaultItemStore = $vaultItemStore.filter(item => item.status == VaultStatus.ARCHIVED);
                 break;
             case CipherCategory.RECENTLY_DELETED:
-                const deleted = $cipherStore.filter(item => item.status == CipherStatus.DELETED);
-                filteredItems = await decryptCiphers(deleted);
+                $vaultItemStore = $vaultItemStore.filter(item => item.status == VaultStatus.DELETED);
                 break;
         }
 
-        if (filteredItems.length > 0) {
-            filteredItems = filteredItems.sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        $vaultItemStore = filteredItems;
+        $vaultItemStore = $vaultItemStore.sort((a, b) => a.name.localeCompare(b.name));;
         selectVaultItem();
     });
 

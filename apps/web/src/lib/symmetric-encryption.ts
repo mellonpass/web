@@ -1,10 +1,12 @@
 import {
   CipherStatus,
   CipherType,
+  VaultStatus,
   type Cipher,
   type CipherData,
   type CipherLoginData,
   type CipherSecureNoteData,
+  type VaultContentData,
   type VaultData,
   type VaultItem,
 } from "$lib/types";
@@ -25,7 +27,7 @@ export async function encryptCipher({
   name: string;
   type: CipherType;
   data: CipherData;
-  status: CipherStatus;
+  status: VaultStatus;
   isFavorite: boolean;
 }): Promise<Cipher> {
   const pck = await sk.protectKey(ck);
@@ -57,8 +59,8 @@ export async function encryptCipher({
     type: type,
     key: pck.toBase64(),
     name: await ck.encrypt(encoder.encode(name)),
-    isFavorite: isFavorite,
-    status: status,
+    isFavorite: await ck.encrypt(encoder.encode(isFavorite.toString())),
+    status: await ck.encrypt(encoder.encode(status)),
     data: encrpytedData,
   };
 
@@ -73,6 +75,9 @@ export async function decryptCipherForVaultItem(
   const vaultData: VaultData = {
     id: cipher.id!,
     type: cipher.type,
+    isFavorite:
+      (await ck.decryptText(cipher.isFavorite)).toLowerCase() == "true",
+    status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
   };
 
@@ -91,34 +96,34 @@ export async function decryptCipherForVaultItem(
   return vaultData as VaultItem;
 }
 
-export async function decryptCipher(
+export async function decryptCipherForVaultContent(
   sk: SymmetricKey,
   cipher: Cipher
-): Promise<Cipher> {
+): Promise<VaultContentData> {
   const ck = await extractCipherKey(sk, cipher.key);
-  const cipherRaw: Partial<Cipher> = {
+  const vaultContent: Partial<VaultContentData> = {
     id: cipher.id!,
     type: cipher.type,
-    isFavorite: cipher.isFavorite,
-    status: cipher.status,
+    isFavorite: (await ck.decryptText(cipher.isFavorite)) == "true",
+    status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
   };
 
   switch (cipher.type) {
     case CipherType.LOGIN:
       const loginData = cipher.data as CipherLoginData;
-      cipherRaw.data = {
+      vaultContent.data = {
         username: await ck.decryptText(loginData.username),
         password: await ck.decryptText(loginData.password),
       };
       break;
     default:
       const secureNoteData = cipher.data as CipherSecureNoteData;
-      cipherRaw.data = {
+      vaultContent.data = {
         note: await ck.decryptText(secureNoteData.note),
       };
       break;
   }
 
-  return { ...cipherRaw } as Cipher;
+  return { ...vaultContent } as VaultContentData;
 }

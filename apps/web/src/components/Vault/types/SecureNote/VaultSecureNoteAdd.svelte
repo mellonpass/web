@@ -5,7 +5,7 @@
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherStatus, CipherType, type Cipher, type VaultItem } from "$lib/types";
+    import { CipherStatus, CipherType, VaultStatus, type Cipher, type VaultItem } from "$lib/types";
     import { getContext } from "svelte";
 
     let errorCreate = $state(false);
@@ -55,7 +55,7 @@
                 type: CipherType.SECURE_NOTE,
                 name: cipherName.value,
                 isFavorite: false,
-                status: CipherStatus.ACTIVE,
+                status: VaultStatus.ACTIVE,
                 data: {
                     note: cipherNote.value!
                 }
@@ -72,7 +72,10 @@
                         type: CipherType.SECURE_NOTE,
                         name: cipherName.value,
                         content: cipherNote.value!,
+                        isFavorite: false,
+                        status: VaultStatus.ACTIVE,
                     }
+
                     $newVaultItem = newSecureNoteItem;
 
                     UIkit.modal("#vault-modal").hide();

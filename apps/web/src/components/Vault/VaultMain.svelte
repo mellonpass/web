@@ -38,12 +38,12 @@
         if (vaultItems.length == 0) {
             $selectedVaultItem = null;
         } else {
-            if ($selectedVaultItem != null) {
-                setTimeout(() => {
-                    const focusElement = document.getElementById($selectedVaultItem!.id);
-                    focusElement?.scrollIntoView({behavior: "instant", block: "center"});
-                }, 200);
-            }
+            setTimeout(() => {
+                if ($selectedVaultItem == null) { return; }
+                const focusElement = document.getElementById($selectedVaultItem!.id);
+                focusElement?.scrollIntoView({behavior: "instant", block: "center"});
+            }, 200);
+            
         }
     });
 
