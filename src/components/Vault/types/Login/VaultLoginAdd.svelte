@@ -6,16 +6,18 @@
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherStatus, CipherType, VaultStatus, type VaultItem } from "$lib/types";
-    import { getContext } from "svelte";
+    import { CipherType, VaultStatus, type VaultItem } from "$lib/types";
+    import { getContext, onMount } from "svelte";
 
     let passwordToggle = $state(false);
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
 
+    let loginNameRef: HTMLInputElement | null = $state(null);
+
     const cipherName = $state({
         name: "cipher-name",
-        value: "Login",
+        value: "Login name",
         invalid: null,
     });
 
@@ -41,6 +43,12 @@
     const epsk: string = getContext("epsk");
 
     let formSubmitted = $state(false);
+
+    onMount(() => {
+        if (loginNameRef) {
+            loginNameRef.select();
+        }
+    });
 
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
@@ -122,6 +130,7 @@
         <div class="uk-margin">
             <!-- svelte-ignore a11y_autofocus -->
             <input
+                bind:this={loginNameRef}
                 bind:value={cipherName.value}
                 onfocusout={onFieldFocusOut}
                 name={cipherName.name}

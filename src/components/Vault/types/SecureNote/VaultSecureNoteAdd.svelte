@@ -5,15 +5,15 @@
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherStatus, CipherType, VaultStatus, type Cipher, type VaultItem } from "$lib/types";
-    import { getContext } from "svelte";
+    import { CipherType, VaultStatus, type Cipher, type VaultItem } from "$lib/types";
+    import { getContext, onMount } from "svelte";
 
     let errorCreate = $state(false);
     let errorCreateMsg = $state(null);
 
     const cipherName = $state({
         name: "cipher-name",
-        value: "Secure note",
+        value: "Secure note name",
         invalid: null,
     });
 
@@ -31,7 +31,15 @@
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
 
+    let secureNoteRef: HTMLInputElement | null = $state(null);
+
     let formSubmitted = $state(false);
+
+    onMount(() => {
+        if (secureNoteRef) {
+            secureNoteRef.select();
+        }
+    });
 
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
@@ -113,6 +121,7 @@
         <div class="uk-margin">
             <!-- svelte-ignore a11y_autofocus -->
             <input
+                bind:this={secureNoteRef}
                 bind:value={cipherName.value}
                 onfocusout={onFieldFocusOut}
                 name={cipherName.name}
