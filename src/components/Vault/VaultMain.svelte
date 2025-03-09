@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { PUBLIC_SECURITY_WARNING } from "$env/static/public";
+
     import { onDestroy, onMount } from "svelte";
 
     import VaultContent from "$components/Vault/VaultContent.svelte";
@@ -88,6 +90,16 @@
         <VaultSideNav/>
     </div>
     <div class="x-vault-main-container uk-flex uk-flex-column uk-width-expand">
+        {#if PUBLIC_SECURITY_WARNING === "true"}
+            { /* @ts-ignore */ null }
+            <div class="uk-alert-danger uk-text-center uk-margin-remove" uk-alert>
+                { /* @ts-ignore */ null }
+                <a href={null} class="uk-alert-close" aria-label="close-alert" uk-close></a>
+                <p>
+                    <strong>Warning</strong>: This is only a demonstration of MellonPass. Do not store real password data.
+                </p>
+            </div>
+        {/if}
         <VaultNavbar/>
             { /* @ts-ignore */ null }
             <div class="uk-flex" uk-height-viewport="offset-top: true">
