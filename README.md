@@ -1,6 +1,6 @@
-# ClientHub
+# Web
 
-Monorepo for all MellonPass client applications (websites, SPAs, mobiles, and shared packages).
+MellonPass web application.
 
 ## Table of Contents
 
@@ -24,19 +24,13 @@ Make sure you have the following installed on your machine:
 1. Cloning the repository:
 
     ```
-    git clone git@github.com:mellonpass/clienthub.git
+    git clone git@github.com:mellonpass/web.git
     ```
 
 1. Installing dependencies:
 
     ```
-    npm i --only=dev -w <workspace/path>
-    ```
-
-    If you want to run a specific workspace application:
-
-    ```
-    npm i --only=dev -w apps/web
+    npm i --only=dev
     ```
 
 ### Running the application
@@ -44,45 +38,27 @@ Make sure you have the following installed on your machine:
 1. Setup local environment variables.
 
     ```
-    cp workspace/path/.env.example workspace/path/.env
+    touch .env.example .env
     ```
 
 1. Starting the development server:
 
     ```
-    npm run dev -w <workspace/path>
+    npm run dev
     ```
-
-See [Scripts](#scripts) for more details.
-
-# Project structure
-
-```sh
-clienthub/
-├── apps/
-│   ├── web/
-│   └── ...
-├── .gitignore
-├── LICENSE
-├── package-lock.json
-├── package.json
-├── README.md
-```
-
-- `apps/`: Contains all the applications.
-    - `web/`: The web application.
 
 # Scripts
 
-The following scripts are available in the `aps/web` workspace package.json:
+The following scripts are available in the package.json:
 
-- `npm run dev -w apps/web`: Start the development web server.
-- `npm run check:watch -w apps/web`: Start the realtime svelte-check diagnostics.
+- `npm run dev`: Start the development web server.
+- `npm run check:watch`: Start the realtime svelte-check diagnostics.
 
 # Contributing
 
 To contribute, follow these steps:
 
+- Fork the repository.
 - Create a new branch (`git checkout -b feat/your-feature`).
 - Make your changes.
 - Commit your changes. See [conventional-commits](https://gist.github.com/roelzkie15/3fe7635c542aee64c568535eb8ea25d3) for composing commit messages.
