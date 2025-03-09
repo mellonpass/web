@@ -4,16 +4,16 @@ WORKDIR /code
 
 # use ARG later to dynamically specify workspace build
 # on ci/cd actions.
-COPY apps/web ./apps/web
+COPY ./web ./web
 COPY package*.json ./
 
-RUN npm ci -w apps/web
-RUN npm i -w apps/web
+RUN npm ci -w ./web
+RUN npm i -w ./web
 
 # .env.production is created on ci/cd actions.
-COPY .env.production ./apps/web
+COPY .env.production ./web
 
-RUN npm run build -w apps/web
+RUN npm run build -w ./web
 
 FROM nginx:alpine
 
