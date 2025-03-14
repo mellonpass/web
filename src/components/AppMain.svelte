@@ -8,8 +8,7 @@
     import { getCiphers } from "$lib/services/ciphers";
     import { categoryFilter, cipherStore, newVaultItem, selectedVaultItem, vaultItemStore } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
-    import { type Cipher, CipherCategory, CipherStatus, CipherType, type VaultItem, VaultStatus } from "$lib/types";
-
+    import { type Cipher, CipherCategory, CipherType, type VaultItem, VaultStatus } from "$lib/types";
 
     if (localStorage.getItem("mk") != null) {
         setContext("mk", localStorage.getItem("mk"));
