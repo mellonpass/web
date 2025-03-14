@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { PUBLIC_SECURITY_WARNING } from "$env/static/public";
+    import { PUBLIC_DEMO_MODE } from "$env/static/public";
 
     import { onDestroy, onMount } from "svelte";
 
@@ -90,7 +90,7 @@
         <VaultSideNav/>
     </div>
     <div class="x-vault-main-container uk-flex uk-flex-column uk-width-expand">
-        {#if PUBLIC_SECURITY_WARNING === "true"}
+        {#if PUBLIC_DEMO_MODE === "true"}
             { /* @ts-ignore */ null }
             <div class="uk-alert-danger uk-text-center uk-margin-remove" uk-alert>
                 { /* @ts-ignore */ null }
