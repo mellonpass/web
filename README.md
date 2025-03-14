@@ -5,8 +5,8 @@ MellonPass web application.
 ## Table of Contents
 
 - [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
 - [Scripts](#scripts)
+- [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -53,6 +53,26 @@ The following scripts are available in the package.json:
 
 - `npm run dev`: Start the development web server.
 - `npm run check:watch`: Start the realtime svelte-check diagnostics.
+- `npm run build`: To build production readt distibution.
+
+# Deployment
+
+## Docker
+
+For your own self-hosted web application production image. You need to build the image with your own environment variables:
+
+```bash
+touch .env.production
+echo PUBLIC_SERVER_URL=your_self_hosted_mellonpass_api_url >> .env.production
+echo PUBLIC_DEMO_MODE=false >> .env.production
+```
+
+Then build the `Dockerfile` and push to your own preferred container registry.
+
+```bash
+docker build -t yourimage:tag .
+docker image push
+```
 
 # Contributing
 
