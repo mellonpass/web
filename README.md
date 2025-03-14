@@ -67,12 +67,13 @@ echo PUBLIC_SERVER_URL=your_self_hosted_mellonpass_api_url >> .env.production
 echo PUBLIC_DEMO_MODE=false >> .env.production
 ```
 
-Then build the `Dockerfile` and push to your own preferred container registry.
+Then build the `Dockerfile`.
 
 ```bash
 docker build -t yourimage:tag .
-docker image push
 ```
+
+You can always push it to your own preferred container registry.
 
 # Contributing
 
