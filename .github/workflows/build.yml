@@ -2,7 +2,7 @@ name: Build image
 
 on:
   push:
-    branches: ["production"]
+    branches: ["production", "latest"]
 
 jobs:
   build:
@@ -30,6 +30,5 @@ jobs:
         uses: int128/kaniko-action@v1
         with:
           push: true
-          # temporarily use web tag.
           tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           labels: ${{ steps.metadata.outputs.labels }}
