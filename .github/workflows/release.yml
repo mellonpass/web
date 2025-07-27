@@ -30,7 +30,6 @@ jobs:
         run: |
           touch .env.production
           echo PUBLIC_SERVER_URL=${{ vars.PUBLIC_SERVER_URL }} >> .env.production
-          echo PUBLIC_DEMO_MODE=${{ vars.PUBLIC_DEMO_MODE }} >> .env.production
 
       - name: Build and upload docker image on ghrc.io
         uses: docker/build-push-action@v6
