@@ -115,9 +115,9 @@
         </div>
     {/each}
 
-    <form id="signup-form" method="post" onsubmit={handleSignUpSubmit} novalidate>
-        <div class="uk-margin">
-            {#each formFields as formField (formField.id)}
+    <form id="signup-form" class="uk-margin-medium" method="post" onsubmit={handleSignUpSubmit} novalidate>
+        {#each formFields as formField (formField.id)}
+            <div class="uk-margin-small-top">
                 <div class="uk-margin-small">
                     <label for="{formField.name}">{formField.label}</label>
                 </div>
@@ -131,27 +131,30 @@
                     name="{formField.name}"
                     required
                 >
-                {#if invalidityMapper[formField.name]}
-                    <div class="uk-margin-small uk-text-default uk-text-danger">
+                <div class="uk-margin-small-top uk-text-meta uk-text-danger">
+                    {#if invalidityMapper[formField.name]}
                         {formField.errorMsg}
-                    </div>
-                {/if}
-            {/each}
-
-            <div class="uk-margin">
-                <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
+                    {:else}
+                        &nbsp;
+                    {/if}
+                </div>
             </div>
+        {/each}
+
+        <div class="uk-margin">
+            <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
         </div>
+
+        <!-- Temporarily remove this part. -->
+        <!-- <p>
+            By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
+        </p> -->
+
+        <p class="uk-text-center uk-text-meta">
+            <a href="/login">Already have an account?</a>
+        </p>
     </form>
 
-    <!-- Temporarily remove this part. -->
-    <!-- <p>
-        By continuing, you agree to the <a href={null}>Terms of Service</a> and <a href={null}>Privacy Policy</a>.
-    </p> -->
-
-    <p class="uk-text-center uk-text-meta">
-        <a href="/login">Already have an account?</a>
-    </p>
 {:else}
     <header>
         <h2 class="uk-text-center">Check your email</h2>

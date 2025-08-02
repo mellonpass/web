@@ -82,7 +82,7 @@
         </div>
     {/if}
 
-    <div class="uk-margin">
+    <div class="uk-margin-small-top">
         <div class="uk-margin-small">
             <label for="email">Email</label>
         </div>
@@ -100,14 +100,16 @@
                 required
             >
         </div>
-        {#if emailInput.invalid}
-            <div class="uk-margin-small uk-text-meta uk-text-danger">
+        <div class="uk-margin-small-top uk-text-meta uk-text-danger">
+            {#if emailInput.invalid}
                 Invalid email.
-            </div>
-        {/if}
+            {:else}
+                &nbsp;
+            {/if}
+        </div>
     </div>
 
-    <div class="uk-margin">
+    <div class="uk-margin-small-top">
         <div class="uk-margin-small">
             <label for="master-password">Master password</label>
         </div>
@@ -134,11 +136,13 @@
             >
         </div>
 
-        {#if masterPasswordInput.invalid}
-            <div class="uk-margin-small uk-text-meta uk-text-danger">
+        <div class="uk-margin-small-top uk-text-meta uk-text-danger">
+            {#if masterPasswordInput.invalid}
                 This field is required.
-            </div>
-        {/if}
+            {:else}
+                &nbsp;
+            {/if}
+        </div>
 
     </div>
 
