@@ -48,7 +48,7 @@
         <div class="uk-inline x-vertical-center uk-margin-left">
             <button class="uk-button uk-button-primary uk-button-small uk-border-rounded uk-text-capitalize">New Item</button>
             { /* @ts-ignore */ null }
-            <div id="new-item-dropdown" uk-dropdown="mode: click; pos: bottom-right;">
+            <div id="new-item-dropdown" uk-dropdown="mode: click; pos: bottom-right; shift: false; flip: false">
                 <ul class="uk-nav uk-dropdown-nav">
                     <li class="uk-text-default">
                         { /* @ts-ignore */ null }
