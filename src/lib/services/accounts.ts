@@ -41,7 +41,9 @@ export const setupAccount = async (
   email: string,
   loginHash: string,
   protectedSymmetricKey: string,
-  hint: string
+  hint: string,
+  rsa_protected_key: string,
+  rsa_public_key: string
 ) => {
   return await requests({
     method: "POST",
@@ -51,6 +53,8 @@ export const setupAccount = async (
       protected_symmetric_key: protectedSymmetricKey,
       login_hash: loginHash,
       hint: hint,
+      rsa_protected_private_key: rsa_protected_key,
+      rsa_public_key: rsa_public_key,
     },
   });
 };

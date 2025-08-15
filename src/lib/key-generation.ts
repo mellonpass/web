@@ -64,7 +64,7 @@ export const generateStretchedMasterKey = async (
 
 export const generateProtectedSymmetricKey = async (
   smk: StretchedMasterKey
-) => {
+): Promise<ProtectedSymmetricKey> => {
   // Create random 512-bit Symmetric Key.
   const rawKey = crypto.getRandomValues(new Uint8Array(64));
   const sk = new SymmetricKey(rawKey);
@@ -104,10 +104,15 @@ export const generateCipherKey = async () => {
 
 export async function extractSymmetricKey(
   mk: string,
-  epsk: string
+  key: string | ProtectedSymmetricKey
 ): Promise<SymmetricKey> {
   const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
-  const psk = await ProtectedSymmetricKey.fromBase64(epsk);
+  let psk;
+  if (typeof key == "string") {
+    psk = await ProtectedSymmetricKey.fromBase64(key);
+  } else {
+    psk = key;
+  }
   return <SymmetricKey>await smk.extractKey(psk);
 }
 
@@ -117,4 +122,29 @@ export async function extractCipherKey(
 ): Promise<CipherKey> {
   const pck = await ProtectedCipherKey.fromBase64(epck);
   return <CipherKey>await sk.extractKey(pck);
+}
+
+export async function generateAsymmetricKey(): Promise<
+  [JsonWebKey, JsonWebKey]
+> {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 4096,
+      // https://developer.mozilla.org/en-US/docs/Web/API/RsaHashedKeyGenParams#publicexponent
+      publicExponent: new Uint8Array([1, 0, 1]), // 65537
+      hash: "SHA-256",
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  const jsonPrivateKey = await crypto.subtle.exportKey(
+    "jwk",
+    keyPair.privateKey
+  );
+
+  const jsonPublicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+
+  return [jsonPrivateKey, jsonPublicKey];
 }

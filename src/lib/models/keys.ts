@@ -72,7 +72,7 @@ export abstract class AESHMACKey extends BaseKey {
   }
 
   protected async encryptSign(
-    data: Uint8Array<ArrayBuffer> | Uint8Array
+    data: Uint8Array
   ): Promise<Uint8Array<ArrayBuffer>> {
     const iv = crypto.getRandomValues(new Uint8Array(16));
     const counterLength = iv.byteLength * BIT_SIZE;
@@ -110,6 +110,30 @@ export abstract class AESHMACKey extends BaseKey {
     );
 
     return new Uint8Array(buffer);
+  }
+
+  /**
+   * Encrypt binary data and base64 encode.
+   * @param data
+   * @returns Promise<string> - A base64 encoded string.
+   */
+  async encrypt(data: Uint8Array): Promise<string> {
+    const buffer = await this.encryptSign(data);
+    return btoa(arrayBufferToHex(buffer));
+  }
+
+  async decryptText(encodedData: string): Promise<string> {
+    const data = atob(encodedData);
+    // encrypted data | mac | iv
+    const databuffer = hexToArrayBuffer(data);
+    const pData = new ProtectedData(databuffer);
+    const decryptedBuffer = await this.verifyDecrypt(
+      pData.data,
+      pData.mac,
+      pData.iv
+    );
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedBuffer);
   }
 }
 
@@ -184,25 +208,6 @@ export class SymmetricKey extends Key {
 export class CipherKey extends AESHMACKey {
   constructor(keybuffer: Uint8Array<ArrayBuffer>) {
     super(keybuffer);
-  }
-
-  async encrypt(data: Uint8Array): Promise<string> {
-    const buffer = await this.encryptSign(data);
-    return btoa(arrayBufferToHex(buffer));
-  }
-
-  async decryptText(encodedData: string): Promise<string> {
-    const data = atob(encodedData);
-    // encrypted data | mac | iv
-    const databuffer = hexToArrayBuffer(data);
-    const pData = new ProtectedData(databuffer);
-    const decryptedBuffer = await this.verifyDecrypt(
-      pData.data,
-      pData.mac,
-      pData.iv
-    );
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedBuffer);
   }
 }
 

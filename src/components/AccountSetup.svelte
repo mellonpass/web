@@ -3,8 +3,9 @@
 
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
-    import { generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
+    import { extractSymmetricKey, generateAsymmetricKey, generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
     import { setupAccount } from '$lib/services/accounts';
+  import { arrayBufferToHex } from "$lib/bytes";
 
     const { verifiedEmail } = $props();
 
@@ -78,7 +79,7 @@
     const onFormSubmit = async (e: any) => {
         e.preventDefault();
 
-        formSubmitted = true;
+        formSubmitted = false;
 
         mpFieldInvalid = mpFieldVal == null ? true : mpFieldInvalid;
         mpcFieldInvalid = mpcFieldVal == null ? true : mpcFieldInvalid;
@@ -100,9 +101,24 @@
         const loginHash = await generateLoginhash(mk, mpFieldVal!);
         const smk = await generateStretchedMasterKey(mk);
         const psk = await generateProtectedSymmetricKey(smk);
+        // Use to encrypt the rsa private key.
+        const sk = await extractSymmetricKey(arrayBufferToHex(mk), psk);
+        const [rsa_private_key, rsa_public_key] = await generateAsymmetricKey();
+
+        const epsk = psk.toBase64();
+        const encoder = new TextEncoder();
+        const rsa_protected_key = await sk.encrypt(encoder.encode(JSON.stringify(rsa_private_key)));
+        const rsa_encoded_public_key = btoa(arrayBufferToHex(encoder.encode(JSON.stringify(rsa_public_key))));
 
         try {
-            await setupAccount(verifiedEmail, loginHash, psk.toBase64(), mphFieldVal);
+            await setupAccount(
+                verifiedEmail,
+                loginHash,
+                epsk,
+                mphFieldVal,
+                rsa_protected_key,
+                rsa_encoded_public_key,
+            );
             window.location.assign('/login');
         } catch (error: any) {
             setupAccountError = error.error;
