@@ -3,7 +3,7 @@
 
     import { createAnimationTriggerAction } from 'svelte-trigger-action';
 
-    import { extractSymmetricKey, generateAsymmetricKey, generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
+    import { extractSymmetricKey, generateAsymmetricKeys, generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
     import { setupAccount } from '$lib/services/accounts';
   import { arrayBufferToHex } from "$lib/bytes";
 
@@ -103,7 +103,7 @@
         const psk = await generateProtectedSymmetricKey(smk);
         // Use to encrypt the rsa private key.
         const sk = await extractSymmetricKey(arrayBufferToHex(mk), psk);
-        const [rsa_private_key, rsa_public_key] = await generateAsymmetricKey();
+        const [rsa_private_key, rsa_public_key] = await generateAsymmetricKeys();
 
         const epsk = psk.toBase64();
         const encoder = new TextEncoder();

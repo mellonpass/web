@@ -124,7 +124,7 @@ export async function extractCipherKey(
   return <CipherKey>await sk.extractKey(pck);
 }
 
-export async function generateAsymmetricKey(): Promise<
+export async function generateAsymmetricKeys(): Promise<
   [JsonWebKey, JsonWebKey]
 > {
   const keyPair = await crypto.subtle.generateKey(

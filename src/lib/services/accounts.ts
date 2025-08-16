@@ -42,7 +42,7 @@ export const setupAccount = async (
   loginHash: string,
   protectedSymmetricKey: string,
   hint: string,
-  rsa_protected_key: string,
+  rsa_protected_key: string, // private key.
   rsa_public_key: string
 ) => {
   return await requests({
