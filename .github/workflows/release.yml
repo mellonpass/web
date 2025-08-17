@@ -2,8 +2,7 @@ name: Build image
 
 on:
   push:
-    branches: ["main"]
-    tags: ["*"]
+    branches: ["demo"]
 
 jobs:
   build:
@@ -31,6 +30,7 @@ jobs:
         run: |
           touch .env.production
           echo PUBLIC_SERVER_URL=${{ vars.PUBLIC_SERVER_URL }} >> .env.production
+          echo PUBLIC_DEMO_MODE=${{ vars.PUBLIC_DEMO_MODE }} >> .env.production
           echo PUBLIC_CF_ENABLE_TURNSTILE=${{ vars.PUBLIC_CF_ENABLE_TURNSTILE }} >> .env.production
           echo PUBLIC_CF_ENABLE_TURNSTILE=${{ vars.PUBLIC_CF_ENABLE_TURNSTILE }} >> .env.production
           echo PUBLIC_CF_TURNSTILE_SITE_KEY=${{ vars.PUBLIC_CF_TURNSTILE_SITE_KEY }} >> .env.production
