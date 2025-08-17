@@ -69,6 +69,9 @@
     };
 </script>
 
+<svelte:head>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</svelte:head>
 
 <header class="uk-text-center">
     <h2>Login</h2>
@@ -149,17 +152,19 @@
 
     </div>
 
-    <div class="uk-margin">
-
-        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+    {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+        <div class="uk-margin-small-top">
+            <div class="uk-text-meta uk-margin-small">Let us know you're human.</div>
             <div
                 class="cf-turnstile"
-                data-size="normal"
+                data-size="flexible"
                 data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
                 data-callback={(token: string) => cfTurnstileIntegrationResponse = token }>
             </div>
-        {/if}
+        </div>
+    {/if}
 
+    <div class="uk-margin">
         <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
 
