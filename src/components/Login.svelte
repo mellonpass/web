@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { PUBLIC_CF_ENABLE_TURNSTILE, PUBLIC_CF_TURNSTILE_SITE_KEY } from '$env/static/public';
+
     import Icon from "@iconify/svelte";
 
     import { page } from '$app/state';
@@ -147,6 +149,11 @@
     </div>
 
     <div class="uk-margin">
+
+        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+            <div class="cf-turnstile" data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}></div>
+        {/if}
+
         <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
 
