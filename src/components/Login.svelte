@@ -154,8 +154,9 @@
         {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
             <div
                 class="cf-turnstile"
+                data-size="normal"
                 data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
-                data-callback={(token: string) => {cfTurnstileIntegrationResponse = token} }>
+                data-callback={(token: string) => cfTurnstileIntegrationResponse = token }>
             </div>
         {/if}
 
