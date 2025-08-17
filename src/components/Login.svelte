@@ -35,6 +35,7 @@
     };
 
     let loginError = $state(null);
+    let cfTurnstileIntegrationResponse: string | null = $state(null);
     let formSubmitted = $state(false);
 
     const onFieldFocusOut = (e: any) => {
@@ -54,9 +55,9 @@
         if (e.target.checkValidity()) {
             const mk = await generateMasterKey(emailInput.value!, masterPasswordInput.value!);
             const loginHash = await generateLoginhash(mk, masterPasswordInput.value!);
-            
+
             try {
-                const response = await loginAccount(emailInput.value!, loginHash);
+                const response = await loginAccount(emailInput.value!, loginHash, cfTurnstileIntegrationResponse);
                 localStorage.setItem("mk", arrayBufferToHex(mk));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign(page.url.searchParams.get("next") ?? "/");
@@ -151,7 +152,11 @@
     <div class="uk-margin">
 
         {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
-            <div class="cf-turnstile" data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}></div>
+            <div
+                class="cf-turnstile"
+                data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
+                data-callback={(token: string) => {cfTurnstileIntegrationResponse = token} }>
+            </div>
         {/if}
 
         <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Login</button>

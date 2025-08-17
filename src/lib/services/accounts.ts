@@ -59,11 +59,19 @@ export const setupAccount = async (
   });
 };
 
-export const loginAccount = async (email: string, loginHash: string) => {
+export const loginAccount = async (
+  email: string,
+  loginHash: string,
+  cf_turnstile_token: string | null
+) => {
   return await requests({
     method: "POST",
     url: `${PUBLIC_SERVER_URL}/accounts/login`,
-    payload: { email: email, login_hash: loginHash },
+    payload: {
+      email: email,
+      login_hash: loginHash,
+      cf_turnstile_token: cf_turnstile_token,
+    },
     options: { credentials: "include" },
   });
 };
