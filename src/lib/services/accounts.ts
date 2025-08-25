@@ -1,10 +1,18 @@
 import { PUBLIC_SERVER_URL } from "$env/static/public";
 import { requests } from "$lib/requests";
 
-export const createAccount = async (name: string, email: string) => {
+export const createAccount = async (
+  name: string,
+  email: string,
+  cf_turnstile_token?: string
+) => {
   const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/create`, {
     method: "POST",
-    body: JSON.stringify({ name: name, email: email }),
+    body: JSON.stringify({
+      name: name,
+      email: email,
+      cf_turnstile_token: cf_turnstile_token,
+    }),
     headers: {
       "content-type": "application/json",
     },
@@ -62,7 +70,7 @@ export const setupAccount = async (
 export const loginAccount = async (
   email: string,
   loginHash: string,
-  cf_turnstile_token: string | null
+  cf_turnstile_token?: string
 ) => {
   return await requests({
     method: "POST",

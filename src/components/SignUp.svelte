@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { PUBLIC_CF_ENABLE_TURNSTILE, PUBLIC_CF_TURNSTILE_SITE_KEY } from '$env/static/public';
     import { createAccount } from '$lib/services/accounts';
+  import Turnstile from './Turnstile.svelte';
 
     type FormField = {
         id: string;
@@ -11,6 +13,7 @@
     }
 
     let signUpSuccessful = $state(false);
+    let cfTurnsTileToken: string | undefined = $state();
 
     const serverErrors: Array<{message: string}> = $state([]);
     const invalidityMapper: {[key: string]: any} = $state({});
@@ -65,7 +68,7 @@
         // ensure that these fields validity check beyond required.
         if (validateName()) {
             try {
-                await createAccount(nameField!.value!, emailField!.value!);
+                await createAccount(nameField!.value!, emailField!.value!, cfTurnsTileToken);
                 signUpSuccessful = true;
             } catch (error: any) {  // TODO: do something about error handling typing.
                 const error_ = error.error;
@@ -141,8 +144,18 @@
             </div>
         {/each}
 
+        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+            <Turnstile
+                sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
+                action="signup"
+                callback={(cfToken) => {
+                    cfTurnsTileToken = cfToken;
+                }}
+            />
+        {/if}
+
         <div class="uk-margin">
-            <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
+            <button disabled={formSubmitted || cfTurnsTileToken == null} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
         </div>
 
         <!-- Temporarily remove this part. -->

@@ -38,7 +38,7 @@
     };
 
     let loginError = $state(null);
-    let cfTurnsTileToken: string | null = $state(null);
+    let cfTurnsTileToken: string | undefined = $state();
     let formSubmitted = $state(false);
 
     // --
@@ -159,7 +159,6 @@
         <Turnstile
             sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
             action="login"
-            execution="render"
             callback={(cfToken) => {
                 cfTurnsTileToken = cfToken;
             }}
