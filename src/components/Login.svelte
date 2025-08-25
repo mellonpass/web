@@ -1,13 +1,16 @@
 <script lang="ts">
-    import { PUBLIC_CF_ENABLE_TURNSTILE, PUBLIC_CF_TURNSTILE_SITE_KEY } from '$env/static/public';
+    import { PUBLIC_CF_ENABLE_TURNSTILE, PUBLIC_CF_TURNSTILE_SITE_KEY } from "$env/static/public";
 
     import Icon from "@iconify/svelte";
+    
+    import { page } from "$app/state";
 
-    import { page } from '$app/state';
+    import Turnstile from "./Turnstile.svelte";
 
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { loginAccount } from "$lib/services/accounts";
-    import { arrayBufferToHex } from '$lib/bytes';
+    import { arrayBufferToHex } from "$lib/bytes";
+    
 
     type FormField = {
         name: string;
@@ -35,8 +38,11 @@
     };
 
     let loginError = $state(null);
-    let cfTurnstileIntegrationResponse: string | null = $state(null);
+    let cfTurnsTileToken: string | null = $state(null);
     let formSubmitted = $state(false);
+
+    // --
+    // Events
 
     const onFieldFocusOut = (e: any) => {
         const field = formFields[e.target.name];
@@ -57,7 +63,7 @@
             const loginHash = await generateLoginhash(mk, masterPasswordInput.value!);
 
             try {
-                const response = await loginAccount(emailInput.value!, loginHash, cfTurnstileIntegrationResponse);
+                const response = await loginAccount(emailInput.value!, loginHash, cfTurnsTileToken);
                 localStorage.setItem("mk", arrayBufferToHex(mk));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign(page.url.searchParams.get("next") ?? "/");
@@ -67,11 +73,8 @@
         }
         formSubmitted = false;
     };
-</script>
 
-<svelte:head>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-</svelte:head>
+</script>
 
 <header class="uk-text-center">
     <h2>Login</h2>
@@ -127,7 +130,7 @@
                 href={null}
                 onclick={() => {masterPasswordInput.toggle = !masterPasswordInput.toggle}}
             >
-                <Icon icon="hugeicons:{masterPasswordInput.toggle ? 'view-off-slash' : 'view'}" width="24" height="24" />
+                <Icon icon="hugeicons:{masterPasswordInput.toggle ? "view-off-slash" : "view"}" width="24" height="24" />
             </a>
             <input
                 bind:value={masterPasswordInput.value}
@@ -153,19 +156,18 @@
     </div>
 
     {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
-        <div class="uk-margin-small-top">
-            <div class="uk-text-meta uk-margin-small">Let us know you're human.</div>
-            <div
-                class="cf-turnstile"
-                data-size="flexible"
-                data-sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
-                data-callback={(token: string) => cfTurnstileIntegrationResponse = token }>
-            </div>
-        </div>
+        <Turnstile
+            sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
+            action="login"
+            execution="render"
+            callback={(cfToken) => {
+                cfTurnsTileToken = cfToken;
+            }}
+        />
     {/if}
 
     <div class="uk-margin">
-        <button disabled={formSubmitted} class="uk-button uk-button-primary uk-width-1-1">Login</button>
+        <button disabled={formSubmitted || cfTurnsTileToken == null} class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
 
     <p class="uk-text-center">
