@@ -20,7 +20,7 @@
     let {
         sitekey,
         action,
-        execution = "execute",
+        execution = "render",
         size = "flexible",
         retry = "auto",
         retryInterval = 8000,
