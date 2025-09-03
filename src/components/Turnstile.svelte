@@ -81,7 +81,7 @@
 
 {#if loaded && mounted}
     <div class="uk-margin-small-top">
-        <div class="uk-text-meta uk-margin-small">Let us know you"re human.</div>
+        <div class="uk-text-meta uk-margin-small">Let us know you're human.</div>
         <div use:turnstileAction={renderParams} id="turnstile-widget"></div>
     </div>
 {/if}

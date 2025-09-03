@@ -17,6 +17,15 @@
 
     const serverErrors: Array<{message: string}> = $state([]);
     const invalidityMapper: {[key: string]: any} = $state({});
+
+    let isFormValid: boolean = $derived.by(() => {
+        const invalidityValues = Object.values(invalidityMapper);
+        if (invalidityValues.length < 2) {
+            return false;
+        }
+        return !invalidityValues.some(invalid => invalid);
+    });
+
     const formFields: Array<FormField> = $state([
         {
             "id": "name",
@@ -59,14 +68,9 @@
             const element = form.elements[key]
             invalidityMapper[key] = !element.checkValidity();
         }
-        // if any of the fields are invalid, reject submit.
-        if (Object.values(invalidityMapper).some(invalid => invalid)) {
-            formSubmitted = false;
-            return;
-        }
 
         // ensure that these fields validity check beyond required.
-        if (validateName()) {
+        if (isFormValid && validateName()) {
             try {
                 await createAccount(nameField!.value!, emailField!.value!, cfTurnsTileToken);
                 signUpSuccessful = true;
@@ -144,7 +148,7 @@
             </div>
         {/each}
 
-        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true" && isFormValid}
             <Turnstile
                 sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
                 action="signup"

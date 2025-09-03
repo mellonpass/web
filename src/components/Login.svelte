@@ -32,6 +32,13 @@
         toggle: false,
     });
 
+    let isFormValid = $derived.by(() => {
+        if (emailInput.invalid == null || masterPasswordInput.invalid == null) {
+            return false;
+        }
+        return !(emailInput.invalid || masterPasswordInput.invalid);
+    });
+
     let formFields: any = {
         "email": emailInput,
         "master-password": masterPasswordInput
@@ -155,7 +162,7 @@
 
     </div>
 
-    {#if PUBLIC_CF_ENABLE_TURNSTILE === "true"}
+    {#if PUBLIC_CF_ENABLE_TURNSTILE === "true" && isFormValid}
         <Turnstile
             sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
             action="login"
