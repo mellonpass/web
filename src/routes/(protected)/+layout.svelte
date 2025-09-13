@@ -1,15 +1,22 @@
 <script lang="ts">
-	let { children } = $props();
+  import NewOrganization from "../../components/NewOrganization.svelte";
 </script>
 
-<script>
-  import NewOrganization from "../components/NewOrganization.svelte";
-</script>
 <nav>
-  <!-- Other menu items -->
-  <NewOrganization on:create={(e) => console.log("Organization created:", e.detail)} />
+  <NewOrganization onCreate={(detail) => console.log("Organization created:", detail)} />
 </nav>
 
 <section class="uk-height-viewport">
-    {@render children()}
+  <slot />
 </section>
+<style>
+  nav {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  section {
+    padding: 1rem;
+  }
+</style>

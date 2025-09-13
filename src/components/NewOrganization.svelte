@@ -1,7 +1,6 @@
-<script>
-  import { createEventDispatcher } from "svelte";
+<script lang="ts">
+  export let onCreate: ((detail: { name: string }) => void) | undefined;
 
-  const dispatch = createEventDispatcher();
   let orgName = "";
   let showModal = false;
 
@@ -15,7 +14,7 @@
 
   function createOrganization() {
     if (orgName.trim()) {
-      dispatch("create", { name: orgName });
+      onCreate?.({ name: orgName }); // call the parent callback
       orgName = "";
       closeModal();
     }
