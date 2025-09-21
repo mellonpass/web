@@ -32,6 +32,8 @@
         toggle: false,
     });
 
+    const enableTurnstile = PUBLIC_CF_ENABLE_TURNSTILE == "true";
+
     let isFormValid = $derived.by(() => {
         if (emailInput.invalid == null || masterPasswordInput.invalid == null) {
             return false;
@@ -162,7 +164,7 @@
 
     </div>
 
-    {#if PUBLIC_CF_ENABLE_TURNSTILE === "true" && isFormValid}
+    {#if enableTurnstile && isFormValid}
         <Turnstile
             sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
             action="login"
@@ -173,7 +175,7 @@
     {/if}
 
     <div class="uk-margin">
-        <button disabled={formSubmitted || cfTurnsTileToken == null} class="uk-button uk-button-primary uk-width-1-1">Login</button>
+        <button disabled={formSubmitted || (enableTurnstile && cfTurnsTileToken == null)} class="uk-button uk-button-primary uk-width-1-1">Login</button>
     </div>
 
     <p class="uk-text-center">
