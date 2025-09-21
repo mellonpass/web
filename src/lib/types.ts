@@ -26,6 +26,7 @@ export enum VaultStatus {
   DELETED = "DELETED",
 }
 
+// Cipher data that are encrypted and decrypted from vault item data.
 export interface Cipher {
   id?: string;
   isFavorite: string;
@@ -47,10 +48,13 @@ export interface VaultData {
   content?: any;
 }
 
+// This is the items that are shown at the list of vault items
 export interface VaultItem extends VaultData {
   content: string;
 }
 
+// This is the vault's content data or details that are shown
+// when a user select a vault item on the list.
 export interface VaultContentData extends VaultData {
   data: CipherData;
 }

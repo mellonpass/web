@@ -17,6 +17,8 @@
 
     const serverErrors: Array<{message: string}> = $state([]);
     const invalidityMapper: {[key: string]: any} = $state({});
+    
+    const enableTurnstile = PUBLIC_CF_ENABLE_TURNSTILE == "true";
 
     let isFormValid: boolean = $derived.by(() => {
         const invalidityValues = Object.values(invalidityMapper);
@@ -148,7 +150,7 @@
             </div>
         {/each}
 
-        {#if PUBLIC_CF_ENABLE_TURNSTILE === "true" && isFormValid}
+        {#if enableTurnstile && isFormValid}
             <Turnstile
                 sitekey={PUBLIC_CF_TURNSTILE_SITE_KEY}
                 action="signup"
@@ -159,7 +161,7 @@
         {/if}
 
         <div class="uk-margin">
-            <button disabled={formSubmitted || cfTurnsTileToken == null} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
+            <button disabled={formSubmitted || (enableTurnstile && cfTurnsTileToken == null)} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
         </div>
 
         <!-- Temporarily remove this part. -->
