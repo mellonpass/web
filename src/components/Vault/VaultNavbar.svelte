@@ -5,8 +5,10 @@
 
     import { invalidateAll } from '$app/navigation';
 
+    import VaultCardAdd from '$components/Vault/types/Card/VaultCardAdd.svelte';
     import VaultLoginAdd from '$components/Vault/types/Login/VaultLoginAdd.svelte';
     import VaultSecureNoteAdd from '$components/Vault/types/SecureNote/VaultSecureNoteAdd.svelte';
+
     import { searchFilter } from '$lib/stores';
     import { logoutAccount } from '$lib/services/accounts';
 
@@ -14,7 +16,8 @@
 
     const ModalMapper: { [key: string]: any } = {
         "login": VaultLoginAdd,
-        "secureNote": VaultSecureNoteAdd
+        "secureNote": VaultSecureNoteAdd,
+        "card": VaultCardAdd,
     };
 
     const ModalComponent = $derived(ModalMapper[selectedModal!]);
@@ -50,6 +53,19 @@
             { /* @ts-ignore */ null }
             <div id="new-item-dropdown" uk-dropdown="mode: click; pos: bottom-right; shift: false; flip: false">
                 <ul class="uk-nav uk-dropdown-nav">
+                    <li class="uk-text-default">
+                        { /* @ts-ignore */ null }
+                        <a
+                            href={null}
+                            uk-toggle="target: #vault-modal"
+                            onclick={() => {
+                                selectedModal = "card";
+                                UIkit.dropdown("#new-item-dropdown").hide();
+                            }}>
+                            <Icon class="uk-margin-small-right"  icon="hugeicons:credit-card" width="24" height="24" />
+                            Card
+                        </a>
+                    </li>
                     <li class="uk-text-default">
                         { /* @ts-ignore */ null }
                         <a
