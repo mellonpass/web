@@ -13,14 +13,14 @@
         itemDetails,
         additionalOptions,
         onSubmit,
-        children
+        customContent
     }: {
         id: string,
         title: string,
         itemDetails: FormItemDetails,
         additionalOptions: FormAdditionalOptions,
         onSubmit: FormCallBack,
-        children: any
+        customContent: any
     } = $props();
 
     let invalidInput = $state(false);
@@ -67,7 +67,7 @@
     { /* @ts-ignore */ null }
      <fieldset class="uk-fieldset uk-margin" uk-grid>
         <legend class="uk-legend uk-text-default uk-text-bold">{ title }</legend>
-        {@render children()}
+        {@render customContent()}
      </fieldset>
 
     <!-- Additional options -->
