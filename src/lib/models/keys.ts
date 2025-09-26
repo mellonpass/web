@@ -3,6 +3,9 @@ import { ProtectedData } from "./data";
 
 const BIT_SIZE = 8;
 
+/**
+ * Base key that imports AES and MAC keys from the keybuffer.
+ */
 abstract class BaseKey {
   protected aeskeyBuffer: Uint8Array<ArrayBuffer>;
   protected mackeyBuffer: Uint8Array<ArrayBuffer>;

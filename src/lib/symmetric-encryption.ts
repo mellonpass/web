@@ -1,8 +1,8 @@
 import {
-  CipherStatus,
   CipherType,
   VaultStatus,
   type Cipher,
+  type CipherCardData,
   type CipherData,
   type CipherLoginData,
   type CipherSecureNoteData,
@@ -12,6 +12,67 @@ import {
 } from "$lib/types";
 import { extractCipherKey } from "./key-generation";
 import type { CipherKey, SymmetricKey } from "./models/keys";
+
+type EncrypyedCipherData = CipherData;
+
+abstract class CipherEncryptor {
+  protected cipherKey: CipherKey;
+  protected encoder = new TextEncoder();
+
+  constructor(cipherKey: CipherKey) {
+    this.cipherKey = cipherKey;
+  }
+
+  abstract encryptData(data: CipherData): Promise<EncrypyedCipherData>;
+}
+
+class CardDataEncryptor extends CipherEncryptor {
+  async encryptData(data: CipherCardData): Promise<EncrypyedCipherData> {
+    return {
+      name: await this.cipherKey.encrypt(this.encoder.encode(data.name)),
+      number: await this.cipherKey.encrypt(this.encoder.encode(data.number)),
+      brand: await this.cipherKey.encrypt(this.encoder.encode(data.brand)),
+      expMonth: await this.cipherKey.encrypt(
+        this.encoder.encode(data.expMonth)
+      ),
+      expYear: await this.cipherKey.encrypt(this.encoder.encode(data.expYear)),
+      securityCode: await this.cipherKey.encrypt(
+        this.encoder.encode(data.securityCode)
+      ),
+    };
+  }
+}
+
+class LoginDataEncryptor extends CipherEncryptor {
+  async encryptData(data: CipherLoginData): Promise<EncrypyedCipherData> {
+    return {
+      username: await this.cipherKey.encrypt(
+        this.encoder.encode(data.username)
+      ),
+      password: await this.cipherKey.encrypt(
+        this.encoder.encode(data.password)
+      ),
+    } satisfies CipherLoginData;
+  }
+}
+
+class SecureNoteEncryptor extends CipherEncryptor {
+  async encryptData(data: CipherSecureNoteData): Promise<EncrypyedCipherData> {
+    return {
+      note: await this.cipherKey.encrypt(this.encoder.encode(data.note)),
+    } satisfies CipherSecureNoteData;
+  }
+}
+
+const ENCRYPTOR_MAPPER: {
+  [key: string]: (cipherKey: CipherKey) => CipherEncryptor;
+} = {
+  [CipherType.CARD]: (cipherKey: CipherKey) => new CardDataEncryptor(cipherKey),
+  [CipherType.LOGIN]: (cipherKey: CipherKey) =>
+    new LoginDataEncryptor(cipherKey),
+  [CipherType.SECURE_NOTE]: (cipherKey: CipherKey) =>
+    new SecureNoteEncryptor(cipherKey),
+};
 
 export async function encryptCipher({
   sk,
@@ -30,30 +91,13 @@ export async function encryptCipher({
   status: VaultStatus;
   isFavorite: boolean;
 }): Promise<Cipher> {
-  const pck = await sk.protectKey(ck);
   const encoder = new TextEncoder();
+  const encryptorFactory = ENCRYPTOR_MAPPER[type];
+  const enryptor = encryptorFactory(ck);
 
-  let encrpytedData: CipherData;
+  let encryptedData = await enryptor.encryptData(data);
 
-  switch (type) {
-    case CipherType.LOGIN:
-      data = data as CipherLoginData;
-      const loginData: CipherLoginData = {
-        username: await ck.encrypt(encoder.encode(data.username)),
-        password: await ck.encrypt(encoder.encode(data.password)),
-      };
-      encrpytedData = loginData;
-      break;
-    case CipherType.SECURE_NOTE:
-      data = data as CipherSecureNoteData;
-      const secureNoteData: CipherSecureNoteData = {
-        note: await ck.encrypt(encoder.encode(data.note)),
-      };
-      encrpytedData = secureNoteData;
-      break;
-    default:
-      throw new Error("Unable to encrypt cipher! Unsupported cipher type.");
-  }
+  const pck = await sk.protectKey(ck);
 
   const cipher: Cipher = {
     type: type,
@@ -61,7 +105,7 @@ export async function encryptCipher({
     name: await ck.encrypt(encoder.encode(name)),
     isFavorite: await ck.encrypt(encoder.encode(isFavorite.toString())),
     status: await ck.encrypt(encoder.encode(status)),
-    data: encrpytedData,
+    data: encryptedData,
   };
 
   return cipher;

@@ -1,3 +1,12 @@
+export interface CipherCardData {
+  name: string;
+  number: string;
+  brand: string;
+  expMonth: string;
+  expYear: string;
+  securityCode: string;
+}
+
 export interface CipherLoginData {
   username: string;
   password: string;
@@ -7,9 +16,13 @@ export interface CipherSecureNoteData {
   note: string;
 }
 
-export type CipherData = CipherLoginData | CipherSecureNoteData;
+export type CipherData =
+  | CipherLoginData
+  | CipherSecureNoteData
+  | CipherCardData;
 
 export enum CipherType {
+  CARD = "CARD",
   LOGIN = "LOGIN",
   SECURE_NOTE = "SECURE_NOTE",
 }
