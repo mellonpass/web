@@ -2,25 +2,20 @@
     type FormItemDetails = {
         name: string
     }
-    type FormAdditionalOptions = {
-        notes: string
-    };
     type FormCallBack  = (args: any) => void;
 
     let {
         id,
         title,
         itemDetails,
-        additionalOptions,
         onSubmit,
-        customContent
+        children
     }: {
         id: string,
         title: string,
         itemDetails: FormItemDetails,
-        additionalOptions: FormAdditionalOptions,
         onSubmit: FormCallBack,
-        customContent: any
+        children: any
     } = $props();
 
     let invalidInput = $state(false);
@@ -67,24 +62,7 @@
     { /* @ts-ignore */ null }
      <fieldset class="uk-fieldset uk-margin" uk-grid>
         <legend class="uk-legend uk-text-default uk-text-bold">{ title }</legend>
-        {@render customContent()}
+        {@render children()}
      </fieldset>
 
-    <!-- Additional options -->
-    <fieldset class="uk-fieldset uk-margin">
-         <legend class="uk-legend uk-text-default uk-text-bold">Additional options</legend>
-         <div class="uk-margin-small">
-            <div class="uk-form-controls">
-                <textarea
-                    style="resize: none;"
-                    class="uk-textarea uk-border-rounded"
-                    aria-label="Textarea"
-                    placeholder="Notes"
-                    rows=5
-                    bind:value={additionalOptions.notes}
-                >
-                </textarea>
-            </div>
-        </div>
-    </fieldset>
 </form>
