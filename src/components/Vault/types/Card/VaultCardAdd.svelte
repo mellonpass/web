@@ -6,14 +6,16 @@
     import AddItemForm from "$components/Vault/types/templates/AddItemForm.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
+    import { createCipher } from "$lib/services/ciphers";
+    import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, VaultStatus, type CipherCardData } from "$lib/types";
+    import { CipherType, VaultStatus, type CipherCardData, type VaultItem } from "$lib/types";
 
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
 
     let itemDetails = {
-        name: "",
+        name: "Card",
     };
     let itemData: CipherCardData = {
         name: "",
@@ -23,6 +25,7 @@
         expYear: "",
         securityCode: "",
     };
+    let errors: Array<string> = [];
 
     const onSubmit = async (e: any) => {
         e.preventDefault();
@@ -44,7 +47,34 @@
             data: itemData
         });
 
-        console.log(cipher);
+        const response = await createCipher(cipher);
+        if (response.data.cipher.create.__typename == "Cipher") {
+            const createdCipher = response.data.cipher.create;
+            cipherStore.add(createdCipher);
+
+            const newCardItem: VaultItem = {
+                id: createdCipher.id,
+                type: CipherType.CARD,
+                name: itemDetails.name,
+                content: itemData.name,
+                isFavorite: false,
+                status: VaultStatus.ACTIVE
+            }
+            $newVaultItem = newCardItem;
+
+            UIkit.modal("#vault-modal").hide();
+
+            setTimeout(() => {
+                e.target.reset();
+                // Reset to default values.
+                setTimeout(() => {
+                    errors = [];
+                    itemDetails.name = "Card";
+                }, 500);
+            });
+        } else {
+            errors.push(response.data.cipher.create.message);
+        }
     };
 
 </script>
@@ -55,6 +85,7 @@
         title="Card details"
         {itemDetails}
         {onSubmit}
+        {errors}
     >
         <div class="uk-margin-small uk-width-1-1">
             <!-- svelte-ignore a11y_autofocus -->
