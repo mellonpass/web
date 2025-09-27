@@ -1,20 +1,27 @@
 <script lang="ts">
+  import { error } from "@sveltejs/kit";
+  import { onMount } from "svelte";
+
     type FormItemDetails = {
         name: string
     }
     type FormCallBack  = (args: any) => void;
+
+    let nameRef: HTMLInputElement | null = $state(null);
 
     let {
         id,
         title,
         itemDetails,
         onSubmit,
+        errors,
         children
     }: {
         id: string,
         title: string,
         itemDetails: FormItemDetails,
         onSubmit: FormCallBack,
+        errors: Array<string>,
         children: any
     } = $props();
 
@@ -31,6 +38,12 @@
         e.target.focus();
     };
 
+    onMount(() => {
+        if (nameRef) {
+            nameRef.select();
+        }
+    });
+
 </script>
 
 <form id="{id}" onsubmit={onSubmit} class="uk-form-stacked">
@@ -44,6 +57,7 @@
                 aria-label="Item title"
                 class="uk-input uk-border-rounded {invalidInput ? 'uk-form-danger' : ''}"
                 placeholder="Item name"
+                bind:this={nameRef}
                 bind:value={itemDetails.name}
                 oninput={handleInput}
                 oninvalid={handleInvalid}
@@ -65,4 +79,12 @@
         {@render children()}
      </fieldset>
 
+    {#if errors  }
+        {#each errors as error}
+            {/* @ts-ignore */ null}
+            <div class="uk-alert-danger" uk-alert>
+                <p>Error: {error}</p>
+            </div>
+        {/each}
+    {/if}
 </form>

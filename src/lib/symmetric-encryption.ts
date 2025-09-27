@@ -13,6 +13,7 @@ import {
 import { extractCipherKey } from "./key-generation";
 import type { CipherKey, SymmetricKey } from "./models/keys";
 
+// Use only for encrypted CipherData values.
 type EncrypyedCipherData = CipherData;
 
 abstract class CipherEncryptor {
