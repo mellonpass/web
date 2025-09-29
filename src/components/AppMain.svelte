@@ -50,6 +50,9 @@
         selectVaultItem();
     };
 
+    /**
+     * Decrypt ciphers for list of vault items display.
+     */
     const decryptCiphers = async (ciphers: Array<Cipher>): Promise<Array<VaultItem>> => {
         const result: Array<VaultItem> = []
         const sk = await extractSymmetricKey(mk, epsk);
@@ -67,12 +70,16 @@
 
         $vaultItemStore = await decryptCiphers($cipherStore);
 
+        // FIXME: refactor by using hashmap.
         switch(category) {
             case CipherCategory.All:
                 $vaultItemStore = $vaultItemStore.filter(item => item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.FAVORITES:
                 $vaultItemStore = $vaultItemStore.filter(item => item.isFavorite && item.status == VaultStatus.ACTIVE);
+                break;
+            case CipherCategory.CARDS:
+                $vaultItemStore = $vaultItemStore.filter(item => item.type == CipherType.CARD && item.status == VaultStatus.ACTIVE);
                 break;
             case CipherCategory.LOGINS:
                 $vaultItemStore = $vaultItemStore.filter(item => item.type == CipherType.LOGIN && item.status == VaultStatus.ACTIVE);
