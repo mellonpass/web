@@ -40,7 +40,7 @@ class CardDataEncryptor extends CipherEncryptor {
       securityCode: await this.cipherKey.encrypt(
         this.encoder.encode(data.securityCode)
       ),
-    };
+    } satisfies CipherCardData;
   }
 }
 
@@ -126,15 +126,21 @@ export async function decryptCipherForVaultItem(
     name: await ck.decryptText(cipher.name),
   };
 
+  // FIXME: refactor by using hashmap.
   switch (cipher.type) {
     case CipherType.LOGIN:
       const loginData = cipher.data as CipherLoginData;
       vaultData.content = await ck.decryptText(loginData.username);
       break;
 
-    default:
+    case CipherType.SECURE_NOTE:
       const secureNoteData = cipher.data as CipherSecureNoteData;
       vaultData.content = await ck.decryptText(secureNoteData.note);
+      break;
+
+    case CipherType.CARD:
+      const cipherCardData = cipher.data as CipherCardData;
+      vaultData.content = await ck.decryptText(cipherCardData.name);
       break;
   }
 
@@ -154,6 +160,7 @@ export async function decryptCipherForVaultContent(
     name: await ck.decryptText(cipher.name),
   };
 
+  // FIXME: refactor by using hashmap.
   switch (cipher.type) {
     case CipherType.LOGIN:
       const loginData = cipher.data as CipherLoginData;
@@ -162,10 +169,21 @@ export async function decryptCipherForVaultContent(
         password: await ck.decryptText(loginData.password),
       };
       break;
-    default:
+    case CipherType.SECURE_NOTE:
       const secureNoteData = cipher.data as CipherSecureNoteData;
       vaultContent.data = {
         note: await ck.decryptText(secureNoteData.note),
+      };
+      break;
+    case CipherType.CARD:
+      const cardData = cipher.data as CipherCardData;
+      vaultContent.data = {
+        name: await ck.decryptText(cardData.name),
+        number: await ck.decryptText(cardData.number),
+        brand: await ck.decryptText(cardData.brand),
+        expMonth: await ck.decryptText(cardData.expMonth),
+        expYear: await ck.decryptText(cardData.expYear),
+        securityCode: await ck.decryptText(cardData.securityCode),
       };
       break;
   }

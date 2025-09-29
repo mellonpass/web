@@ -76,6 +76,7 @@ export enum CipherCategory {
   ARCHIVES = "ARCHIVES",
   All = "ALL",
   FAVORITES = "FAVORITES",
+  CARDS = "CARDS",
   LOGINS = "LOGINS",
   SECURE_NOTES = "SECURE_NOTES",
   RECENTLY_DELETED = "DELETED",
