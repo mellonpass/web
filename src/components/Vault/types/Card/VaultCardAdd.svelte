@@ -10,9 +10,13 @@
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
     import { CipherType, VaultStatus, type CipherCardData, type VaultItem } from "$lib/types";
+    import Icon from "@iconify/svelte";
 
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
+
+    let toggleCardNumber = false;
+    let toggleSecurityCode = false;
 
     let itemDetails = {
         name: "Card",
@@ -48,6 +52,8 @@
         });
 
         const response = await createCipher(cipher);
+
+        // FIXME: refactor to be reusable.
         if (response.data.cipher.create.__typename == "Cipher") {
             const createdCipher = response.data.cipher.create;
             cipherStore.add(createdCipher);
@@ -56,7 +62,7 @@
                 id: createdCipher.id,
                 type: CipherType.CARD,
                 name: itemDetails.name,
-                content: itemData.name,
+                content: itemData.brand || itemDetails.name,
                 isFavorite: false,
                 status: VaultStatus.ACTIVE
             }
@@ -88,7 +94,6 @@
         {errors}
     >
         <div class="uk-margin-small uk-width-1-1">
-            <!-- svelte-ignore a11y_autofocus -->
             <input
                 type="text"
                 aria-label="cardholder-name"
@@ -98,14 +103,23 @@
             >
         </div>
         <div class="uk-margin-small uk-width-1-1">
-            <!-- svelte-ignore a11y_autofocus -->
-            <input
-                type="text"
-                aria-label="card-number"
-                class="uk-input uk-border-rounded"
-                placeholder="Card number"
-                bind:value={itemData.number}
-            >
+            <div class="uk-inline uk-width-1-1">
+                <a
+                    class="uk-form-icon uk-form-icon-flip"
+                    aria-label="card-number-toggle"
+                    href={null}
+                    onclick={() => toggleCardNumber = !toggleCardNumber}
+                >
+                    <Icon icon="hugeicons:{toggleCardNumber ? 'view-off-slash' : 'view'}" width="24" height="24" />
+                </a>
+                <input
+                    type={toggleCardNumber ? "text" : "password"}
+                    aria-label="card-number"
+                    class="uk-input uk-border-rounded"
+                    placeholder="Card number"
+                    bind:value={itemData.number}
+                >
+            </div>
         </div>
         <div class="uk-margin-small uk-width-1-1">
             <select
@@ -126,7 +140,6 @@
             </select>
         </div>
         <div class="uk-margin-small uk-width-1-2">
-            <!-- svelte-ignore a11y_autofocus -->
             <select
                 class="uk-select uk-border-rounded"
                 bind:value={itemData.expMonth}
@@ -147,7 +160,6 @@
             </select>
         </div>
         <div class="uk-margin-small uk-width-1-2">
-            <!-- svelte-ignore a11y_autofocus -->
             <input
                 type="number"
                 aria-label="card-exp-year"
@@ -157,14 +169,23 @@
             >
         </div>
         <div class="uk-margin-small uk-width-1-1">
-            <!-- svelte-ignore a11y_autofocus -->
-            <input
-                type="password"
-                aria-label="card-csv"
-                class="uk-input uk-border-rounded"
-                placeholder="Security code"
-                bind:value={itemData.securityCode}
-            >
+            <div class="uk-inline uk-width-1-1">
+                <a
+                    class="uk-form-icon uk-form-icon-flip"
+                    aria-label="card-number-toggle"
+                    href={null}
+                    onclick={() => toggleSecurityCode = !toggleSecurityCode}
+                >
+                    <Icon icon="hugeicons:{toggleSecurityCode ? 'view-off-slash' : 'view'}" width="24" height="24" />
+                </a>
+                <input
+                    type={toggleSecurityCode ? "text" : "password"}
+                    aria-label="card-csv"
+                    class="uk-input uk-border-rounded"
+                    placeholder="Security code"
+                    bind:value={itemData.securityCode}
+                >
+            </div>
         </div>
     </AddItemForm>
 </div>
