@@ -8,6 +8,8 @@
     import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
+    import VaultCardDetail from "./types/Card/VaultCardDetail.svelte";
+    import VaultCardEdit from "./types/Card/VaultCardEdit.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { restoreCipherFromDelete, updateCipher, updateCipherToDelete } from "$lib/services/ciphers";
@@ -26,6 +28,10 @@
         "SECURE_NOTE": {
             "details": VaultSecureNoteDetail,
             "edit": VaultSecureNoteEdit,
+        },
+        "CARD": {
+            "details": VaultCardDetail,
+            "edit": VaultCardEdit
         }
     };
 
@@ -161,6 +167,7 @@
 
 </script>
 
+<!-- Editing controls. -->
 {#if vaultContentData}
     <div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
         {#if editMode}
@@ -178,6 +185,9 @@
                 </div>
             </div>
         {:else}
+            <!--
+                Favorite, Archine and Delete or Restore.
+            -->
             <div class="uk-flex uk-flex-right">
                 {#if vaultContentData.status != VaultStatus.DELETED}
                     <button
@@ -251,6 +261,7 @@
     </div>
 {/if}
 
+<!-- Vault content display. -->
 { /* @ts-ignore */ null}
 <div class="x-vault-component uk-flex uk-flex-center uk-width-expand" style="height: 93%;">
     {#key editMode}
@@ -289,7 +300,6 @@
                 {/if}
             {/if}
 
-
             <VaultComponent cipher={vaultContentData} bind:data={componentData} />
         </form>
     {/key}
@@ -309,5 +319,4 @@
     .x-favorite, .x-favorite:hover {
         color: #FBC02D;
     }
-
 </style>
