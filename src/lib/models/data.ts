@@ -1,4 +1,4 @@
-import type { CipherCardData, CipherData } from "../types";
+import type { Cipher, CipherCardData, CipherData } from "../types";
 
 export class ProtectedData {
   data: Uint8Array<ArrayBuffer>;
@@ -29,10 +29,11 @@ interface VaultDetailFields {
 abstract class VaultDetailComponentData<T extends CipherData> {
   protected data: T;
 
-  fields: VaultDetailFields | null = null;
+  fields: VaultDetailFields;
 
   constructor(data: T) {
     this.data = data;
+    this.fields = this.fieldDefinitions();
   }
 
   protected abstract fieldDefinitions(): VaultDetailFields;
@@ -47,8 +48,6 @@ abstract class VaultDetailComponentData<T extends CipherData> {
   }
 
   getFields(): Array<VaultDetailField> {
-    this.fields = this.fieldDefinitions();
-
     const fieldNames = Object.keys(this.fields) as Array<
       keyof VaultDetailFields
     >;
@@ -57,8 +56,10 @@ abstract class VaultDetailComponentData<T extends CipherData> {
     fieldNames.forEach((key) => {
       if (this.fields) {
         const field = this.fields[key];
-        field.value = this.evaluateValueByType(field.value, field.type);
-        fields_.push(field);
+        if (field.value) {
+          field.value = this.evaluateValueByType(field.value, field.type);
+          fields_.push(field);
+        }
       }
     });
 

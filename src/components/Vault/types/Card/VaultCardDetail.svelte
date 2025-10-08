@@ -5,6 +5,7 @@
     let { cipher } = $props();
     const data = new VaultCardDetailComponentData(cipher.data);
     const fields = data.getFields();
+    const hasFields = fields.length > 0;
 
 </script>
 
@@ -24,15 +25,19 @@
     <div class="uk-padding-small">
         <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">{cipher.data.brand || "Card"} details</div>
         <div class="x-panel uk-width-1-1 uk-padding-small">
-            {#each fields as field, i}
-                {#if field.value && !field.metadata?.hidden}
-                    <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
-                        <div class="uk-text-meta">{field.label}</div>
-                        <div>{field.value}</div>
-                        <hr class="uk-margin-remove">
-                    </div>
-                {/if}
-            {/each}
+            {#if hasFields}
+                {#each fields as field, i}
+                    {#if field.value && !field.metadata?.hidden}
+                        <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
+                            <div class="uk-text-meta">{field.label}</div>
+                            <div>{field.value}</div>
+                            <hr class="uk-margin-remove">
+                        </div>
+                    {/if}
+                {/each}
+            {:else}
+                No details.
+            {/if}
         </div>
     </div>
 </div>

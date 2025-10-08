@@ -4,12 +4,12 @@
     import { getContext, onMount } from "svelte";
     import { fade } from "svelte/transition";
 
+    import VaultCardDetail from "$components/Vault/types/Card/VaultCardDetail.svelte";
+    import VaultCardEdit from "$components/Vault/types/Card/VaultCardEdit.svelte";
     import VaultLoginDetail from "$components/Vault/types/Login/VaultLoginDetail.svelte";
     import VaultLoginEdit from "$components/Vault/types/Login/VaultLoginEdit.svelte";
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
-    import VaultCardDetail from "./types/Card/VaultCardDetail.svelte";
-    import VaultCardEdit from "./types/Card/VaultCardEdit.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { restoreCipherFromDelete, updateCipher, updateCipherToDelete } from "$lib/services/ciphers";
