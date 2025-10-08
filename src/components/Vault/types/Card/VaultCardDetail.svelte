@@ -1,8 +1,12 @@
 <script lang="ts">
+
+    import Icon from "@iconify/svelte";
+
     import vaultImage from "$lib/assets/images/vaultImage.png";
     import { VaultCardDetailComponentData } from "$lib/models/data";
 
     let { cipher } = $props();
+
     const data = new VaultCardDetailComponentData(cipher.data);
     const fields = data.getFields();
     const hasFields = fields.length > 0;
@@ -23,14 +27,30 @@
     </div>
 
     <div class="uk-padding-small">
-        <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">{cipher.data.brand || "Card"} details</div>
+        <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
+            {cipher.data.brand || "Card"} details
+        </div>
         <div class="x-panel uk-width-1-1 uk-padding-small">
             {#if hasFields}
                 {#each fields as field, i}
-                    {#if field.value && !field.metadata?.hidden}
+                    {#if field.value && !field.hidden}
                         <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
                             <div class="uk-text-meta">{field.label}</div>
-                            <div>{field.value}</div>
+                            <div class="uk-flex uk-flex-between uk-flex-middle">
+                                <span>{field.displayValue?.()}</span>
+                                {#if field.copy}
+                                    { /* @ts-ignore */ null }
+                                    <a 
+                                        href={null}
+                                        aria-label="copy-icon"
+                                        class="uk-icon-link uk-padding-xsmall"
+                                        uk-tooltip="title: Copy; pos: left"
+                                        onclick={field.copyEvent}
+                                    >
+                                        <Icon icon="hugeicons:copy-01" width="16" height="16" />
+                                    </a>
+                                {/if}
+                            </div>
                             <hr class="uk-margin-remove">
                         </div>
                     {/if}

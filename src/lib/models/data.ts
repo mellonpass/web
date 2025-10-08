@@ -15,10 +15,16 @@ export class ProtectedData {
   }
 }
 
+const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
+
 interface VaultDetailField {
   value: any | null;
   label: string;
   type: string;
+  hidden: boolean;
+  copy: boolean;
+  displayValue?: () => string;
+  copyEvent?: () => void;
   metadata?: { [key: string]: any };
 }
 
@@ -38,13 +44,25 @@ abstract class VaultDetailComponentData<T extends CipherData> {
 
   protected abstract fieldDefinitions(): VaultDetailFields;
 
-  private evaluateValueByType(value: any, type: string) {
-    switch (type) {
-      case "password":
-        return "*****";
-      default:
-        return value;
-    }
+  private setCopyEvent(field: VaultDetailField) {
+    field.copyEvent = () => {
+      navigator.clipboard.writeText(field.value);
+
+      setTimeout(() => {
+        navigator.clipboard.writeText("");
+      }, CLIPBOARD_CLEAR_DELAY);
+    };
+  }
+
+  private setDisplayvalue(field: VaultDetailField) {
+    field.displayValue = () => {
+      switch (field.type) {
+        case "password":
+          return "*****";
+        default:
+          return field.value;
+      }
+    };
   }
 
   getFields(): Array<VaultDetailField> {
@@ -56,8 +74,14 @@ abstract class VaultDetailComponentData<T extends CipherData> {
     fieldNames.forEach((key) => {
       if (this.fields) {
         const field = this.fields[key];
+
         if (field.value) {
-          field.value = this.evaluateValueByType(field.value, field.type);
+          if (field.copy) {
+            this.setCopyEvent(field);
+          }
+
+          this.setDisplayvalue(field);
+
           fields_.push(field);
         }
       }
@@ -78,17 +102,22 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
         value: this.data.name,
         label: "Cardholder name",
         type: "text",
+        copy: false,
+        hidden: false,
       },
       number: {
         value: this.data.number,
         label: "Number",
         type: "password",
+        copy: true,
+        hidden: false,
       },
       brand: {
         value: this.data.brand,
         label: "Brand",
         type: "text",
-        metadata: { hidden: true },
+        copy: false,
+        hidden: true,
       },
     };
 
@@ -119,6 +148,8 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
         value: `${month}/${year}`,
         label: "Expiration",
         type: "datetime",
+        copy: false,
+        hidden: false,
       };
     }
 
@@ -126,6 +157,8 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
       value: this.data.securityCode,
       label: "Security Code",
       type: "password",
+      copy: true,
+      hidden: false,
     };
 
     return fields;
