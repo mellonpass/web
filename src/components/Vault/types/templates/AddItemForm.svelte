@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { error } from "@sveltejs/kit";
-  import { onMount } from "svelte";
+
+    import { onMount } from "svelte";
 
     type FormItemDetails = {
         name: string
