@@ -3,8 +3,18 @@
     import Icon from "@iconify/svelte";
 
     import vaultImage from "$lib/assets/images/vaultImage.png";
+    import type { VaultDetailField } from "$lib/models/data";
 
-    let { name, detailTitle, fields } = $props();
+    let { 
+        name,
+        detailTitle,
+        fields
+     }: {
+        name: string,
+        detailTitle: string,
+        fields: Array<VaultDetailField>
+    } = $props();
+
     const hasFields = fields.length > 0;
 
 </script>

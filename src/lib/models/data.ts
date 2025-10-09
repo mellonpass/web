@@ -2,7 +2,7 @@ import type { CipherCardData, CipherData } from "../types";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
-interface VaultDetailField {
+export interface VaultDetailField {
   value: any | null;
   label: string;
   type: string;
