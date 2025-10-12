@@ -1,11 +1,7 @@
 <script lang="ts">
+    import type { FormCallBack, FormItemDetails } from "$lib/types";
 
     import { onMount } from "svelte";
-
-    type FormItemDetails = {
-        name: string
-    }
-    type FormCallBack  = (args: any) => void;
 
     let nameRef: HTMLInputElement | null = $state(null);
 
@@ -13,14 +9,14 @@
         id,
         title,
         itemDetails,
-        onSubmit,
+        onsubmit,
         errors,
         children
     }: {
         id: string,
         title: string,
         itemDetails: FormItemDetails,
-        onSubmit: FormCallBack,
+        onsubmit: FormCallBack,
         errors: Array<string>,
         children: any
     } = $props();
@@ -28,7 +24,6 @@
     let invalidInput = $state(false);
 
     const handleInput = (e: any) => {
-        const el = e.target;
         invalidInput = false;
     };
 
@@ -46,7 +41,7 @@
 
 </script>
 
-<form id="{id}" onsubmit={onSubmit} class="uk-form-stacked">
+<form id="{id}" {onsubmit} class="uk-form-stacked">
     <!-- Item details -->
     <fieldset class="uk-fieldset uk-margin">
          <legend class="uk-legend uk-text-default uk-text-bold">Item details</legend>
