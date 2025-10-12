@@ -66,10 +66,10 @@ export interface VaultItem extends VaultData {
   content: string;
 }
 
-// This is the vault's content data or details that are shown
-// when a user select a vault item on the list.
-export interface VaultContentData extends VaultData {
-  data: CipherData;
+// This is the vault's data on view/edit form
+// when a user selects a vault item on the list.
+export interface VaultItemDetail<T extends CipherData> extends VaultData {
+  data: T;
 }
 
 export enum CipherCategory {
@@ -81,3 +81,9 @@ export enum CipherCategory {
   SECURE_NOTES = "SECURE_NOTES",
   RECENTLY_DELETED = "DELETED",
 }
+
+export interface FormItemDetails {
+  name: string;
+}
+
+export type FormCallBack = (args: any) => void;

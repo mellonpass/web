@@ -6,7 +6,7 @@ import {
   type CipherData,
   type CipherLoginData,
   type CipherSecureNoteData,
-  type VaultContentData,
+  type VaultItemDetail,
   type VaultData,
   type VaultItem,
 } from "$lib/types";
@@ -147,46 +147,49 @@ export async function decryptCipherForVaultItem(
   return vaultData as VaultItem;
 }
 
-export async function decryptCipherForVaultContent(
+export async function decryptCipherForVaultContent<T extends CipherData>(
   sk: SymmetricKey,
   cipher: Cipher
-): Promise<VaultContentData> {
+): Promise<VaultItemDetail<T>> {
   const ck = await extractCipherKey(sk, cipher.key);
-  const vaultContent: Partial<VaultContentData> = {
+
+  const vaultItemDetail = {
     id: cipher.id!,
     type: cipher.type,
     isFavorite: (await ck.decryptText(cipher.isFavorite)) == "true",
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
-  };
+  } satisfies Partial<VaultItemDetail<T>>;
+
+  let data: any;
 
   // FIXME: refactor by using hashmap.
   switch (cipher.type) {
     case CipherType.LOGIN:
       const loginData = cipher.data as CipherLoginData;
-      vaultContent.data = {
+      data = {
         username: await ck.decryptText(loginData.username),
         password: await ck.decryptText(loginData.password),
-      };
+      } satisfies CipherLoginData;
       break;
     case CipherType.SECURE_NOTE:
       const secureNoteData = cipher.data as CipherSecureNoteData;
-      vaultContent.data = {
+      data = {
         note: await ck.decryptText(secureNoteData.note),
-      };
+      } satisfies CipherSecureNoteData;
       break;
     case CipherType.CARD:
       const cardData = cipher.data as CipherCardData;
-      vaultContent.data = {
+      data = {
         name: await ck.decryptText(cardData.name),
         number: await ck.decryptText(cardData.number),
         brand: await ck.decryptText(cardData.brand),
         expMonth: await ck.decryptText(cardData.expMonth),
         expYear: await ck.decryptText(cardData.expYear),
         securityCode: await ck.decryptText(cardData.securityCode),
-      };
+      } satisfies CipherCardData;
       break;
   }
 
-  return { ...vaultContent } as VaultContentData;
+  return { ...vaultItemDetail, data: data } satisfies VaultItemDetail<T>;
 }
