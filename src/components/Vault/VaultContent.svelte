@@ -2,7 +2,6 @@
     import Icon from "@iconify/svelte";
 
     import { getContext, onMount } from "svelte";
-    import { fade } from "svelte/transition";
 
     import VaultCardDetail from "$components/Vault/types/Card/VaultCardDetail.svelte";
     import VaultCardEdit from "$components/Vault/types/Card/VaultCardEdit.svelte";
@@ -11,14 +10,17 @@
     import VaultSecureNoteEdit from "$components/Vault/types/SecureNote//VaultSecureNoteEdit.svelte";
     import VaultSecureNoteDetail from "$components/Vault/types/SecureNote/VaultSecureNoteDetail.svelte";
 
-    import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
+    import { extractSymmetricKey } from "$lib/key-generation";
     import { restoreCipherFromDelete, updateCipher, updateCipherToDelete } from "$lib/services/ciphers";
-    import { categoryFilter, cipherStore, selectedVaultItem, vaultItemStore } from "$lib/stores";
-    import { decryptCipherForVaultContent, decryptCipherForVaultItem, encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherCategory, VaultStatus, type Cipher, type CipherData, type VaultContentData } from "$lib/types";
+    import { categoryFilter, selectedVaultItem } from "$lib/stores";
+    import { CipherCategory, VaultStatus, type CipherData, type VaultItemDetail } from "$lib/types";
+    import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
+
+    import type { SymmetricKey } from "$lib/models/keys";
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
+    let sk: SymmetricKey | null = $state(null);
 
     const VAULT_MAPPER: { [key: string]: { [key: string]: any } } = {
         "LOGIN": {
@@ -35,151 +37,97 @@
         }
     };
 
-    // Data assigned on component edit.
-    let componentData: any = $state({});
-
-    let editMode = $state(false);
+    let isEditMode = $state(false);
     let formErrors: Array<string> = $state([]);
-    let vaultContentData: VaultContentData | null = $state(null);
-
-    let onSaveSubmitted = $state(false);
+    let vaultItemDetail: VaultItemDetail<CipherData> | null = $state(null);
 
     let VaultComponent = $derived.by(() => {
-        if (vaultContentData != null) {
-            // @ts-ignore TODO: remove ts-ignore if default cipher is defined.
-            let component = VAULT_MAPPER[vaultContentData.type];
-            return editMode ? component.edit : component.details;
+        if ($selectedVaultItem) {
+            let component = VAULT_MAPPER[$selectedVaultItem.type];
+            return isEditMode ? component.edit : component.details;
         }
     });
 
-    const loadCipherDetail = async () => {
-        if ($selectedVaultItem != null) {
-            const encryptedCipher = cipherStore.get($selectedVaultItem.id)!;
-            const sk = await extractSymmetricKey(mk, epsk);
-            vaultContentData = await decryptCipherForVaultContent(sk, encryptedCipher);
-        }
-    };
-
-    const encryptVaultContentForUpdate = async (
-        {name, data, isFavorite, status}: {name?: string; data?: CipherData; isFavorite?: boolean; status?: VaultStatus}
-    ): Promise<Cipher> => {
-        const ck = await generateCipherKey();
-        const sk = await extractSymmetricKey(mk, epsk);
-
-        let baseCipherData = {
-            sk: sk,
-            ck: ck,
-            id: $selectedVaultItem!.id,
-            type: vaultContentData!.type,
-            status: status !== undefined ? status : vaultContentData!.status,
-            isFavorite: isFavorite !== undefined ? isFavorite : vaultContentData!.isFavorite,
-            name: name !== undefined ? name : vaultContentData!.name,
-            data: data !== undefined ? data : vaultContentData!.data,
-        };
-        const _cipher: Cipher = await encryptCipher({ ...baseCipherData });
-        return { ..._cipher, id: $selectedVaultItem!.id } as Cipher;
-    };
-
-    const handleUpdateResponse = async (responsePayload: any) => {
-        switch (responsePayload.__typename) {
-            case "Cipher":
-                const updatedCipher = responsePayload as Cipher;
-                cipherStore.edit(updatedCipher);
-
-                const sk = await extractSymmetricKey(mk, epsk);
-                const updatedVaultItem = await decryptCipherForVaultItem(sk, updatedCipher);
-                $selectedVaultItem = updatedVaultItem;
-                vaultItemStore.edit(updatedVaultItem)
-
-                loadCipherDetail();
-                editMode = !editMode;
-                break;
-            default:
-                formErrors.push(responsePayload.message);
-                break;
-        }
-    };
-
     const updateFavorite = async () => {
-        const cipher = await encryptVaultContentForUpdate({isFavorite: !(vaultContentData!.isFavorite)})
+        vaultItemDetail!.isFavorite = !vaultItemDetail!.isFavorite;
+
+        const cipher = await encryptVaultDetailForUpdate({vaultDetail: vaultItemDetail!, sk: sk!})
         const response = await updateCipher(cipher);
 
-        await handleUpdateResponse(response.data.cipher.update);
+        vaultItemDetail = await handleCipherResponse(response.data.cipher.update, sk!);
 
-        if (!(vaultContentData!.isFavorite)) {
+        if (vaultItemDetail!.isFavorite) {
             $categoryFilter = CipherCategory.FAVORITES;
         } else {
             $categoryFilter = CipherCategory.All;
         }
     };
 
-    const updateStatus = async(status: VaultStatus) => {
-        const cipher = await encryptVaultContentForUpdate({status: status});
+    const updateStatus = async (status: VaultStatus) => {
+        vaultItemDetail!.status = status;
 
+        const cipher = await encryptVaultDetailForUpdate({vaultDetail: vaultItemDetail!, sk: sk!})
+
+        // Refactor with hashmap.
         switch (status) {
             case VaultStatus.ACTIVE:
                 // Check if current vault content data status is either archived or deleted.
                 // If deleted, do a restore operation.
-                if (vaultContentData?.status == VaultStatus.ARCHIVED) {
+                if (vaultItemDetail!.status == VaultStatus.ARCHIVED) {
                     var response = await updateCipher(cipher);
-                    await handleUpdateResponse(response.data.cipher.update);
+                    await handleCipherResponse(response.data.cipher.update, sk!);
                 } else {
                     var response = await restoreCipherFromDelete(cipher);
-                    await handleUpdateResponse(response.data.cipher.restoreCipherFromDelete);
+                    await handleCipherResponse(response.data.cipher.restoreCipherFromDelete, sk!);
                 }
                 $categoryFilter = CipherCategory.All;
                 break;
             case VaultStatus.ARCHIVED:
                 var response = await updateCipher(cipher);
-                await handleUpdateResponse(response.data.cipher.update);
+                await handleCipherResponse(response.data.cipher.update, sk!);
                 $categoryFilter = CipherCategory.ARCHIVES;
                 break;
             case VaultStatus.DELETED:
                 var response = await updateCipherToDelete(cipher);
-                await handleUpdateResponse(response.data.cipher.updateToDelete);
+                await handleCipherResponse(response.data.cipher.updateToDelete, sk!);
                 $categoryFilter = CipherCategory.RECENTLY_DELETED;
             default:
                 break;
         }
     }
 
-    const onSave = async (e: any) => {
-        e.preventDefault();
-
-        onSaveSubmitted = true;
-
-        formErrors = [];
-        if (componentData.errors.length > 0) {
-            formErrors = componentData.errors;
-            onSaveSubmitted = false;
-            return;
-        }
-
-        const cipher: Cipher = await encryptVaultContentForUpdate({name: componentData.name, data: componentData.data});
-        const response = await updateCipher(cipher);
-        await handleUpdateResponse(response.data.cipher.update);
-        onSaveSubmitted = false;
-    };
-
     onMount(async () => {
-        await loadCipherDetail();
+        sk = await extractSymmetricKey(mk, epsk);
+        vaultItemDetail = await loadVaultItemDetailFromStore($selectedVaultItem!.id, sk);
     });
 
 </script>
 
 <!-- Editing controls. -->
-{#if vaultContentData}
-    <div class:x-editing-mode={editMode} class="x-edit-panel uk-padding-small">
-        {#if editMode}
+{#if vaultItemDetail}
+    <div
+        class:x-editing-mode={isEditMode}
+        class="x-edit-panel uk-padding-small">
+        {#if isEditMode}
             <div class="uk-flex">
                 <div class="uk-width-expand">
-                    <span class="x-edit-label uk-text-middle uk-text-bold">Editing</span>
+                    <span class="x-edit-label uk-text-middle uk-text-bold">
+                        Editing
+                    </span>
                 </div>
                 <div>
-                    <button disabled={onSaveSubmitted} form="vault-form" class="uk-button uk-button-primary uk-button-small uk-border-rounded">
+                    <button
+                        form="vault-form"
+                        class="uk-button uk-button-primary uk-button-small uk-border-rounded"
+                    >
                         Save
                     </button>
-                    <button class="uk-button uk-button-default uk-button-small uk-border-rounded" onclick={() => {editMode = !editMode; formErrors = [];}}>
+                    <button
+                        class="uk-button uk-button-default uk-button-small uk-border-rounded"
+                        onclick={
+                            () => {isEditMode = !isEditMode; formErrors = [];}
+                        }
+                    >
                         Cancel
                     </button>
                 </div>
@@ -189,17 +137,17 @@
                 Favorite, Archine and Delete or Restore.
             -->
             <div class="uk-flex uk-flex-right">
-                {#if vaultContentData.status != VaultStatus.DELETED}
+                {#if vaultItemDetail.status != VaultStatus.DELETED}
                     <button
-                        onclick={() => {editMode = !editMode; formErrors = [];}}
-                        class:uk-margin-small-right={vaultContentData.status != VaultStatus.ACTIVE}
+                        onclick={() => {isEditMode = !isEditMode; formErrors = [];}}
+                        class:uk-margin-small-right={vaultItemDetail.status != VaultStatus.ACTIVE}
                         class="uk-button uk-button-default uk-button-small uk-border-rounded"
                     >
                     Edit
                     </button>
                 {/if}
 
-                {#if vaultContentData.status == VaultStatus.ACTIVE}
+                {#if vaultItemDetail.status == VaultStatus.ACTIVE}
                     <!-- More menu -->
                     <div class="uk-inline x-vertical-center">
                         <a
@@ -217,7 +165,7 @@
                                         onclick={updateFavorite}
                                         href={null}
                                         class="uk-text-default"
-                                        class:x-favorite={vaultContentData.isFavorite}
+                                        class:x-favorite={vaultItemDetail.isFavorite}
                                     >
                                         <Icon class="uk-margin-small-right" icon="hugeicons:star" width="24" height="24" />
                                         Favorite
@@ -264,35 +212,17 @@
 <!-- Vault content display. -->
 { /* @ts-ignore */ null}
 <div class="x-vault-component uk-flex uk-flex-center uk-width-expand" style="height: 93%;">
-    {#key editMode}
-        <form
-            onsubmit={onSave}
-            id="vault-form"
-            class="uk-width-expand uk-flex uk-flex-column uk-height-1-1" 
-            novalidate
-        >
-            {#if formErrors.length > 0}
-                <div transition:fade={{ duration: 100 }} class="uk-padding-small uk-text-small">
-                    { /* @ts-ignore */ null }
-                    <div class="uk-alert-danger" uk-alert>
-                        <ul>
-                            {#each formErrors as error}
-                                <li>{error}</li>
-                            {/each}
-                        </ul>
-                    </div>
-                </div>
-            {/if}
-
-            {#if vaultContentData}
-                {#if vaultContentData.status == VaultStatus.ARCHIVED}
+    {#key isEditMode}
+        <div class="uk-width-expand uk-flex uk-flex-column uk-height-1-1">
+            {#if vaultItemDetail}
+                {#if vaultItemDetail.status == VaultStatus.ARCHIVED}
                     { /* @ts-ignore */ null }
                     <div class="uk-alert uk-text-bold" uk-alert>
                         <p>This vault item is archived.</p>
                     </div>
                 {/if}
 
-                {#if vaultContentData.status == VaultStatus.DELETED}
+                {#if vaultItemDetail.status == VaultStatus.DELETED}
                     { /* @ts-ignore */ null }
                     <div class="uk-alert-danger uk-text-bold" uk-alert>
                         <p>This vault item is scheduled to be deleted.</p>
@@ -300,8 +230,12 @@
                 {/if}
             {/if}
 
-            <VaultComponent cipher={vaultContentData} bind:data={componentData} />
-        </form>
+            <VaultComponent
+                formId="vault-form"
+                vaultId={$selectedVaultItem!.id}
+                bind:isEditMode={isEditMode}
+            />
+        </div>
     {/key}
 </div>
 
