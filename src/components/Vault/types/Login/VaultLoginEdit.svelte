@@ -1,124 +1,60 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
-    import { writable } from 'svelte/store';
+    import { getContext, onMount } from "svelte";
 
-    import vaultImage from "$lib/assets/images/vaultImage.png";
+    import LoginForm from "$components/Vault/types/Login/_LoginForm.svelte";
+    import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    let { cipher, data = $bindable({}) } = $props();
+    import { extractSymmetricKey } from "$lib/key-generation";
+    import { updateCipher } from "$lib/services/ciphers";
+    import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
 
-    let showPassword = $state(false);
+    import type { SymmetricKey } from "$lib/models/keys";
+    import type { Cipher, CipherLoginData, VaultItemDetail } from "$lib/types";
 
-    const loginData = writable({
-        id: cipher.id,
-        type: cipher.type,
-        name: cipher.name,
-        data: {
-            username: cipher.data.username,
-            password: cipher.data.password,
+    let { formId, vaultId, isEditMode = $bindable() } = $props();
+
+    const epsk: string = getContext("epsk");
+    const mk: string = getContext("mk");
+
+    const errors: Array<string> = [];
+
+    let sk: SymmetricKey | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherLoginData> | null = $state(null);
+
+    const onSave = async () => {
+        errors.length = 0;
+
+        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherLoginData>({
+            vaultDetail: vaultItemDetail!,
+            sk: sk!,
+        });
+
+        try {
+            const response = await updateCipher(cipher);
+            await handleCipherResponse(response.data.cipher.update, sk!);
+            isEditMode = !isEditMode;
+        } catch (error: any) {
+            errors.push(error);
         }
-    });
+    };
 
-    // Capture loginData changes and assign to
-    // component data for saving.
-    const loginDataUnsubscriber = loginData.subscribe((value) => {
-        data = value;
-
-        // Inject error data.
-        data.errors = []
-        if (value.name == "") {
-            data.errors.push("Name is required.");
-        }
-        if (value.data.username == "") {
-            data.errors.push("Username is required.");
-        }
-        if (value.data.password == "") {
-            data.errors.push("Password is required.");
-        }
-    });
-
-    let titleInputRef: HTMLInputElement;
-
-    onMount(() => {
-        titleInputRef.focus();
-        titleInputRef.select();
-    });
-
-    onDestroy(() => {
-        loginDataUnsubscriber();
+    onMount(async () => {
+        sk = await extractSymmetricKey(mk, epsk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherLoginData>(vaultId, sk);
     });
 
 </script>
 
-<div class="uk-panel">
-    <div class="uk-padding-small">
-        { /* @ts-ignore */ null }
-        <div class="uk-grid-small uk-flex-middle" uk-grid>
-            <div class="uk-width-auto">
-                <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
-            </div>
-            <div class="uk-width-expand">
-                <!-- svelte-ignore a11y_autofocus -->
-                <input
-                    bind:this={titleInputRef}
-                    bind:value={$loginData.name}
-                    style="background: none;"
-                    class="uk-input uk-form-large x-editable-input"
-                    type="text"
-                    aria-label="Input"
-                    autofocus
-                    required
-                >
-            </div>
-        </div>
+{#if vaultItemDetail}
+    <div class="uk-padding">
+        <ItemForm
+            id={formId}
+            title="Login Credentials"
+            itemDetails={vaultItemDetail}
+            onsubmit={onSave} 
+            {errors}
+        >
+            <LoginForm data={vaultItemDetail.data} />
+        </ItemForm>
     </div>
-
-    <div class="x-panel uk-border-rounded">
-        <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-            <span class="x-vertical-center uk-text-muted uk-margin-right">Username: </span>
-            <input
-                bind:value={$loginData.data.username}
-                class="uk-input x-editable-input"
-                type="text"
-                aria-label="Input"
-                required
-            >
-        </div>
-        <hr class="uk-margin-remove">
-        <div class="x-login-item uk-padding-small uk-flex uk-text-decoration-none">
-            <span class="x-vertical-center uk-text-muted uk-margin-right">Password: </span>
-            {#if showPassword}
-                <!-- svelte-ignore a11y_autofocus -->
-                <input
-                    bind:value={$loginData.data.password}
-                    onfocusin={() => {showPassword = true}}
-                    onfocusout={() => {showPassword = false}}
-                    type="text"
-                    class="uk-input x-editable-input" 
-                    aria-label="Input"
-                    autofocus
-                    required
-                >
-            {:else}
-                <input
-                    onfocusin={() => {showPassword = true}}
-                    type="text"
-                    class="uk-input x-editable-input" 
-                    aria-label="Input"
-                    value="• • • • • • • • • •"
-                    readonly
-                >
-            {/if}
-        </div>
-    </div>
-</div>
-
-<style>
-    .x-panel {
-        background-color: white;
-        border: solid 1px whitesmoke;
-    }
-
-    .x-editable-input {
-        border: none;
-    }
-</style>
+{/if}

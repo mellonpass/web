@@ -1,4 +1,4 @@
-import type { CipherCardData, CipherData } from "$lib/types";
+import type { CipherCardData, CipherData, CipherLoginData } from "$lib/types";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
@@ -146,6 +146,32 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
       hidden: false,
     };
 
+    return fields;
+  }
+}
+
+export class VaultLoginDetailComponentData extends VaultDetailComponentData<CipherLoginData> {
+  constructor(data: CipherLoginData) {
+    super(data);
+  }
+
+  protected fieldDefinitions() {
+    const fields: VaultDetailFields = {
+      username: {
+        value: this.data.username,
+        label: "Username",
+        type: "text",
+        copy: true,
+        hidden: false,
+      },
+      password: {
+        value: this.data.password,
+        label: "Password",
+        type: "password",
+        copy: true,
+        hidden: false,
+      },
+    };
     return fields;
   }
 }
