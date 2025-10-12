@@ -1,8 +1,33 @@
 {
-  "name": "web",
+  "name": "mellonpass-web",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
+  "description": "MellonPass Web E2E Password Manager.",
+  "author": {
+    "email": "badcoder28@gmail.com",
+    "name": "Roel Delos Reyes"
+  },
+  "maintainers": [
+    "Roel Delos Reyes <badcoder28@gmail.com>"
+  ],
+  "keywords": [
+    "password-manager",
+    "cryptography",
+    "e2e",
+    "web",
+    "UI"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "classifiers": [
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Server :: MellonPass Server",
+    "Server :: MellonPass Server :: 0.3.0"
+  ],
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
