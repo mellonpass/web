@@ -60,4 +60,5 @@ const _VaultItemStore = () => {
 };
 
 export const cipherStore = _CipherStore();
+// A store for vault list items.
 export const vaultItemStore = _VaultItemStore();

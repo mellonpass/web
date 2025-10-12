@@ -1,7 +1,7 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
 
-    import LoginForm from "$components/Vault/types/Login/_LoginForm.svelte";
+    import CardForm from "$components/Vault/types/Card/_CardForm.svelte";
     import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
     import { extractSymmetricKey } from "$lib/key-generation";
@@ -9,7 +9,7 @@
     import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
 
     import type { SymmetricKey } from "$lib/models/keys";
-    import type { Cipher, CipherLoginData, VaultItemDetail } from "$lib/types";
+    import type { Cipher, CipherCardData, VaultItemDetail } from "$lib/types";
 
     let { formId, vaultId, isEditMode = $bindable() } = $props();
 
@@ -19,12 +19,12 @@
     const errors: Array<string> = [];
 
     let sk: SymmetricKey | null = $state(null);
-    let vaultItemDetail: VaultItemDetail<CipherLoginData> | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherCardData> | null = $state(null);
 
     const onSave = async () => {
         errors.length = 0;
 
-        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherLoginData>({
+        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherCardData>({
             vaultDetail: vaultItemDetail!,
             sk: sk!,
         });
@@ -40,7 +40,7 @@
 
     onMount(async () => {
         sk = await extractSymmetricKey(mk, epsk);
-        vaultItemDetail = await loadVaultItemDetailFromStore<CipherLoginData>(vaultId, sk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherCardData>(vaultId, sk);
     });
 
 </script>
@@ -49,12 +49,12 @@
     <div class="uk-padding">
         <ItemForm
             id={formId}
-            title="Login Credentials"
+            title="Card details"
             itemDetails={vaultItemDetail}
             onsubmit={onSave} 
             {errors}
         >
-            <LoginForm data={vaultItemDetail.data} />
+            <CardForm data={vaultItemDetail.data} />
         </ItemForm>
     </div>
 {/if}

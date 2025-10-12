@@ -3,24 +3,28 @@
 
     import { getContext } from "svelte";
 
-    import LoginForm from "$components/Vault/types/Login/_LoginForm.svelte";
     import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
+    import CardForm from "$components/Vault/types/Card/_CardForm.svelte";
 
     import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
     import { createCipher } from "$lib/services/ciphers";
     import { cipherStore, newVaultItem } from "$lib/stores";
     import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, VaultStatus, type CipherLoginData, type VaultItem } from "$lib/types";
+    import { CipherType, VaultStatus, type CipherCardData, type VaultItem } from "$lib/types";
 
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
 
     let itemDetails = {
-        name: "Login",
+        name: "Card",
     };
-    let itemData: CipherLoginData = {
-        username: "",
-        password: "",
+    let itemData: CipherCardData = {
+        name: "",
+        number: "",
+        brand: "",
+        expMonth: "",
+        expYear: "",
+        securityCode: "",
     };
     let errors: Array<string> = [];
 
@@ -38,7 +42,7 @@
             sk: sk,
             ck: ck,
             name: itemDetails.name,
-            type: CipherType.LOGIN,
+            type: CipherType.CARD,
             isFavorite: false,
             status: VaultStatus.ACTIVE,
             data: itemData
@@ -51,15 +55,15 @@
             const createdCipher = response.data.cipher.create;
             cipherStore.add(createdCipher);
 
-            const newLoginItem: VaultItem = {
+            const newCardItem: VaultItem = {
                 id: createdCipher.id,
-                type: CipherType.LOGIN,
+                type: CipherType.CARD,
                 name: itemDetails.name,
-                content: itemData.username || itemDetails.name,
+                content: itemData.brand || itemDetails.name,
                 isFavorite: false,
                 status: VaultStatus.ACTIVE
             }
-            $newVaultItem = newLoginItem;
+            $newVaultItem = newCardItem;
 
             UIkit.modal("#vault-modal").hide();
 
@@ -68,7 +72,7 @@
                 // Reset to default values.
                 setTimeout(() => {
                     errors = [];
-                    itemDetails.name = "Login";
+                    itemDetails.name = "Card";
                 }, 500);
             });
         } else {
@@ -81,12 +85,12 @@
 <div class="uk-modal-body">
     <ItemForm
         id="cardForm"
-        title="Login Credentials"
+        title="Card details"
         onsubmit={onSubmit}
         {itemDetails}
         {errors}
     >
-        <LoginForm data={itemData} />
+        <CardForm data={itemData} />
     </ItemForm>
 </div>
 
