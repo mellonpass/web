@@ -3,14 +3,16 @@
     import Icon from "@iconify/svelte";
 
     import vaultImage from "$lib/assets/images/vaultImage.png";
+
     import type { VaultDetailField } from "$lib/models/data";
+    import type { FormItemDetails } from "$lib/types";
 
     let { 
-        name,
+        itemDetails,
         detailTitle,
         fields
      }: {
-        name: string,
+        itemDetails: FormItemDetails,
         detailTitle: string,
         fields: Array<VaultDetailField>
     } = $props();
@@ -28,7 +30,7 @@
                     <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
                 </div>
                 <div class="uk-width-expand">
-                    <h3 class="uk-card-title uk-margin-remove-bottom">{name}</h3>
+                    <h3 class="uk-card-title uk-margin-remove-bottom">{itemDetails.name}</h3>
                 </div>
             </div>
         </div>
