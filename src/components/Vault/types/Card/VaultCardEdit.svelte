@@ -1,33 +1,60 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { writable } from 'svelte/store';
+    import { getContext, onMount } from "svelte";
 
-    import vaultImage from "$lib/assets/images/vaultImage.png";
+    import CardForm from "$components/Vault/types/Card/_CardForm.svelte";
+    import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    let { cipher, data = $bindable({}) } = $props();
+    import { extractSymmetricKey } from "$lib/key-generation";
+    import { updateCipher } from "$lib/services/ciphers";
+    import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
 
-    const initData = writable({
-        id: cipher.id,
-        type: cipher.type,
-        name: cipher.name,
-        data: {
-            note: cipher.data.note,
+    import type { SymmetricKey } from "$lib/models/keys";
+    import type { Cipher, CipherCardData, VaultItemDetail } from "$lib/types";
+
+    let { formId, vaultId, isEditMode = $bindable() } = $props();
+
+    const epsk: string = getContext("epsk");
+    const mk: string = getContext("mk");
+
+    const errors: Array<string> = [];
+
+    let sk: SymmetricKey | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherCardData> | null = $state(null);
+
+    const onSave = async () => {
+        errors.length = 0;
+
+        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherCardData>({
+            vaultDetail: vaultItemDetail!,
+            sk: sk!,
+        });
+
+        try {
+            const response = await updateCipher(cipher);
+            await handleCipherResponse(response.data.cipher.update, sk!);
+            isEditMode = !isEditMode;
+        } catch (error: any) {
+            errors.push(error);
         }
+    };
+
+    onMount(async () => {
+        sk = await extractSymmetricKey(mk, epsk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherCardData>(vaultId, sk);
     });
 
 </script>
 
-<div class="uk-panel">
-    <div class="uk-padding-small">
-        { /* @ts-ignore */ null}
-        <div class="uk-grid-small uk-flex-middle" uk-grid>
-            <div class="uk-width-auto">
-                <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
-            </div>
-            <div class="uk-width-expand">
-               
-            </div>
-        </div>
+{#if vaultItemDetail}
+    <div class="uk-padding">
+        <ItemForm
+            id={formId}
+            title="Card details"
+            itemDetails={vaultItemDetail}
+            onsubmit={onSave} 
+            {errors}
+        >
+            <CardForm data={vaultItemDetail.data} />
+        </ItemForm>
     </div>
-
-</div>
+{/if}
