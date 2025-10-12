@@ -1,4 +1,4 @@
-import type { CipherCardData, CipherData } from "../types";
+import type { CipherCardData, CipherData } from "$lib/types";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
@@ -18,7 +18,7 @@ interface VaultDetailFields {
 }
 
 abstract class VaultDetailComponentData<T extends CipherData> {
-  protected data: T;
+  public data: T;
 
   fields: VaultDetailFields;
 
