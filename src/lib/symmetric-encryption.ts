@@ -62,7 +62,7 @@ class LoginDataEncryptor extends CipherEncryptor {
 class SecureNoteEncryptor extends CipherEncryptor {
   async encryptData(data: CipherSecureNoteData): Promise<EncrypyedCipherData> {
     return {
-      note: await this.cipherKey.encrypt(this.encoder.encode(data.note)),
+      _: await this.cipherKey.encrypt(this.encoder.encode(data._)),
     } satisfies CipherSecureNoteData;
   }
 }
@@ -140,8 +140,7 @@ export async function decryptCipherForVaultItem(
       break;
 
     case CipherType.SECURE_NOTE:
-      const secureNoteData = cipher.data as CipherSecureNoteData;
-      vaultData.content = await ck.decryptText(secureNoteData.note);
+      vaultData.content = "";
       break;
 
     case CipherType.CARD:
@@ -180,9 +179,8 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
       } satisfies CipherLoginData;
       break;
     case CipherType.SECURE_NOTE:
-      const secureNoteData = cipher.data as CipherSecureNoteData;
       data = {
-        note: await ck.decryptText(secureNoteData.note),
+        _: "",
       } satisfies CipherSecureNoteData;
       break;
     case CipherType.CARD:

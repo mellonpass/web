@@ -13,7 +13,7 @@ export interface CipherLoginData {
 }
 
 export interface CipherSecureNoteData {
-  note: string;
+  _: string;
 }
 
 export type CipherData =

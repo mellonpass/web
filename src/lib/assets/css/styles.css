@@ -13,3 +13,7 @@ body {
   resize: vertical;
   min-height: 32px;
 }
+
+.uk-notification-message {
+  padding: 0 !important;
+}

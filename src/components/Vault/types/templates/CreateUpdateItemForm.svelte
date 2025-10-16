@@ -11,14 +11,14 @@
         itemDetails,
         onsubmit,
         errors,
-        children
+        children = null
     }: {
         id: string,
         title: string,
         itemDetails: FormItemDetails,
         onsubmit: FormCallBack,
         errors: Array<string>,
-        children: any
+        children?: any,
     } = $props();
 
     let invalidInput = $state(false);
@@ -68,11 +68,13 @@
     </fieldset>
 
     <!-- Custom fieldset -->
-    { /* @ts-ignore */ null }
-     <fieldset class="uk-fieldset uk-margin" uk-grid>
-        <legend class="uk-legend uk-text-default uk-text-bold">{ title }</legend>
-        {@render children()}
-     </fieldset>
+     {#if children}
+        { /* @ts-ignore */ null }
+        <fieldset class="uk-fieldset uk-margin" uk-grid>
+            <legend class="uk-legend uk-text-default uk-text-bold">{ title }</legend>
+            {@render children()}
+        </fieldset>
+     {/if}
 
     { /* @ts-ignore */ null }
      <fieldset class="uk-fieldset uk-margin">
