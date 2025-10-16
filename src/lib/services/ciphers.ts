@@ -18,6 +18,7 @@ export const createCipher = async (cipher: Cipher) => {
         key: cipher.key,
         name: cipher.name,
         data: cipher.data,
+        notes: cipher.notes,
         isFavorite: cipher.isFavorite,
         status: cipher.status,
       },
@@ -71,6 +72,7 @@ export const updateCipher = async (cipher: Cipher) => {
         name: cipher.name,
         status: cipher.status,
         data: cipher.data,
+        notes: cipher.notes,
       },
     },
   });
@@ -87,6 +89,7 @@ export const updateCipherToDelete = async (cipher: Cipher) => {
         name: cipher.name,
         status: cipher.status,
         data: cipher.data,
+        notes: cipher.notes,
       },
     },
   });
@@ -103,6 +106,7 @@ export const restoreCipherFromDelete = async (cipher: Cipher) => {
         name: cipher.name,
         status: cipher.status,
         data: cipher.data,
+        notes: cipher.notes,
       },
     },
   });

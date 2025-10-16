@@ -9,6 +9,7 @@ export const CREATE_CIPHER = `
                     name
                     type
                     data
+                    notes
                     isFavorite
                     status
                     created
@@ -33,6 +34,7 @@ export const UPDATE_CIPHER = `
                     name
                     type
                     data
+                    notes
                     isFavorite
                     status
                     created
@@ -55,6 +57,7 @@ export const UPDATE_CIPHER_TO_DELETE = `
                     id
                     name
                     data
+                    notes
                     isFavorite
                     key
                     status
@@ -77,6 +80,7 @@ export const RESTORE_CIPHER_FROM_DELETE = `
                     id
                     name
                     data
+                    notes
                     isFavorite
                     key
                     status
@@ -103,6 +107,7 @@ export const GET_CIPHERS = `
                     type
                     isFavorite
                     data
+                    notes
                     status
                     created
                     updated
@@ -125,6 +130,7 @@ export const GET_CIPHER_DETAIL = `
             type
             isFavorite
             data
+            notes
             status
             created
             updated

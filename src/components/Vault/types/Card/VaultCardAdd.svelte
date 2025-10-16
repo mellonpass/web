@@ -17,9 +17,10 @@
 
     let itemDetails = {
         name: "Card",
+        notes: "",
     };
     let itemData: CipherCardData = {
-        name: "",
+        cardholderName: "",
         number: "",
         brand: "",
         expMonth: "",
@@ -42,6 +43,7 @@
             sk: sk,
             ck: ck,
             name: itemDetails.name,
+            notes: itemDetails.notes,
             type: CipherType.CARD,
             isFavorite: false,
             status: VaultStatus.ACTIVE,
@@ -59,7 +61,8 @@
                 id: createdCipher.id,
                 type: CipherType.CARD,
                 name: itemDetails.name,
-                content: itemData.brand || itemDetails.name,
+                notes: itemDetails.notes,
+                content: itemData.brand || itemData.cardholderName,
                 isFavorite: false,
                 status: VaultStatus.ACTIVE
             }

@@ -83,8 +83,8 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
 
   protected fieldDefinitions() {
     const fields: VaultDetailFields = {
-      name: {
-        value: this.data.name,
+      cardholderName: {
+        value: this.data.cardholderName,
         label: "Cardholder name",
         type: "text",
         copy: false,

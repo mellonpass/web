@@ -70,6 +70,18 @@
             {/if}
         </div>
     </div>
+
+    {#if itemDetails.notes}
+        <div class="uk-padding-small">
+            <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
+                Additional options
+            </div>
+            <div class="x-panel x-html-render uk-border-rounded uk-padding-small">
+                {@html itemDetails.notes}
+            </div>
+        </div>
+    {/if}
+
 </div>
 
 <style>
@@ -78,4 +90,9 @@
         border: solid 1px whitesmoke;
         border-radius: 10px;
     }
+
+    .x-html-render {
+        white-space: pre;
+    }
+
 </style>

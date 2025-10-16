@@ -74,6 +74,23 @@
         {@render children()}
      </fieldset>
 
+    { /* @ts-ignore */ null }
+     <fieldset class="uk-fieldset uk-margin">
+        <legend class="uk-legend uk-text-default uk-text-bold">Additional options</legend>
+
+        <div class="uk-margin-small">
+            <div class="uk-form-controls">
+                <textarea
+                    class="uk-textarea uk-border-rounded"
+                    rows="5"
+                    placeholder="Notes"
+                    aria-label="notes"
+                    bind:value={itemDetails.notes}
+                ></textarea>
+            </div>
+        </div>
+     </fieldset>
+
     {#if errors  }
         {#each errors as error}
             {/* @ts-ignore */ null}

@@ -1,5 +1,5 @@
 export interface CipherCardData {
-  name: string;
+  cardholderName: string;
   number: string;
   brand: string;
   expMonth: string;
@@ -46,6 +46,7 @@ export interface Cipher {
   type: CipherType;
   key: string;
   name: string;
+  notes: string;
   data: CipherData;
   status: string;
   created?: Date | null;
@@ -57,6 +58,7 @@ export interface VaultData {
   isFavorite: boolean;
   type: CipherType;
   name: string;
+  notes: string;
   status: VaultStatus;
   content?: any;
 }
@@ -84,6 +86,7 @@ export enum CipherCategory {
 
 export interface FormItemDetails {
   name: string;
+  notes: string | null;
 }
 
 export type FormCallBack = (args: any) => void;

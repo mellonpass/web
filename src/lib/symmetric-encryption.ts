@@ -30,7 +30,9 @@ abstract class CipherEncryptor {
 class CardDataEncryptor extends CipherEncryptor {
   async encryptData(data: CipherCardData): Promise<EncrypyedCipherData> {
     return {
-      name: await this.cipherKey.encrypt(this.encoder.encode(data.name)),
+      cardholderName: await this.cipherKey.encrypt(
+        this.encoder.encode(data.cardholderName)
+      ),
       number: await this.cipherKey.encrypt(this.encoder.encode(data.number)),
       brand: await this.cipherKey.encrypt(this.encoder.encode(data.brand)),
       expMonth: await this.cipherKey.encrypt(
@@ -79,6 +81,7 @@ export async function encryptCipher({
   sk,
   ck,
   name,
+  notes,
   type,
   data,
   status,
@@ -87,6 +90,7 @@ export async function encryptCipher({
   sk: SymmetricKey;
   ck: CipherKey;
   name: string;
+  notes: string;
   type: CipherType;
   data: CipherData;
   status: VaultStatus;
@@ -104,6 +108,7 @@ export async function encryptCipher({
     type: type,
     key: pck.toBase64(),
     name: await ck.encrypt(encoder.encode(name)),
+    notes: await ck.encrypt(encoder.encode(notes)),
     isFavorite: await ck.encrypt(encoder.encode(isFavorite.toString())),
     status: await ck.encrypt(encoder.encode(status)),
     data: encryptedData,
@@ -124,6 +129,7 @@ export async function decryptCipherForVaultItem(
       (await ck.decryptText(cipher.isFavorite)).toLowerCase() == "true",
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
+    notes: await ck.decryptText(cipher.notes),
   };
 
   // FIXME: refactor by using hashmap.
@@ -140,7 +146,7 @@ export async function decryptCipherForVaultItem(
 
     case CipherType.CARD:
       const cipherCardData = cipher.data as CipherCardData;
-      vaultData.content = await ck.decryptText(cipherCardData.name);
+      vaultData.content = await ck.decryptText(cipherCardData.cardholderName);
       break;
   }
 
@@ -159,6 +165,7 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     isFavorite: (await ck.decryptText(cipher.isFavorite)) == "true",
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
+    notes: await ck.decryptText(cipher.notes),
   } satisfies Partial<VaultItemDetail<T>>;
 
   let data: any;
@@ -181,7 +188,7 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     case CipherType.CARD:
       const cardData = cipher.data as CipherCardData;
       data = {
-        name: await ck.decryptText(cardData.name),
+        cardholderName: await ck.decryptText(cardData.cardholderName),
         number: await ck.decryptText(cardData.number),
         brand: await ck.decryptText(cardData.brand),
         expMonth: await ck.decryptText(cardData.expMonth),

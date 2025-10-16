@@ -17,6 +17,7 @@
 
     let itemDetails = {
         name: "Login",
+        notes: "",
     };
     let itemData: CipherLoginData = {
         username: "",
@@ -38,6 +39,7 @@
             sk: sk,
             ck: ck,
             name: itemDetails.name,
+            notes: itemDetails.notes,
             type: CipherType.LOGIN,
             isFavorite: false,
             status: VaultStatus.ACTIVE,
@@ -55,6 +57,7 @@
                 id: createdCipher.id,
                 type: CipherType.LOGIN,
                 name: itemDetails.name,
+                notes: itemDetails.notes,
                 content: itemData.username || itemDetails.name,
                 isFavorite: false,
                 status: VaultStatus.ACTIVE

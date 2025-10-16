@@ -8,3 +8,8 @@ body {
   display: inline-flex !important;
   align-items: center !important;
 }
+
+.uk-textarea {
+  resize: vertical;
+  min-height: 32px;
+}
