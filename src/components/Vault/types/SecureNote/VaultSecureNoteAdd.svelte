@@ -18,9 +18,6 @@
         name: "Notes",
         notes: "",
     };
-    let itemData = {
-        _: "",
-    }
     let errors: Array<string> = [];
 
     const onSubmit = async (e: any) => {
@@ -41,7 +38,6 @@
             type: CipherType.SECURE_NOTE,
             isFavorite: false,
             status: VaultStatus.ACTIVE,
-            data: itemData
         });
 
         const response = await createCipher(cipher);

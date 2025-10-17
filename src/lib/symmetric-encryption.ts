@@ -59,22 +59,12 @@ class LoginDataEncryptor extends CipherEncryptor {
   }
 }
 
-class SecureNoteEncryptor extends CipherEncryptor {
-  async encryptData(data: CipherSecureNoteData): Promise<EncrypyedCipherData> {
-    return {
-      _: await this.cipherKey.encrypt(this.encoder.encode(data._)),
-    } satisfies CipherSecureNoteData;
-  }
-}
-
 const ENCRYPTOR_MAPPER: {
   [key: string]: (cipherKey: CipherKey) => CipherEncryptor;
 } = {
   [CipherType.CARD]: (cipherKey: CipherKey) => new CardDataEncryptor(cipherKey),
   [CipherType.LOGIN]: (cipherKey: CipherKey) =>
     new LoginDataEncryptor(cipherKey),
-  [CipherType.SECURE_NOTE]: (cipherKey: CipherKey) =>
-    new SecureNoteEncryptor(cipherKey),
 };
 
 export async function encryptCipher({
@@ -83,24 +73,31 @@ export async function encryptCipher({
   name,
   notes,
   type,
-  data,
   status,
   isFavorite,
+  data,
 }: {
   sk: SymmetricKey;
   ck: CipherKey;
   name: string;
   notes: string;
   type: CipherType;
-  data: CipherData;
   status: VaultStatus;
   isFavorite: boolean;
+  data?: CipherData;
 }): Promise<Cipher> {
   const encoder = new TextEncoder();
   const encryptorFactory = ENCRYPTOR_MAPPER[type];
-  const enryptor = encryptorFactory(ck);
 
-  let encryptedData = await enryptor.encryptData(data);
+  let encryptedData = null;
+
+  if (encryptorFactory !== undefined) {
+    const enryptor = encryptorFactory(ck);
+
+    if (data !== undefined) {
+      encryptedData = await enryptor.encryptData(data);
+    }
+  }
 
   const pck = await sk.protectKey(ck);
 
@@ -138,11 +135,6 @@ export async function decryptCipherForVaultItem(
       const loginData = cipher.data as CipherLoginData;
       vaultData.content = await ck.decryptText(loginData.username);
       break;
-
-    case CipherType.SECURE_NOTE:
-      vaultData.content = "";
-      break;
-
     case CipherType.CARD:
       const cipherCardData = cipher.data as CipherCardData;
       vaultData.content = await ck.decryptText(cipherCardData.cardholderName);
@@ -177,11 +169,6 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
         username: await ck.decryptText(loginData.username),
         password: await ck.decryptText(loginData.password),
       } satisfies CipherLoginData;
-      break;
-    case CipherType.SECURE_NOTE:
-      data = {
-        _: "",
-      } satisfies CipherSecureNoteData;
       break;
     case CipherType.CARD:
       const cardData = cipher.data as CipherCardData;

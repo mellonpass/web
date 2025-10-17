@@ -4,7 +4,6 @@
     import ViewItemForm from "$components/Vault/types/templates/ViewItemForm.svelte";
 
     import { extractSymmetricKey } from "$lib/key-generation";
-    import { VaultLoginDetailComponentData } from "$lib/models/data";
     import { loadVaultItemDetailFromStore } from "$lib/vaults";
     import type { CipherSecureNoteData, VaultItemDetail } from "$lib/types";
 
