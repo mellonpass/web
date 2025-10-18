@@ -241,8 +241,14 @@
 
 
 <style>
+
     .x-vault-component {
         padding: 0 15px;
+        overflow: scroll;
+    }
+
+    .x-edit-panel {
+        border-bottom: 1px solid #E0E0E0;
     }
 
     .x-editing-mode {
