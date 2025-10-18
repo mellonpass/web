@@ -1,7 +1,7 @@
 {
   "name": "mellonpass-web",
   "private": true,
-  "version": "0.3.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "MellonPass Web E2E Password Manager.",
   "author": {
@@ -21,13 +21,7 @@
   "engines": {
     "node": ">=18"
   },
-  "classifiers": [
-    "Environment :: Web Environment",
-    "Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Server :: MellonPass Server",
-    "Server :: MellonPass Server :: 0.3.0"
-  ],
+  "apiCompatibility": ">= 1.0.0 < 2.0.0",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
