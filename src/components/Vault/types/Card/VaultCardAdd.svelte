@@ -3,14 +3,12 @@
 
     import { getContext } from "svelte";
 
-    import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
     import CardForm from "$components/Vault/types/Card/_CardForm.svelte";
+    import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { createCipher } from "$lib/services/ciphers";
-    import { cipherStore, newVaultItem } from "$lib/stores";
-    import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, VaultStatus, type CipherCardData, type VaultItem } from "$lib/types";
+    import { newVaultItem } from "$lib/stores";
+    import { CipherType, type CipherCardData } from "$lib/types";
+    import { createVaultItem } from "$lib/vaults";
 
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
@@ -36,37 +34,16 @@
             return;
         }
 
-        const sk = await extractSymmetricKey(mk, epsk);
-        const ck = await generateCipherKey();
-
-        const cipher = await encryptCipher({
-            sk: sk,
-            ck: ck,
-            name: itemDetails.name,
-            notes: itemDetails.notes,
-            type: CipherType.CARD,
-            isFavorite: false,
-            status: VaultStatus.ACTIVE,
-            data: itemData
-        });
-
-        const response = await createCipher(cipher);
-
-        // FIXME: refactor to be reusable.
-        if (response.data.cipher.create.__typename == "Cipher") {
-            const createdCipher = response.data.cipher.create;
-            cipherStore.add(createdCipher);
-
-            const newCardItem: VaultItem = {
-                id: createdCipher.id,
-                type: CipherType.CARD,
-                name: itemDetails.name,
-                notes: itemDetails.notes,
-                content: itemData.brand || itemData.cardholderName,
-                isFavorite: false,
-                status: VaultStatus.ACTIVE
-            }
-            $newVaultItem = newCardItem;
+        try {
+            $newVaultItem = await createVaultItem({
+                mk:mk,
+                epsk:epsk,
+                name:itemDetails.name,
+                notes:itemDetails.notes,
+                content:itemData.brand || itemData.cardholderName,
+                itemData:itemData,
+                cipherType:CipherType.CARD
+            })
 
             UIkit.modal("#vault-modal").hide();
 
@@ -78,8 +55,9 @@
                     itemDetails.name = "Card";
                 }, 500);
             });
-        } else {
-            errors.push(response.data.cipher.create.message);
+
+        } catch (error) {
+            errors.push((error as Error).message);
         }
     };
 

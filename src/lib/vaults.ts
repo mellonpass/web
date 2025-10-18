@@ -1,5 +1,5 @@
-import { generateCipherKey } from "$lib/key-generation";
-import { cipherStore, vaultItemStore } from "$lib/stores";
+import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
+import { cipherStore, vaultItemStore, newVaultItem } from "$lib/stores";
 import {
   decryptCipherForVaultContent,
   decryptCipherForVaultItem,
@@ -7,12 +7,67 @@ import {
 } from "$lib/symmetric-encryption";
 
 import type { SymmetricKey } from "$lib/models/keys";
-import type {
-  Cipher,
-  CipherData,
-  VaultItemDetail,
-  VaultItem,
+import {
+  VaultStatus,
+  type Cipher,
+  type CipherData,
+  type CipherType,
+  type VaultItem,
+  type VaultItemDetail,
 } from "$lib/types";
+import { createCipher } from "./services/ciphers";
+
+export async function createVaultItem({
+  mk,
+  epsk,
+  name,
+  notes,
+  content,
+  itemData,
+  cipherType,
+}: {
+  mk: string;
+  epsk: string;
+  name: string;
+  notes: string;
+  content: string;
+  cipherType: CipherType;
+  itemData?: CipherData;
+}): Promise<VaultItem> {
+  const sk = await extractSymmetricKey(mk, epsk);
+  const ck = await generateCipherKey();
+
+  const cipher = await encryptCipher({
+    sk: sk,
+    ck: ck,
+    name: name,
+    notes: notes,
+    type: cipherType,
+    isFavorite: false,
+    status: VaultStatus.ACTIVE,
+    data: itemData,
+  });
+
+  const response = await createCipher(cipher);
+
+  if (response.data.cipher.create.__typename == "Cipher") {
+    const createdCipher = response.data.cipher.create;
+    cipherStore.add(createdCipher);
+
+    const createdVaultItem = {
+      id: createdCipher.id,
+      type: cipherType,
+      name: name,
+      notes: notes,
+      content: content,
+      isFavorite: false,
+      status: VaultStatus.ACTIVE,
+    } satisfies VaultItem;
+    return createdVaultItem;
+  } else {
+    throw new Error(response.data.cipher.create.message);
+  }
+}
 
 export async function loadVaultItemDetailFromStore<T extends CipherData>(
   cipherId: string,
