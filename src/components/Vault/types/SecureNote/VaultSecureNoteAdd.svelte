@@ -5,11 +5,9 @@
 
     import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
-    import { createCipher } from "$lib/services/ciphers";
-    import { cipherStore, newVaultItem } from "$lib/stores";
-    import { encryptCipher } from "$lib/symmetric-encryption";
-    import { CipherType, VaultStatus, type VaultItem } from "$lib/types";
+    import { newVaultItem } from "$lib/stores";
+    import { CipherType } from "$lib/types";
+    import { createVaultItem } from "$lib/vaults";
 
     const mk: string = getContext("mk");
     const epsk: string = getContext("epsk");
@@ -27,36 +25,16 @@
             return;
         }
 
-        const sk = await extractSymmetricKey(mk, epsk);
-        const ck = await generateCipherKey();
+        try {
 
-        const cipher = await encryptCipher({
-            sk: sk,
-            ck: ck,
-            name: itemDetails.name,
-            notes: itemDetails.notes,
-            type: CipherType.SECURE_NOTE,
-            isFavorite: false,
-            status: VaultStatus.ACTIVE,
-        });
-
-        const response = await createCipher(cipher);
-
-        // FIXME: refactor to be reusable.
-        if (response.data.cipher.create.__typename == "Cipher") {
-            const createdCipher = response.data.cipher.create;
-            cipherStore.add(createdCipher);
-
-            const newSecureNotesItem: VaultItem = {
-                id: createdCipher.id,
-                type: CipherType.SECURE_NOTE,
-                name: itemDetails.name,
-                notes: itemDetails.notes,
-                isFavorite: false,
-                content: "",
-                status: VaultStatus.ACTIVE
-            }
-            $newVaultItem = newSecureNotesItem;
+           $newVaultItem = await createVaultItem({
+                mk:mk,
+                epsk:epsk,
+                name:itemDetails.name,
+                notes:itemDetails.notes,
+                content:"",
+                cipherType:CipherType.SECURE_NOTE
+            })
 
             UIkit.modal("#vault-modal").hide();
 
@@ -68,8 +46,8 @@
                     itemDetails.name = "Notes";
                 }, 500);
             });
-        } else {
-            errors.push(response.data.cipher.create.message);
+        } catch (error) {
+            errors.push((error as Error).message);
         }
     };
 
