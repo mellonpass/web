@@ -1,102 +1,57 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { writable } from 'svelte/store';
+    import { getContext, onMount } from "svelte";
 
-    import vaultImage from "$lib/assets/images/vaultImage.png";
+    import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    let { cipher, data = $bindable({}) } = $props();
+    import { extractSymmetricKey } from "$lib/key-generation";
+    import type { SymmetricKey } from "$lib/models/keys";
+    import { updateCipher } from "$lib/services/ciphers";
+    import type { Cipher, CipherSecureNoteData, VaultItemDetail } from "$lib/types";
+    import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
 
-    let titleInputRef: HTMLInputElement;
-    let textInputRef: HTMLTextAreaElement;
+    let { formId, vaultId, isEditMode = $bindable() } = $props();
 
-    const initData = writable({
-        id: cipher.id,
-        type: cipher.type,
-        name: cipher.name,
-        data: {
-            note: cipher.data.note,
+    const epsk: string = getContext("epsk");
+    const mk: string = getContext("mk");
+
+    const errors: Array<string> = [];
+
+    let sk: SymmetricKey | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherSecureNoteData> | null = $state(null);
+
+    const onSave = async () => {
+        errors.length = 0;
+
+        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherSecureNoteData>({
+            vaultDetail: vaultItemDetail!,
+            sk: sk!,
+        });
+
+        try {
+            const response = await updateCipher(cipher);
+            await handleCipherResponse(response.data.cipher.update, sk!);
+            isEditMode = !isEditMode;
+        } catch (error: any) {
+            errors.push(error);
         }
-    });
-
-    const adjustTextAreaHeight = () => {
-        textInputRef.style.height = "1px";
-        textInputRef.style.height = `${textInputRef.scrollHeight}px`;
     };
 
-    onMount(() => {
-        titleInputRef.focus();
-        titleInputRef.select();
-        adjustTextAreaHeight();
+    onMount(async () => {
+        sk = await extractSymmetricKey(mk, epsk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecureNoteData>(vaultId, sk);
     });
-
-    // Capture initData changes and assign to
-    // component data for saving.
-    initData.subscribe((value) => {
-        data = value;
-
-        data.errors = [];
-        if (value.name == "") {
-            data.errors.push("Name is required.");
-        }
-
-        if (value.data.note == "") {
-            data.errors.push("Note is required.");
-        }
-
-        if (textInputRef) {
-            adjustTextAreaHeight();
-        }
-    });
-
 
 </script>
 
-<div class="uk-panel">
-    <div class="uk-padding-small">
-        { /* @ts-ignore */ null}
-        <div class="uk-grid-small uk-flex-middle" uk-grid>
-            <div class="uk-width-auto">
-                <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
-            </div>
-            <div class="uk-width-expand">
-                <!-- svelte-ignore a11y_autofocus -->
-                <input
-                    bind:this={titleInputRef}
-                    bind:value={$initData.name}
-                    style="background: none;"
-                    class="uk-input uk-form-large x-editable-input"
-                    type="text"
-                    aria-label="Input"
-                    autofocus
-                >
-            </div>
-        </div>
+{#if vaultItemDetail}
+    <div class="uk-padding">
+        <ItemForm
+            id={formId}
+            title="Secure notes"
+            itemDetails={vaultItemDetail}
+            onsubmit={onSave} 
+            {errors}
+        >
+        </ItemForm>
     </div>
-
-    <div class="x-panel uk-border-rounded">
-        <textarea
-            id="note"
-            bind:this={textInputRef}
-            bind:value={$initData.data.note}
-            placeholder="This is the beginning of a note."
-            class="uk-textarea uk-border-rounded uk-width-1-1 uk-padding-small">
-        </textarea>
-    </div>
-</div>
-
-<style>
-
-    #note {
-        resize: none;
-    }
-
-    .x-panel {
-        height: auto;
-        background-color: white;
-        border: solid 1px whitesmoke;
-    }
-
-    .x-editable-input {
-        border: none;
-    }
-</style>
+{/if}

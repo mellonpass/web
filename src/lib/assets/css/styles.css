@@ -1,10 +1,20 @@
 html,
 body {
-  height: 100%;
   margin: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .x-vertical-center {
   display: inline-flex !important;
   align-items: center !important;
+}
+
+.uk-textarea {
+  resize: vertical;
+  min-height: 32px;
+}
+
+.uk-notification-message {
+  padding: 0 !important;
 }

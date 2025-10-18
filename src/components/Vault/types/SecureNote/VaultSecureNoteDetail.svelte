@@ -1,30 +1,29 @@
 <script lang="ts">
-    import vaultImage from "$lib/assets/images/vaultImage.png";
-    let { cipher } = $props();
+    import { getContext, onMount } from "svelte";
+
+    import ViewItemForm from "$components/Vault/types/templates/ViewItemForm.svelte";
+
+    import { extractSymmetricKey } from "$lib/key-generation";
+    import { loadVaultItemDetailFromStore } from "$lib/vaults";
+    import type { CipherSecureNoteData, VaultItemDetail } from "$lib/types";
+
+    const epsk: string = getContext("epsk");
+    const mk: string = getContext("mk");
+
+    let { vaultId } = $props();
+
+    let vaultItemDetail: VaultItemDetail<CipherSecureNoteData> | null = $state(null);
+
+    onMount(async () => {
+        const sk = await extractSymmetricKey(mk, epsk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecureNoteData>(vaultId, sk);
+    });
 </script>
 
-<div class="uk-panel">
-    <div class="uk-padding-small">
-        { /* @ts-ignore */ null}
-        <div class="uk-grid-small uk-flex-middle" uk-grid>
-            <div class="uk-width-auto">
-                <img class="uk-border-round" width="60" height="60" src={vaultImage} alt="Avatar">
-            </div>
-            <div class="uk-width-expand">
-                <h3 class="uk-card-title uk-margin-remove-bottom">{cipher.name}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="x-panel uk-border-rounded uk-padding-small">
-        {@html cipher.data.note}
-    </div>
-</div>
-
-<style>
-    .x-panel {
-        background-color: white;
-        border: solid 1px whitesmoke;
-        white-space: pre;
-    }
-</style>
+{#if vaultItemDetail}
+    <ViewItemForm 
+        itemDetails={
+            {"name": vaultItemDetail.name, "notes": vaultItemDetail.notes}
+        }
+    />
+{/if}

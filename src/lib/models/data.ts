@@ -1,4 +1,5 @@
 import type { CipherCardData, CipherData, CipherLoginData } from "$lib/types";
+import UIkit from "uikit";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
@@ -36,6 +37,12 @@ abstract class VaultDetailComponentData<T extends CipherData> {
       setTimeout(() => {
         navigator.clipboard.writeText("");
       }, CLIPBOARD_CLEAR_DELAY);
+
+      UIkit.notification({
+        message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${field.label} copied!<div>`,
+        pos: "top-right",
+        timeout: 5000,
+      });
     };
   }
 
@@ -83,8 +90,8 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
 
   protected fieldDefinitions() {
     const fields: VaultDetailFields = {
-      name: {
-        value: this.data.name,
+      cardholderName: {
+        value: this.data.cardholderName,
         label: "Cardholder name",
         type: "text",
         copy: false,

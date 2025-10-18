@@ -179,7 +179,6 @@
     .x-vault-content {
         background-color: #FBFBFB;
         height: 100%;
-        overflow: scroll;
     }
 
     .x-vault-list {

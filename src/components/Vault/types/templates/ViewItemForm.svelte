@@ -1,4 +1,5 @@
 <script lang="ts">
+    import UIkit from "uikit";
 
     import Icon from "@iconify/svelte";
 
@@ -13,12 +14,27 @@
         fields
      }: {
         itemDetails: FormItemDetails,
-        detailTitle: string,
-        fields: Array<VaultDetailField>
+        detailTitle?: string,
+        fields?: Array<VaultDetailField>
     } = $props();
 
-    const hasFields = fields.length > 0;
+    const hasFields = fields ? fields.length > 0 : 0;
+    
+    const copyNotes = (e: any) => {
+        e.preventDefault();
 
+        navigator.clipboard.writeText(itemDetails.notes!);
+
+        setTimeout(() => {
+        navigator.clipboard.writeText("");
+        }, 1000 * 30);
+
+        UIkit.notification({
+            message: "<div class='uk-alert-success uk-text-default uk-padding-small'>Notes copied!<div>",
+            pos: "top-right",
+            timeout: 5000
+        });
+    };
 </script>
 
 <div class="uk-panel">
@@ -36,40 +52,68 @@
         </div>
     </div>
 
-    <div class="uk-padding-small">
-        <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
-            {detailTitle}
-        </div>
-        <div class="x-panel uk-width-1-1 uk-padding-small">
-            {#if hasFields}
-                {#each fields as field, i}
-                    {#if field.value && !field.hidden}
-                        <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
-                            <div class="uk-text-meta">{field.label}</div>
-                            <div class="uk-flex uk-flex-between uk-flex-middle">
-                                <span>{field.displayValue?.()}</span>
-                                {#if field.copy}
-                                    { /* @ts-ignore */ null }
-                                    <a 
-                                        href={null}
-                                        aria-label="copy-icon"
-                                        class="uk-icon-link uk-padding-xsmall"
-                                        uk-tooltip="title: Copy; pos: left"
-                                        onclick={field.copyEvent}
-                                    >
-                                        <Icon icon="hugeicons:copy-01" width="16" height="16" />
-                                    </a>
-                                {/if}
+    {#if detailTitle}
+        <div class="uk-padding-small">
+            <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
+                {detailTitle}
+            </div>
+            <div class="x-panel uk-width-1-1 uk-padding-small">
+                {#if fields && hasFields}
+                    {#each fields as field, i}
+                        {#if field.value && !field.hidden}
+                            <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
+                                <div class="uk-text-meta">{field.label}</div>
+                                <div class="uk-flex uk-flex-between uk-flex-middle">
+                                    <span>{field.displayValue?.()}</span>
+                                    {#if field.copy}
+                                        { /* @ts-ignore */ null }
+                                        <a 
+                                            href={null}
+                                            aria-label="copy-icon"
+                                            class="uk-icon-link uk-padding-xsmall"
+                                            uk-tooltip="title: Copy; pos: left"
+                                            onclick={field.copyEvent}
+                                        >
+                                            <Icon icon="hugeicons:copy-01" width="16" height="16" />
+                                        </a>
+                                    {/if}
+                                </div>
+                                <hr class="uk-margin-remove">
                             </div>
-                            <hr class="uk-margin-remove">
-                        </div>
-                    {/if}
-                {/each}
-            {:else}
-                No details.
-            {/if}
+                        {/if}
+                    {/each}
+                {:else}
+                    No details.
+                {/if}
+            </div>
         </div>
-    </div>
+    {/if}
+
+    {#if itemDetails.notes}
+        <div class="uk-padding-small">
+            <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
+                Additional options
+            </div>
+            <div class="x-panel uk-width-1-1 uk-padding-small">
+                <div class="uk-flex uk-flex-between uk-flex-middle">
+                    <div class="x-html-render uk-border-rounded">
+                        {@html itemDetails.notes}
+                    </div>
+                    { /* @ts-ignore */ null }
+                    <a 
+                        href={null}
+                        aria-label="copy-icon"
+                        class="uk-icon-link uk-padding-xsmall"
+                        uk-tooltip="title: Copy; pos: left"
+                        onclick={copyNotes}
+                    >
+                        <Icon icon="hugeicons:copy-01" width="16" height="16" />
+                    </a>
+                </div>
+            </div>
+        </div>
+    {/if}
+
 </div>
 
 <style>
@@ -78,4 +122,9 @@
         border: solid 1px whitesmoke;
         border-radius: 10px;
     }
+
+    .x-html-render {
+        white-space: pre;
+    }
+
 </style>

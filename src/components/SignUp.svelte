@@ -76,7 +76,7 @@
             try {
                 await createAccount(nameField!.value!, emailField!.value!, cfTurnsTileToken);
                 signUpSuccessful = true;
-            } catch (error: any) {  // TODO: do something about error handling typing.
+            } catch (error: any) {
                 const error_ = error.error;
                 serverErrors.length = 0;
                 // if server returns a multiple error validation.

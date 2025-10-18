@@ -28,7 +28,7 @@
 {#if componentData}
     <ViewItemForm 
         itemDetails={
-            {"name": vaultItemDetail!.name}
+            {"name": vaultItemDetail!.name, "notes": vaultItemDetail!.notes}
         }
         detailTitle="{componentData!.data.brand || 'Card'} details"
         fields={componentData!.getFields()} 

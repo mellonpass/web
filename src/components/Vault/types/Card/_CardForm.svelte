@@ -14,7 +14,7 @@
         aria-label="cardholder-name"
         class="uk-input uk-border-rounded"
         placeholder="Cardholder name"
-        bind:value={data.name}
+        bind:value={data.cardholderName}
     >
 </div>
 <div class="uk-margin-small uk-width-1-1">
