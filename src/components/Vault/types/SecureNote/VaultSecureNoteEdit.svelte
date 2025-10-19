@@ -6,7 +6,7 @@
     import { extractSymmetricKey } from "$lib/key-generation";
     import type { SymmetricKey } from "$lib/models/keys";
     import { updateCipher } from "$lib/services/ciphers";
-    import type { Cipher, CipherSecureNoteData, VaultItemDetail } from "$lib/types";
+    import type { Cipher, CipherSecuresNoteData, VaultItemDetail } from "$lib/types";
     import { encryptVaultDetailForUpdate, handleCipherResponse, loadVaultItemDetailFromStore } from "$lib/vaults";
 
     let { formId, vaultId, isEditMode = $bindable() } = $props();
@@ -17,12 +17,12 @@
     const errors: Array<string> = [];
 
     let sk: SymmetricKey | null = $state(null);
-    let vaultItemDetail: VaultItemDetail<CipherSecureNoteData> | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherSecuresNoteData> | null = $state(null);
 
     const onSave = async () => {
         errors.length = 0;
 
-        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherSecureNoteData>({
+        const cipher: Cipher = await encryptVaultDetailForUpdate<CipherSecuresNoteData>({
             vaultDetail: vaultItemDetail!,
             sk: sk!,
         });
@@ -38,7 +38,7 @@
 
     onMount(async () => {
         sk = await extractSymmetricKey(mk, epsk);
-        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecureNoteData>(vaultId, sk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecuresNoteData>(vaultId, sk);
     });
 
 </script>

@@ -5,7 +5,7 @@ import {
   type CipherCardData,
   type CipherData,
   type CipherLoginData,
-  type CipherSecureNoteData,
+  type CipherSecuresNoteData,
   type VaultItemDetail,
   type VaultData,
   type VaultItem,
@@ -14,7 +14,7 @@ import { extractCipherKey } from "./key-generation";
 import type { CipherKey, SymmetricKey } from "./models/keys";
 
 // Use only for encrypted CipherData values.
-type EncrypyedCipherData = CipherData;
+type EncryptedCipherData = CipherData;
 
 abstract class CipherEncryptor {
   protected cipherKey: CipherKey;
@@ -24,11 +24,15 @@ abstract class CipherEncryptor {
     this.cipherKey = cipherKey;
   }
 
-  abstract encryptData(data: CipherData): Promise<EncrypyedCipherData>;
+  abstract encryptData(data?: CipherData): Promise<EncryptedCipherData | null>;
 }
 
 class CardDataEncryptor extends CipherEncryptor {
-  async encryptData(data: CipherCardData): Promise<EncrypyedCipherData> {
+  async encryptData(data: CipherCardData): Promise<EncryptedCipherData> {
+    if (!data) {
+      throw new Error("Card data is required for encryption.");
+    }
+
     return {
       cardholderName: await this.cipherKey.encrypt(
         this.encoder.encode(data.cardholderName)
@@ -47,7 +51,11 @@ class CardDataEncryptor extends CipherEncryptor {
 }
 
 class LoginDataEncryptor extends CipherEncryptor {
-  async encryptData(data: CipherLoginData): Promise<EncrypyedCipherData> {
+  async encryptData(data: CipherLoginData): Promise<EncryptedCipherData> {
+    if (!data) {
+      throw new Error("Login data is required for encryption.");
+    }
+
     return {
       username: await this.cipherKey.encrypt(
         this.encoder.encode(data.username)
@@ -59,12 +67,23 @@ class LoginDataEncryptor extends CipherEncryptor {
   }
 }
 
-const ENCRYPTOR_MAPPER: {
-  [key: string]: (cipherKey: CipherKey) => CipherEncryptor;
-} = {
+// No encryption needed for secure notes data.
+// This is only a placeholder for behavioral consistency.
+class SecureNotesDataEncryptor extends CipherEncryptor {
+  async encryptData(_?: CipherSecuresNoteData): Promise<null> {
+    return null;
+  }
+}
+
+const ENCRYPTOR_FACTORY: Record<
+  CipherType,
+  (cipherKey: CipherKey) => CipherEncryptor
+> = {
   [CipherType.CARD]: (cipherKey: CipherKey) => new CardDataEncryptor(cipherKey),
   [CipherType.LOGIN]: (cipherKey: CipherKey) =>
     new LoginDataEncryptor(cipherKey),
+  [CipherType.SECURE_NOTE]: (cipherKey: CipherKey) =>
+    new SecureNotesDataEncryptor(cipherKey),
 };
 
 export async function encryptCipher({
@@ -87,17 +106,9 @@ export async function encryptCipher({
   data?: CipherData;
 }): Promise<Cipher> {
   const encoder = new TextEncoder();
-  const encryptorFactory = ENCRYPTOR_MAPPER[type];
-
-  let encryptedData = null;
-
-  if (encryptorFactory !== undefined) {
-    const enryptor = encryptorFactory(ck);
-
-    if (data !== undefined) {
-      encryptedData = await enryptor.encryptData(data);
-    }
-  }
+  const encryptorFactory = ENCRYPTOR_FACTORY[type];
+  const encryptor = encryptorFactory(ck);
+  const encryptedData = await encryptor.encryptData(data);
 
   const pck = await sk.protectKey(ck);
 
