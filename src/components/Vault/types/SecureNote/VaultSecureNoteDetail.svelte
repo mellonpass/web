@@ -5,18 +5,18 @@
 
     import { extractSymmetricKey } from "$lib/key-generation";
     import { loadVaultItemDetailFromStore } from "$lib/vaults";
-    import type { CipherSecureNoteData, VaultItemDetail } from "$lib/types";
+    import type { CipherSecuresNoteData, VaultItemDetail } from "$lib/types";
 
     const epsk: string = getContext("epsk");
     const mk: string = getContext("mk");
 
     let { vaultId } = $props();
 
-    let vaultItemDetail: VaultItemDetail<CipherSecureNoteData> | null = $state(null);
+    let vaultItemDetail: VaultItemDetail<CipherSecuresNoteData> | null = $state(null);
 
     onMount(async () => {
         const sk = await extractSymmetricKey(mk, epsk);
-        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecureNoteData>(vaultId, sk);
+        vaultItemDetail = await loadVaultItemDetailFromStore<CipherSecuresNoteData>(vaultId, sk);
     });
 </script>
 

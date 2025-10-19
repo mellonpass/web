@@ -12,13 +12,13 @@ export interface CipherLoginData {
   password: string;
 }
 
-export interface CipherSecureNoteData {
+export interface CipherSecuresNoteData {
   type: string;
 }
 
 export type CipherData =
   | CipherLoginData
-  | CipherSecureNoteData
+  | CipherSecuresNoteData
   | CipherCardData;
 
 export enum CipherType {
