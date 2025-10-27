@@ -15,7 +15,7 @@ export const arrayBufferToHex = (buffer: ArrayBuffer | Uint8Array) => {
 /**
  * Convert hex string into ArrayBuffer.
  * @param {string} hex
- * @returns {Uint8Array<ArrayBuffer>} Uint8Array<ArrayBuffer>.
+ * @returns {Uint8Array} Uint8Array.
  */
 export const hexToArrayBuffer = (hex: string) => {
   return new Uint8Array(hex.match(/../g)!.map((h) => parseInt(h, 16)));

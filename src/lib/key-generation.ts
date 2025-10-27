@@ -10,7 +10,7 @@ import {
 export const generateMasterKey = async (
   email: string,
   masterPassword: string
-): Promise<Uint8Array<ArrayBuffer>> => {
+): Promise<Uint8Array> => {
   const encoder = new TextEncoder();
   const salt = encoder.encode(email);
 
@@ -32,7 +32,7 @@ export const generateMasterKey = async (
 };
 
 export const generateStretchedMasterKey = async (
-  masterKey: Uint8Array<ArrayBuffer>
+  masterKey: Uint8Array
 ): Promise<StretchedMasterKey> => {
   const encoder = new TextEncoder();
 
@@ -72,7 +72,7 @@ export const generateProtectedSymmetricKey = async (
 };
 
 export const generateLoginhash = async (
-  masterKey: Uint8Array<ArrayBuffer>,
+  masterKey: Uint8Array,
   masterPassword: string
 ): Promise<string> => {
   const encoder = new TextEncoder();
