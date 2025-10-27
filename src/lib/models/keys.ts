@@ -154,17 +154,22 @@ export abstract class AESHMACKey extends BaseKey {
 }
 
 /**
- * A key that can protect Key and extract from a ProtectedKey.
+ * Generic Key wrapper that can protect (encrypt+sign) another key and extract
+ * (verify+decrypt) a protected key.
  */
-export abstract class Key extends AESHMACKey {
-  async protectKey(key: Key | AESHMACKey): Promise<ProtectedKey> {
+export abstract class Key<
+  PK extends ProtectedKey,
+  K extends AESHMACKey | Key<any, any>,
+> extends AESHMACKey {
+  protected abstract setProtectedKeyType(keybuffer: Uint8Array): PK;
+  protected abstract getKeyType(keybuffer: Uint8Array): K;
+
+  async protectKey(key: K): Promise<PK> {
     const pskBuffer = await this.encryptSign(key.keybuffer);
     return this.setProtectedKeyType(pskBuffer);
   }
 
-  protected abstract setProtectedKeyType(keybuffer: Uint8Array): ProtectedKey;
-
-  async extractKey(protectedKey: ProtectedKey): Promise<Key | AESHMACKey> {
+  async extractKey(protectedKey: PK): Promise<K> {
     const decryptedBuffer = await this.verifyDecrypt(
       protectedKey.key,
       protectedKey.mac,
@@ -172,19 +177,20 @@ export abstract class Key extends AESHMACKey {
     );
     return this.getKeyType(decryptedBuffer);
   }
-
-  protected abstract getKeyType(keybuffer: Uint8Array): Key | AESHMACKey;
 }
 
 /**
  * Key to protect and extract a Symmetric Key.
  */
-export class StretchedMasterKey extends Key {
+export class StretchedMasterKey extends Key<
+  ProtectedSymmetricKey,
+  SymmetricKey
+> {
   constructor(keybuffer: Uint8Array) {
     super(keybuffer);
   }
 
-  protected getKeyType(keybuffer: Uint8Array): Key {
+  protected getKeyType(keybuffer: Uint8Array): SymmetricKey {
     return new SymmetricKey(keybuffer);
   }
 
@@ -196,7 +202,7 @@ export class StretchedMasterKey extends Key {
 /**
  * Key to protect and extract a Cipher Key.
  */
-export class SymmetricKey extends Key {
+export class SymmetricKey extends Key<ProtectedCipherKey, CipherKey> {
   constructor(keybuffer: Uint8Array) {
     super(keybuffer);
   }
