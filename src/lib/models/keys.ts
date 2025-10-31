@@ -100,7 +100,8 @@ export abstract class AESHMACKey extends BaseKey {
     );
 
     const buffer = new Uint8Array(encBuffer);
-    const mac = await this.hmacSign(buffer);
+    const macInput = new Uint8Array([...buffer, ...iv]);
+    const mac = await this.hmacSign(macInput);
 
     // combine data into a single byte.
     return new Uint8Array([...buffer, ...mac, ...iv]);
@@ -111,7 +112,9 @@ export abstract class AESHMACKey extends BaseKey {
     mac: Uint8Array,
     iv: Uint8Array
   ): Promise<Uint8Array> {
-    const valid = await this.hmacVerify(mac, data);
+    const macInput = new Uint8Array([...data, ...iv]);
+    const valid = await this.hmacVerify(mac, macInput);
+
     if (!valid) {
       throw new Error("Invalid MAC signature!");
     }
@@ -141,8 +144,8 @@ export abstract class AESHMACKey extends BaseKey {
   async decryptText(encodedData: string): Promise<string> {
     const data = atob(encodedData);
     // encrypted data | mac | iv
-    const databuffer = hexToArrayBuffer(data);
-    const pData = new ProtectedData(databuffer);
+    const buffer = hexToArrayBuffer(data);
+    const pData = new ProtectedData(buffer);
     const decryptedBuffer = await this.verifyDecrypt(
       pData.data,
       pData.mac,
