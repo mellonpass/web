@@ -75,13 +75,13 @@ export abstract class AESHMACKey extends BaseKey {
     super(keybuffer);
   }
 
-  protected async hmacSign(data: Uint8Array): Promise<Uint8Array> {
+  private async hmacSign(data: Uint8Array): Promise<Uint8Array> {
     const macKey = await this.getMACKey();
     const buffer = await crypto.subtle.sign("HMAC", macKey, data);
     return new Uint8Array(buffer);
   }
 
-  protected async hmacVerify(
+  private async hmacVerify(
     signature: Uint8Array,
     data: Uint8Array
   ): Promise<boolean> {
