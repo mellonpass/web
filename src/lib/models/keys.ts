@@ -229,9 +229,6 @@ export class CipherKey extends AESHMACKey {
 }
 
 abstract class ProtectedKey extends BaseKey {
-  private IV_START_LEN = this.keybuffer.length - 16;
-  private MAC_START_LEN = this.IV_START_LEN - 32;
-
   key: Uint8Array;
   mac: Uint8Array;
   iv: Uint8Array;
@@ -239,9 +236,12 @@ abstract class ProtectedKey extends BaseKey {
   constructor(keybuffer: Uint8Array) {
     super(keybuffer);
 
-    this.iv = keybuffer.slice(this.IV_START_LEN, keybuffer.byteLength);
-    this.mac = keybuffer.slice(this.MAC_START_LEN, this.IV_START_LEN);
-    this.key = keybuffer.slice(0, this.MAC_START_LEN);
+    const IV_START_LEN = keybuffer.length - 16;
+    const MAC_START_LEN = IV_START_LEN - 32;
+
+    this.iv = keybuffer.slice(IV_START_LEN, keybuffer.byteLength);
+    this.mac = keybuffer.slice(MAC_START_LEN, IV_START_LEN);
+    this.key = keybuffer.slice(0, MAC_START_LEN);
   }
 }
 
