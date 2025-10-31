@@ -97,8 +97,10 @@
         {#each errors as error}
             {/* @ts-ignore */ null}
             <div class="uk-alert-danger" uk-alert>
+                {/* @ts-ignore */ null}
+                <a href={null} class="uk-alert-close" aria-label="close-alert" uk-close></a>
                 <p>Error: {error}</p>
             </div>
-        {/each}
+        {/each} 
     {/if}
 </form>
