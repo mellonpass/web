@@ -55,13 +55,13 @@ abstract class BaseKey {
     );
   }
 
-  toBase64() {
+  toBase64(): string {
     return btoa(arrayBufferToHex(this.keybuffer));
   }
 
   static fromBase64<T extends BaseKey>(
-    this: new (encodedKey: any) => T,
-    encodedKey: any
+    this: new (encodedKey: Uint8Array) => T,
+    encodedKey: string
   ): T {
     return new this(hexToArrayBuffer(atob(encodedKey)));
   }
@@ -75,13 +75,13 @@ export abstract class AESHMACKey extends BaseKey {
     super(keybuffer);
   }
 
-  protected async hmacSign(data: Uint8Array): Promise<Uint8Array> {
+  private async hmacSign(data: Uint8Array): Promise<Uint8Array> {
     const macKey = await this.getMACKey();
     const buffer = await crypto.subtle.sign("HMAC", macKey, data);
     return new Uint8Array(buffer);
   }
 
-  protected async hmacVerify(
+  private async hmacVerify(
     signature: Uint8Array,
     data: Uint8Array
   ): Promise<boolean> {
@@ -100,7 +100,8 @@ export abstract class AESHMACKey extends BaseKey {
     );
 
     const buffer = new Uint8Array(encBuffer);
-    const mac = await this.hmacSign(buffer);
+    const macInput = new Uint8Array([...buffer, ...iv]);
+    const mac = await this.hmacSign(macInput);
 
     // combine data into a single byte.
     return new Uint8Array([...buffer, ...mac, ...iv]);
@@ -111,7 +112,9 @@ export abstract class AESHMACKey extends BaseKey {
     mac: Uint8Array,
     iv: Uint8Array
   ): Promise<Uint8Array> {
-    const valid = await this.hmacVerify(mac, data);
+    const macInput = new Uint8Array([...data, ...iv]);
+    const valid = await this.hmacVerify(mac, macInput);
+
     if (!valid) {
       throw new Error("Invalid MAC signature!");
     }
@@ -141,8 +144,8 @@ export abstract class AESHMACKey extends BaseKey {
   async decryptText(encodedData: string): Promise<string> {
     const data = atob(encodedData);
     // encrypted data | mac | iv
-    const databuffer = hexToArrayBuffer(data);
-    const pData = new ProtectedData(databuffer);
+    const buffer = hexToArrayBuffer(data);
+    const pData = new ProtectedData(buffer);
     const decryptedBuffer = await this.verifyDecrypt(
       pData.data,
       pData.mac,
@@ -226,9 +229,6 @@ export class CipherKey extends AESHMACKey {
 }
 
 abstract class ProtectedKey extends BaseKey {
-  private IV_START_LEN = this.keybuffer.length - 16;
-  private MAC_START_LEN = this.IV_START_LEN - 32;
-
   key: Uint8Array;
   mac: Uint8Array;
   iv: Uint8Array;
@@ -236,9 +236,12 @@ abstract class ProtectedKey extends BaseKey {
   constructor(keybuffer: Uint8Array) {
     super(keybuffer);
 
-    this.iv = keybuffer.slice(this.IV_START_LEN, keybuffer.byteLength);
-    this.mac = keybuffer.slice(this.MAC_START_LEN, this.IV_START_LEN);
-    this.key = keybuffer.slice(0, this.MAC_START_LEN);
+    const IV_START_LEN = keybuffer.length - 16;
+    const MAC_START_LEN = IV_START_LEN - 32;
+
+    this.iv = keybuffer.slice(IV_START_LEN, keybuffer.byteLength);
+    this.mac = keybuffer.slice(MAC_START_LEN, IV_START_LEN);
+    this.key = keybuffer.slice(0, MAC_START_LEN);
   }
 }
 

@@ -19,7 +19,7 @@
     "UI"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "apiCompatibility": ">= 1.0.0 < 2.0.0",
   "scripts": {

@@ -53,7 +53,7 @@
                 }, 500);
             });
         } catch (error) {
-            errors.push((error as Error).message);
+            errors = [(error as Error).message];
         }
     };
 

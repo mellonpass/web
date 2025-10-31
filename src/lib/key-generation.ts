@@ -68,7 +68,7 @@ export const generateProtectedSymmetricKey = async (
   // Create random 512-bit Symmetric Key.
   const rawKey = crypto.getRandomValues(new Uint8Array(64));
   const sk = new SymmetricKey(rawKey);
-  return <ProtectedSymmetricKey>await smk.protectKey(sk);
+  return await smk.protectKey(sk);
 };
 
 export const generateLoginhash = async (
@@ -113,7 +113,7 @@ export async function extractSymmetricKey(
   } else {
     psk = key;
   }
-  return <SymmetricKey>await smk.extractKey(psk);
+  return await smk.extractKey(psk);
 }
 
 export async function extractCipherKey(
@@ -121,7 +121,7 @@ export async function extractCipherKey(
   epck: string
 ): Promise<CipherKey> {
   const pck = await ProtectedCipherKey.fromBase64(epck);
-  return <CipherKey>await sk.extractKey(pck);
+  return await sk.extractKey(pck);
 }
 
 export async function generateAsymmetricKeys(): Promise<
