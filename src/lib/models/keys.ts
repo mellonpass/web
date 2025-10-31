@@ -55,13 +55,13 @@ abstract class BaseKey {
     );
   }
 
-  toBase64() {
+  toBase64(): string {
     return btoa(arrayBufferToHex(this.keybuffer));
   }
 
   static fromBase64<T extends BaseKey>(
-    this: new (encodedKey: any) => T,
-    encodedKey: any
+    this: new (encodedKey: Uint8Array) => T,
+    encodedKey: string
   ): T {
     return new this(hexToArrayBuffer(atob(encodedKey)));
   }
