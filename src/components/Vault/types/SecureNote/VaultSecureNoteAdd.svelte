@@ -26,8 +26,7 @@
         }
 
         try {
-
-           $newVaultItem = await createVaultItem({
+            $newVaultItem = await createVaultItem({
                 mk:mk,
                 epsk:epsk,
                 name:itemDetails.name,
@@ -47,7 +46,7 @@
                 }, 500);
             });
         } catch (error) {
-            errors.push((error as Error).message);
+            errors = [(error as Error).message];
         }
     };
 
