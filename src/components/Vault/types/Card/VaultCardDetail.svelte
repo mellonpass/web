@@ -30,7 +30,7 @@
         itemDetails={
             {"name": vaultItemDetail!.name, "notes": vaultItemDetail!.notes}
         }
-        detailTitle="{componentData!.data.brand || 'Card'} details"
-        fields={componentData!.getFields()} 
+        detailTitle="{componentData.data.brand || 'Card'} details"
+        fields={componentData.fields} 
     />
 {/if}
