@@ -3,84 +3,77 @@ import UIkit from "uikit";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
-export interface VaultDetailField {
+export abstract class VaultDetailField {
   value: any | null;
   label: string;
-  type: string;
+  type: "text" | "password" | "datetime";
   hidden: boolean;
-  copy: boolean;
-  displayValue?: () => string;
-  copyEvent?: () => void;
-  metadata?: { [key: string]: any };
+
+  constructor(
+    value: any | null,
+    label: string,
+    type: "text" | "password" | "datetime",
+    hidden: boolean = false
+  ) {
+    this.value = value;
+    this.label = label;
+    this.type = type;
+    this.hidden = hidden;
+  }
+
+  public displayValue() {
+    return this.value;
+  }
+
+  public copyEvent() {
+    navigator.clipboard.writeText(this.value);
+    setTimeout(() => {
+      navigator.clipboard.writeText("");
+    }, CLIPBOARD_CLEAR_DELAY);
+
+    UIkit.notification({
+      message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${this.label} copied!<div>`,
+      pos: "top-right",
+      timeout: 5000,
+    });
+  }
 }
 
-interface VaultDetailFields {
-  [key: string]: VaultDetailField;
+class VaultDetailTextField extends VaultDetailField {
+  constructor(value: any | null, label: string, hidden: boolean = false) {
+    super(value, label, "text", hidden);
+  }
+}
+
+export class VaultDetailPasswordField extends VaultDetailField {
+  public tooglePassword: boolean = false;
+
+  constructor(value: any | null, label: string, hidden: boolean = false) {
+    super(value, label, "password", hidden);
+  }
+
+  displayValue() {
+    return this.tooglePassword ? this.value : "••••••••";
+  }
+}
+
+class VaultDetailDateTimeField extends VaultDetailField {
+  constructor(value: any | null, label: string, hidden: boolean = false) {
+    super(value, label, "datetime", hidden);
+  }
 }
 
 abstract class VaultDetailComponentData<T extends CipherData> {
   public data: T;
 
-  fields: VaultDetailFields;
+  fields: Array<VaultDetailField>;
 
   constructor(data: T) {
     this.data = data;
     this.fields = this.fieldDefinitions();
   }
 
-  protected abstract fieldDefinitions(): VaultDetailFields;
-
-  private setCopyEvent(field: VaultDetailField) {
-    field.copyEvent = () => {
-      navigator.clipboard.writeText(field.value);
-
-      setTimeout(() => {
-        navigator.clipboard.writeText("");
-      }, CLIPBOARD_CLEAR_DELAY);
-
-      UIkit.notification({
-        message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${field.label} copied!<div>`,
-        pos: "top-right",
-        timeout: 5000,
-      });
-    };
-  }
-
-  private setDisplayvalue(field: VaultDetailField) {
-    field.displayValue = () => {
-      switch (field.type) {
-        case "password":
-          return "*****";
-        default:
-          return field.value;
-      }
-    };
-  }
-
-  getFields(): Array<VaultDetailField> {
-    const fieldNames = Object.keys(this.fields) as Array<
-      keyof VaultDetailFields
-    >;
-
-    const fields_: Array<VaultDetailField> = [];
-    fieldNames.forEach((key) => {
-      if (this.fields) {
-        const field = this.fields[key];
-
-        if (field.value) {
-          if (field.copy) {
-            this.setCopyEvent(field);
-          }
-
-          this.setDisplayvalue(field);
-
-          fields_.push(field);
-        }
-      }
-    });
-
-    return fields_;
-  }
+  protected abstract fieldDefinitions(): Array<VaultDetailField>;
 }
 
 export class VaultCardDetailComponentData extends VaultDetailComponentData<CipherCardData> {
@@ -89,29 +82,11 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
   }
 
   protected fieldDefinitions() {
-    const fields: VaultDetailFields = {
-      cardholderName: {
-        value: this.data.cardholderName,
-        label: "Cardholder name",
-        type: "text",
-        copy: false,
-        hidden: false,
-      },
-      number: {
-        value: this.data.number,
-        label: "Number",
-        type: "password",
-        copy: true,
-        hidden: false,
-      },
-      brand: {
-        value: this.data.brand,
-        label: "Brand",
-        type: "text",
-        copy: false,
-        hidden: true,
-      },
-    };
+    const fields: Array<VaultDetailField> = [
+      new VaultDetailTextField(this.data.cardholderName, "Cardholder Name"),
+      new VaultDetailPasswordField(this.data.number, "Card Number"),
+      new VaultDetailTextField(this.data.brand, "Brand", true),
+    ];
 
     if (this.data.expMonth || this.data.expYear) {
       // Nothing to worry reaching year 3000.
@@ -136,22 +111,14 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
         year = (currentMillennia + parseInt(year)).toString();
       }
 
-      fields.expiration = {
-        value: `${month}/${year}`,
-        label: "Expiration",
-        type: "datetime",
-        copy: false,
-        hidden: false,
-      };
+      // Index order is important for display.
+      fields.push(
+        ...[
+          new VaultDetailDateTimeField(`${month}/${year}`, "Expiration"),
+          new VaultDetailPasswordField(this.data.securityCode, "Security Code"),
+        ]
+      );
     }
-
-    fields.securityCode = {
-      value: this.data.securityCode,
-      label: "Security Code",
-      type: "password",
-      copy: true,
-      hidden: false,
-    };
 
     return fields;
   }
@@ -163,22 +130,9 @@ export class VaultLoginDetailComponentData extends VaultDetailComponentData<Ciph
   }
 
   protected fieldDefinitions() {
-    const fields: VaultDetailFields = {
-      username: {
-        value: this.data.username,
-        label: "Username",
-        type: "text",
-        copy: true,
-        hidden: false,
-      },
-      password: {
-        value: this.data.password,
-        label: "Password",
-        type: "password",
-        copy: true,
-        hidden: false,
-      },
-    };
-    return fields;
+    return [
+      new VaultDetailTextField(this.data.username, "Username"),
+      new VaultDetailPasswordField(this.data.password, "Password"),
+    ];
   }
 }

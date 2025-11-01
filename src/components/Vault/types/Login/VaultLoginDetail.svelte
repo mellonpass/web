@@ -31,6 +31,6 @@
             {"name": vaultItemDetail!.name, "notes": vaultItemDetail!.notes}
         }
         detailTitle="Login Credentials"
-        fields={componentData!.getFields()} 
+        fields={componentData.fields} 
     />
 {/if}

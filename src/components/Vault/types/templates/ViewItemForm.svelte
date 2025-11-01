@@ -3,6 +3,8 @@
 
     import Icon from "@iconify/svelte";
 
+    import ViewItemFormField from "$components/Vault/types/templates/ViewItemFormField.svelte";
+
     import vaultImage from "$lib/assets/images/vaultImage.png";
 
     import type { VaultDetailField } from "$lib/models/data";
@@ -17,6 +19,7 @@
         detailTitle?: string,
         fields?: Array<VaultDetailField>
     } = $props();
+
 
     const hasFields = fields ? fields.length > 0 : 0;
     
@@ -62,23 +65,7 @@
                     {#each fields as field, i}
                         {#if field.value && !field.hidden}
                             <div class="uk-margin" class:uk-margin-remove-bottom={i === fields.length - 1 || i === 0}>
-                                <div class="uk-text-meta">{field.label}</div>
-                                <div class="uk-flex uk-flex-between uk-flex-middle">
-                                    <span>{field.displayValue?.()}</span>
-                                    {#if field.copy}
-                                        { /* @ts-ignore */ null }
-                                        <a 
-                                            href={null}
-                                            aria-label="copy-icon"
-                                            class="uk-icon-link uk-padding-xsmall"
-                                            uk-tooltip="title: Copy; pos: left"
-                                            onclick={field.copyEvent}
-                                        >
-                                            <Icon icon="hugeicons:copy-01" width="16" height="16" />
-                                        </a>
-                                    {/if}
-                                </div>
-                                <hr class="uk-margin-remove">
+                                <ViewItemFormField field={field} />
                             </div>
                         {/if}
                     {/each}
@@ -104,7 +91,7 @@
                         href={null}
                         aria-label="copy-icon"
                         class="uk-icon-link uk-padding-xsmall"
-                        uk-tooltip="title: Copy; pos: left"
+                        uk-tooltip="title: Copy"
                         onclick={copyNotes}
                     >
                         <Icon icon="hugeicons:copy-01" width="16" height="16" />
