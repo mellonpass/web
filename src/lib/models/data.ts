@@ -64,7 +64,11 @@ abstract class VaultDetailComponentData<T extends CipherData> {
 
   constructor(data: T) {
     this.data = data;
-    this.fields = this.fieldDefinitions();
+
+    // filter out empty fields.
+    this.fields = this.fieldDefinitions().filter(
+      (field) => field.value !== null && field.value !== ""
+    );
   }
 
   protected abstract fieldDefinitions(): Array<VaultDetailField>;
