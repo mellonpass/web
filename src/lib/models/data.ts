@@ -57,12 +57,6 @@ export class VaultDetailPasswordField extends VaultDetailField {
   }
 }
 
-class VaultDetailDateTimeField extends VaultDetailField {
-  constructor(value: any | null, label: string, hidden: boolean = false) {
-    super(value, label, "datetime", hidden);
-  }
-}
-
 abstract class VaultDetailComponentData<T extends CipherData> {
   public data: T;
 
@@ -70,7 +64,11 @@ abstract class VaultDetailComponentData<T extends CipherData> {
 
   constructor(data: T) {
     this.data = data;
-    this.fields = this.fieldDefinitions();
+
+    // filter out empty fields.
+    this.fields = this.fieldDefinitions().filter(
+      (field) => field.value !== null && field.value !== ""
+    );
   }
 
   protected abstract fieldDefinitions(): Array<VaultDetailField>;
@@ -114,7 +112,7 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
       // Index order is important for display.
       fields.push(
         ...[
-          new VaultDetailDateTimeField(`${month}/${year}`, "Expiration"),
+          new VaultDetailTextField(`${month}/${year}`, "Expiration"),
           new VaultDetailPasswordField(this.data.securityCode, "Security Code"),
         ]
       );

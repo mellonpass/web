@@ -1,4 +1,4 @@
-import { arrayBufferToHex, hexToArrayBuffer } from "$lib/bytes";
+import { arrayBufferToBase64, base64ToArrayBuffer } from "$lib/bytes";
 
 const BIT_SIZE = 8;
 
@@ -56,14 +56,14 @@ abstract class BaseKey {
   }
 
   toBase64(): string {
-    return btoa(arrayBufferToHex(this.keybuffer));
+    return btoa(arrayBufferToBase64(this.keybuffer));
   }
 
   static fromBase64<T extends BaseKey>(
     this: new (encodedKey: Uint8Array) => T,
     encodedKey: string
   ): T {
-    return new this(hexToArrayBuffer(atob(encodedKey)));
+    return new this(base64ToArrayBuffer(atob(encodedKey)));
   }
 }
 
@@ -138,13 +138,13 @@ export abstract class AESHMACKey extends BaseKey {
    */
   async encrypt(data: Uint8Array): Promise<string> {
     const buffer = await this.encryptSign(data);
-    return btoa(arrayBufferToHex(buffer));
+    return btoa(arrayBufferToBase64(buffer));
   }
 
   async decryptText(encodedData: string): Promise<string> {
     const data = atob(encodedData);
     // encrypted data | mac | iv
-    const buffer = hexToArrayBuffer(data);
+    const buffer = base64ToArrayBuffer(data);
     const pData = new ProtectedData(buffer);
     const decryptedBuffer = await this.verifyDecrypt(
       pData.data,
