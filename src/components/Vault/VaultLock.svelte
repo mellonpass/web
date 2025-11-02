@@ -3,7 +3,7 @@
 
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { logoutAccount, unlock } from "$lib/services/accounts";
-    import { arrayBufferToHex } from "$lib/bytes";
+    import { arrayBufferToBase64 } from "$lib/bytes";
     import { invalidateAll } from "$app/navigation";
 
     let mPass = $state("");
@@ -30,7 +30,7 @@
 
             try {
                 const response = await unlock(loginHash);
-                localStorage.setItem("mk", arrayBufferToHex(mk));
+                localStorage.setItem("mk", arrayBufferToBase64(mk));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign('/');
             } catch (err: any) {

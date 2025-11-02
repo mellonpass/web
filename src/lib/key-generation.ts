@@ -1,4 +1,4 @@
-import { arrayBufferToHex, hexToArrayBuffer } from "$lib/bytes";
+import { arrayBufferToBase64, base64ToArrayBuffer } from "$lib/bytes";
 import {
   CipherKey,
   ProtectedCipherKey,
@@ -94,7 +94,7 @@ export const generateLoginhash = async (
   );
 
   const buffer = await crypto.subtle.deriveBits(algorithm, baseKey, 256);
-  return arrayBufferToHex(buffer);
+  return arrayBufferToBase64(buffer);
 };
 
 export const generateCipherKey = (): CipherKey => {
@@ -106,7 +106,7 @@ export async function extractSymmetricKey(
   mk: string,
   key: string | ProtectedSymmetricKey
 ): Promise<SymmetricKey> {
-  const smk = await generateStretchedMasterKey(hexToArrayBuffer(mk));
+  const smk = await generateStretchedMasterKey(base64ToArrayBuffer(mk));
   let psk;
   if (typeof key == "string") {
     psk = await ProtectedSymmetricKey.fromBase64(key);

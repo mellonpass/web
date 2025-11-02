@@ -5,7 +5,7 @@
 
     import { extractSymmetricKey, generateAsymmetricKeys, generateLoginhash, generateMasterKey, generateProtectedSymmetricKey, generateStretchedMasterKey } from '$lib/key-generation';
     import { setupAccount } from '$lib/services/accounts';
-  import { arrayBufferToHex } from "$lib/bytes";
+  import { arrayBufferToBase64 } from "$lib/bytes";
 
     const { verifiedEmail } = $props();
 
@@ -102,13 +102,13 @@
         const smk = await generateStretchedMasterKey(mk);
         const psk = await generateProtectedSymmetricKey(smk);
         // Use to encrypt the rsa private key.
-        const sk = await extractSymmetricKey(arrayBufferToHex(mk), psk);
+        const sk = await extractSymmetricKey(arrayBufferToBase64(mk), psk);
         const [rsa_private_key, rsa_public_key] = await generateAsymmetricKeys();
 
         const epsk = psk.toBase64();
         const encoder = new TextEncoder();
         const rsa_protected_key = await sk.encrypt(encoder.encode(JSON.stringify(rsa_private_key)));
-        const rsa_encoded_public_key = btoa(arrayBufferToHex(encoder.encode(JSON.stringify(rsa_public_key))));
+        const rsa_encoded_public_key = btoa(arrayBufferToBase64(encoder.encode(JSON.stringify(rsa_public_key))));
 
         try {
             await setupAccount(

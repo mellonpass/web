@@ -9,7 +9,7 @@
 
     import { generateLoginhash, generateMasterKey } from "$lib/key-generation";
     import { loginAccount } from "$lib/services/accounts";
-    import { arrayBufferToHex } from "$lib/bytes";
+    import { arrayBufferToBase64 } from "$lib/bytes";
     
 
     type FormField = {
@@ -73,7 +73,7 @@
 
             try {
                 const response = await loginAccount(emailInput.value!, loginHash, cfTurnsTileToken);
-                localStorage.setItem("mk", arrayBufferToHex(mk));
+                localStorage.setItem("mk", arrayBufferToBase64(mk));
                 localStorage.setItem("epsk", response.data.psk);
                 window.location.assign(page.url.searchParams.get("next") ?? "/");
             } catch (error: any) {
