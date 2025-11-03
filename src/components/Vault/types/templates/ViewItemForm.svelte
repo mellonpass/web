@@ -8,21 +8,25 @@
     import vaultImage from "$lib/assets/images/vaultImage.png";
 
     import type { VaultDetailField } from "$lib/models/data";
-    import type { FormItemDetails } from "$lib/types";
+    import type { FormItemDetails, FormItemHistory } from "$lib/types";
 
     let { 
         itemDetails,
         detailTitle,
+        itemHistory,
         fields
      }: {
         itemDetails: FormItemDetails,
+        itemHistory: FormItemHistory,
         detailTitle?: string,
         fields?: Array<VaultDetailField>
     } = $props();
 
 
     const hasFields = fields ? fields.length > 0 : 0;
-    
+    const historyLastUpdated = `${itemHistory.lastEdited.toLocaleDateString()} ${itemHistory.lastEdited.toLocaleTimeString()}`;
+    const historyCreated = `${itemHistory.created.toLocaleDateString()} ${itemHistory.created.toLocaleTimeString()}`;
+
     const copyNotes = (e: any) => {
         e.preventDefault();
 
@@ -90,7 +94,7 @@
                     <a 
                         href={null}
                         aria-label="copy-icon"
-                        class="uk-icon-link uk-padding-xsmall"
+                        class="uk-icon-button form-field-icon-button"
                         uk-tooltip="title: Copy"
                         onclick={copyNotes}
                     >
@@ -100,6 +104,22 @@
             </div>
         </div>
     {/if}
+
+    <div class="uk-padding-small">
+        <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
+            Item history
+        </div>
+        <div class="x-panel uk-width-1-1 uk-padding-small">
+            <div>
+                <span class="uk-text-emphasis uk-text-small">Last edited:</span>
+                <span class="uk-text-meta">{historyLastUpdated}</span>
+            </div>
+            <div>
+                <span class="uk-text-emphasis uk-text-small">Created: </span>
+                <span class="uk-text-meta">{historyCreated}</span>
+            </div>
+        </div>
+    </div>
 
 </div>
 

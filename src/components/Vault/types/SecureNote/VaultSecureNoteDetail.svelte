@@ -25,5 +25,11 @@
         itemDetails={
             {"name": vaultItemDetail.name, "notes": vaultItemDetail.notes}
         }
+        itemHistory={
+            {
+                "created": vaultItemDetail.created,
+                "lastEdited": vaultItemDetail.updated,
+            }
+        }
     />
 {/if}
