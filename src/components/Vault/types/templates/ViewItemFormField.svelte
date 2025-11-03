@@ -23,7 +23,7 @@
 </script>
 
 <div class="uk-text-meta">{field.label}</div>
-<div class="uk-flex uk-flex-between uk-flex-middle">
+<div class="uk-flex uk-flex-between uk-flex-middle uk-margin-xsmall">
     <span>{displayValue}</span>
     <div class="uk-panel">
         {#if field.type == "password"}
@@ -31,23 +31,22 @@
             <a
                 href={null}
                 aria-label="eye-icon"
-                class="uk-icon-link uk-padding-xsmall"
+                class="uk-icon-button form-field-icon-button"
                 onclick={() => tooglePassword = !tooglePassword}
             >
-                <Icon icon="hugeicons:{tooglePassword ? "view-off-slash" : "view"}" width="16" height="16" />
+                <Icon icon="hugeicons:{tooglePassword ? "view-off-slash" : "view"}"/>
             </a>
         {/if}
         { /* @ts-ignore */ null }
         <a
             href={null}
             aria-label="copy-icon"
-            class="uk-icon-link uk-padding-xsmall"
+            class="uk-icon-button form-field-icon-button"
             uk-tooltip="title: Copy"
             onclick={() => field.copyEvent()}
         >
-            <Icon icon="hugeicons:copy-01" width="16" height="16" />
+            <Icon icon="hugeicons:copy-01"/>
         </a>
     </div>
 </div>
 <hr class="uk-margin-remove">
-
