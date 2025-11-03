@@ -25,10 +25,16 @@
 
 </script>
 
-{#if componentData}
+{#if componentData && vaultItemDetail}
     <ViewItemForm 
         itemDetails={
-            {"name": vaultItemDetail!.name, "notes": vaultItemDetail!.notes}
+            {"name": vaultItemDetail.name, "notes": vaultItemDetail.notes}
+        }
+        itemHistory={
+            {
+                "created": vaultItemDetail.created,
+                "lastEdited": vaultItemDetail.updated,
+            }
         }
         detailTitle="{componentData.data.brand || 'Card'} details"
         fields={componentData.fields} 

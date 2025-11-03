@@ -168,6 +168,8 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
     notes: await ck.decryptText(cipher.notes),
+    created: new Date(cipher.created!),
+    updated: new Date(cipher.updated!),
   } satisfies Partial<VaultItemDetail<T>>;
 
   let data: any;

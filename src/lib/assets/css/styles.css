@@ -18,3 +18,17 @@ body {
 .uk-notification-message {
   padding: 0 !important;
 }
+
+.uk-icon-button.form-field-icon-button {
+    padding: 5px !important;
+    width: auto !important;
+    height: auto !important;
+    border: none !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+    background-color: transparent !important;
+}
+
+.uk-icon-button.form-field-icon-button:hover {
+    background-color: #eee !important;
+}

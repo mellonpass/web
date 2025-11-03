@@ -48,9 +48,9 @@ export interface Cipher {
   name: string;
   notes: string;
   status: string;
-  data?: CipherData | null;
   created?: Date | null;
   updated?: Date | null;
+  data?: CipherData | null;
 }
 
 export interface VaultData {
@@ -72,6 +72,8 @@ export interface VaultItem extends VaultData {
 // when a user selects a vault item on the list.
 export interface VaultItemDetail<T extends CipherData> extends VaultData {
   data: T;
+  created: Date;
+  updated: Date;
 }
 
 export enum CipherCategory {
@@ -87,6 +89,11 @@ export enum CipherCategory {
 export interface FormItemDetails {
   name: string;
   notes: string | null;
+}
+
+export interface FormItemHistory {
+  lastEdited: Date;
+  created: Date;
 }
 
 export type FormCallBack = (args: any) => void;
