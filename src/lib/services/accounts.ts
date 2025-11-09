@@ -70,7 +70,7 @@ export const setupAccount = async (
 export const loginAccount = async (
   email: string,
   loginHash: string,
-  cf_turnstile_token?: string
+  cf_turnstile_token: string
 ) => {
   return await requests({
     method: "POST",
