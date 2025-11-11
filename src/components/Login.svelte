@@ -102,8 +102,6 @@
     {#if loginError}
         { /* @ts-ignore */ null }
         <div class="uk-alert-danger" uk-alert>
-            { /* @ts-ignore */ null }
-            <a href={null} onclick={() => loginError = null} class="uk-alert-close" aria-label="close-alert" uk-close></a>
             <p>{loginError}</p>
         </div>
     {/if}
@@ -185,7 +183,11 @@
     {/if}
 
     <div class="uk-margin">
-        <button disabled={!isFormValid || (enableTurnstile && cfTurnsTileToken == null)} class="uk-button uk-button-primary uk-width-1-1">Login</button>
+        <button
+            disabled={formSubmitted || !isFormValid || (enableTurnstile && cfTurnsTileToken == null)}
+            class="uk-button uk-button-primary uk-width-1-1">
+            Login
+        </button>
     </div>
 
     <p class="uk-text-center">

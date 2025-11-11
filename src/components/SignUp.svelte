@@ -120,8 +120,6 @@
     {#each serverErrors as error (error)}
         {/* @ts-ignore */ null}
         <div class="uk-alert-danger" uk-alert>
-            {/* @ts-ignore */ null}
-            <a href={null} onclick={() => serverErrors.length = 0} class="uk-alert-close" aria-label="alert-close" uk-close={true}></a>
             <p>{error.message}</p>
         </div>
     {/each}
@@ -165,7 +163,11 @@
         {/if}
 
         <div class="uk-margin">
-            <button disabled={!isFormValid || (enableTurnstile && cfTurnsTileToken == null)} class="uk-button uk-button-primary uk-width-1-1">Continue</button>
+            <button
+                disabled={formSubmitted || !isFormValid || (enableTurnstile && cfTurnsTileToken == null)}
+                class="uk-button uk-button-primary uk-width-1-1">
+                Continue
+            </button>
         </div>
 
         <!-- Temporarily remove this part. -->
