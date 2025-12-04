@@ -10,6 +10,7 @@ export interface CipherCardData {
 export interface CipherLoginData {
   username: string;
   password: string;
+  authenticatorKey: string;
 }
 
 export interface CipherSecuresNoteData {
