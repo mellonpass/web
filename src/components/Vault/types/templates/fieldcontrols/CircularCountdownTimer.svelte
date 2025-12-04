@@ -13,7 +13,7 @@
     const circumference = 2 * Math.PI * radius;
 
     let timeLeft = $state(_field.getRemainingSeconds())
-    let initialOffset = $state(0);
+    let initialOffset = $derived(circumference * (1 - timeLeft / duration));
 
     let color = $derived.by(() => {
         return timeLeft > duration * 0.50 ? "#4caf50" :     // green  (66–100%)
@@ -22,20 +22,15 @@
     });
 
     $effect(() => {
-        // compute only once when component starts or TOTP cycles.
-        initialOffset = circumference * (1 - timeLeft / duration);
-    });
-
-    $effect(() => {
         // Countdown logic
-        setInterval(() => {
-            timeLeft -= 1;
-            if (timeLeft <= 0) {
-                timeLeft = 0;
+        const interval = setInterval(() => {
+            timeLeft = _field.getRemainingSeconds();
+            if (timeLeft == 0) {
                 // Triggers re-render of this component with new TOTP value.
                 fieldProps.displayValue = _field.displayValue()
             }
         }, 1000);
+        return () => clearInterval(interval);
     });
 
 </script>
@@ -56,20 +51,23 @@
             fill="none"
         />
 
-        <!-- Animated countdown ring -->
-        <circle
-            class="progress"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            stroke-width={stroke}
-            stroke-linecap="round"
-            fill="none"
-            stroke-dasharray={circumference}
-            stroke-dashoffset={initialOffset}
-            style={`--circ: ${circumference}; --duration: ${duration}s; --from: ${initialOffset};`}
-        />
+        <!-- Constantly re-render when initialOffset is updated to keep up with the timer. -->
+        {#key initialOffset}
+            <!-- Animated countdown ring -->
+            <circle
+                class="progress"
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke={color}
+                stroke-width={stroke}
+                stroke-linecap="round"
+                fill="none"
+                stroke-dasharray={circumference}
+                stroke-dashoffset={initialOffset}
+                style={`--circ: ${circumference}; --duration: ${duration}s; --from: ${initialOffset};`}
+            />
+        {/key}
     </svg>
 
     <!-- Center number -->
