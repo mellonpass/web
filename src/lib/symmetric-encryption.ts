@@ -63,6 +63,9 @@ class LoginDataEncryptor extends CipherEncryptor {
       password: await this.cipherKey.encrypt(
         this.encoder.encode(data.password)
       ),
+      authenticatorKey: await this.cipherKey.encrypt(
+        this.encoder.encode(data.authenticatorKey)
+      ),
     } satisfies CipherLoginData;
   }
 }
@@ -181,6 +184,7 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
       data = {
         username: await ck.decryptText(loginData.username),
         password: await ck.decryptText(loginData.password),
+        authenticatorKey: await ck.decryptText(loginData.authenticatorKey),
       } satisfies CipherLoginData;
       break;
     case CipherType.CARD:

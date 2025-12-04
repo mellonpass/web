@@ -22,11 +22,14 @@
         fields?: Array<VaultDetailField>
     } = $props();
 
-
+    // Determine whether there are fields to show.
     const hasFields = fields ? fields.length > 0 : 0;
+
+    // For history panel.
     const historyLastUpdated = `${itemHistory.lastEdited.toLocaleDateString()} ${itemHistory.lastEdited.toLocaleTimeString()}`;
     const historyCreated = `${itemHistory.created.toLocaleDateString()} ${itemHistory.created.toLocaleTimeString()}`;
 
+    // Copy notes to clipboard.
     const copyNotes = (e: any) => {
         e.preventDefault();
 
@@ -45,6 +48,8 @@
 </script>
 
 <div class="uk-panel">
+
+    <!-- Header: title, group, folders. -->
     <div class="uk-padding-small">
         <div class="x-panel uk-padding-small">
              { /* @ts-ignore */ null}
@@ -59,6 +64,7 @@
         </div>
     </div>
 
+    <!-- Body: dynamic field contents. -->
     {#if detailTitle}
         <div class="uk-padding-small">
             <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
@@ -80,7 +86,8 @@
         </div>
     {/if}
 
-    {#if itemDetails.notes}
+    <!-- Additional options: notes, master password prompt, metadata fields. -->
+    {#if itemDetails.notes != ""}
         <div class="uk-padding-small">
             <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
                 Additional options
@@ -105,6 +112,7 @@
         </div>
     {/if}
 
+    <!-- History panel: created, last edited. -->
     <div class="uk-padding-small">
         <div class="uk-margin-small uk-margin-xsmall-left uk-text-small uk-text-bold">
             Item history

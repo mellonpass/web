@@ -20,6 +20,7 @@
     let itemData: CipherLoginData = {
         username: "",
         password: "",
+        authenticatorKey: ""
     };
     let errors: Array<string> = [];
 

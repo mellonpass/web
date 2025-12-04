@@ -1,18 +1,21 @@
-import type { CipherCardData, CipherData, CipherLoginData } from "$lib/types";
+import { authenticator } from "otplib";
+
 import UIkit from "uikit";
+
+import type { CipherCardData, CipherData, CipherLoginData } from "$lib/types";
 
 const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
 
 export abstract class VaultDetailField {
   value: any | null;
   label: string;
-  type: "text" | "password" | "datetime";
+  type: "text" | "password" | "datetime" | "otp";
   hidden: boolean;
 
   constructor(
     value: any | null,
     label: string,
-    type: "text" | "password" | "datetime",
+    type: "text" | "password" | "datetime" | "otp",
     hidden: boolean = false
   ) {
     this.value = value;
@@ -46,14 +49,33 @@ class VaultDetailTextField extends VaultDetailField {
 }
 
 export class VaultDetailPasswordField extends VaultDetailField {
-  public tooglePassword: boolean = false;
+  toggleState: boolean = false;
 
   constructor(value: any | null, label: string, hidden: boolean = false) {
     super(value, label, "password", hidden);
   }
 
   displayValue() {
-    return this.tooglePassword ? this.value : "••••••••";
+    return this.toggleState ? this.value : "••••••••";
+  }
+
+  togglePassword(): boolean {
+    this.toggleState = !this.toggleState;
+    return this.toggleState;
+  }
+}
+
+export class VaultDetailTOTPField extends VaultDetailField {
+  constructor(value: any | null, label: string, hidden: boolean = false) {
+    super(value, label, "otp", hidden);
+  }
+
+  displayValue() {
+    return authenticator.generate(this.value);
+  }
+
+  getRemainingSeconds(): number {
+    return authenticator.timeRemaining();
   }
 }
 
@@ -131,6 +153,10 @@ export class VaultLoginDetailComponentData extends VaultDetailComponentData<Ciph
     return [
       new VaultDetailTextField(this.data.username, "Username"),
       new VaultDetailPasswordField(this.data.password, "Password"),
+      new VaultDetailTOTPField(
+        this.data.authenticatorKey,
+        "Verification code (TOTP)"
+      ),
     ];
   }
 }
