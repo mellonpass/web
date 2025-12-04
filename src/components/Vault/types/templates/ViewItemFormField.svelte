@@ -44,12 +44,12 @@
     <div class="uk-panel uk-flex uk-flex-middle">
 
         <!-- Re-render the control if its affect the displayValue. -->
-        {#key fieldProps.displayValue }
-            <!-- Render extra control based on field type. -->
-            {#if fieldControl}
+        <!-- Render extra control based on field type. -->
+        {#if fieldControl}
+            {#key fieldProps.displayValue }
                 <fieldControl.component bind:fieldProps={fieldProps}/>
-            {/if}
-        {/key}
+            {/key}
+        {/if}
 
         {#if fieldProps.displayValue != ""}
             { /* @ts-ignore */ null }

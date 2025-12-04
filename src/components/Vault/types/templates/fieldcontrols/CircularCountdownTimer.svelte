@@ -24,8 +24,8 @@
     $effect(() => {
         // Countdown logic
         const interval = setInterval(() => {
-            timeLeft = _field.getRemainingSeconds();
-            if (timeLeft == 0) {
+            timeLeft--;
+            if (timeLeft <= 0) {
                 // Triggers re-render of this component with new TOTP value.
                 fieldProps.displayValue = _field.displayValue()
             }
