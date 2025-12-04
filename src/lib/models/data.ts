@@ -77,6 +77,20 @@ export class VaultDetailTOTPField extends VaultDetailField {
   getRemainingSeconds(): number {
     return authenticator.timeRemaining();
   }
+
+  public copyEvent() {
+    // TODO: refactor me.
+    navigator.clipboard.writeText(this.displayValue());
+    setTimeout(() => {
+      navigator.clipboard.writeText("");
+    }, CLIPBOARD_CLEAR_DELAY);
+
+    UIkit.notification({
+      message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${this.label} copied!<div>`,
+      pos: "top-right",
+      timeout: 5000,
+    });
+  }
 }
 
 abstract class VaultDetailComponentData<T extends CipherData> {
