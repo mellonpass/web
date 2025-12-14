@@ -68,7 +68,6 @@
 
         const cipher = await encryptVaultDetailForUpdate({vaultDetail: vaultItemDetail!, sk: sk!})
 
-        // FIXME: Refactor with hashmap.
         switch (status) {
             case VaultStatus.ACTIVE:
                 // Check if current vault content data status is either archived or deleted.
