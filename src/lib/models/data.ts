@@ -30,10 +30,13 @@ export abstract class VaultDetailField {
 
   public copyEvent() {
     navigator.clipboard.writeText(this.value);
+    this.copyEventFeedback();
+  }
+
+  protected copyEventFeedback() {
     setTimeout(() => {
       navigator.clipboard.writeText("");
     }, CLIPBOARD_CLEAR_DELAY);
-
     UIkit.notification({
       message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${this.label} copied!<div>`,
       pos: "top-right",
@@ -79,17 +82,8 @@ export class VaultDetailTOTPField extends VaultDetailField {
   }
 
   public copyEvent() {
-    // TODO: refactor me.
     navigator.clipboard.writeText(this.displayValue());
-    setTimeout(() => {
-      navigator.clipboard.writeText("");
-    }, CLIPBOARD_CLEAR_DELAY);
-
-    UIkit.notification({
-      message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${this.label} copied!<div>`,
-      pos: "top-right",
-      timeout: 5000,
-    });
+    this.copyEventFeedback();
   }
 }
 
