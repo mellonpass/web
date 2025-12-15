@@ -13,9 +13,6 @@ import {
 import { extractCipherKey } from "./key-generation";
 import type { CipherKey, SymmetricKey } from "./models/keys";
 
-// Use only for encrypted CipherData values.
-type EncryptedCipherData = CipherData;
-
 abstract class CipherEncryptor {
   protected cipherKey: CipherKey;
   protected encoder = new TextEncoder();
@@ -24,11 +21,27 @@ abstract class CipherEncryptor {
     this.cipherKey = cipherKey;
   }
 
-  abstract encryptData(data?: CipherData): Promise<EncryptedCipherData | null>;
+  /**
+   * Encrpyts the given data using the cipher key before storing it in the database.
+   * @param data
+   */
+  abstract encryptData(data?: CipherData): Promise<CipherData | null>;
+  /**
+   * Decrypts the given data for displaying in the vault content view.
+   * @param data
+   */
+  abstract decryptDataForVaultContent(
+    data?: CipherData
+  ): Promise<CipherData | null>;
+  /**
+   * Decrypts the given data for displaying in the vault item list view.
+   * @param data
+   */
+  abstract decryptDataForVaultItem(data?: CipherData): Promise<string>;
 }
 
 class CardDataEncryptor extends CipherEncryptor {
-  async encryptData(data: CipherCardData): Promise<EncryptedCipherData> {
+  async encryptData(data: CipherCardData): Promise<CipherData> {
     if (!data) {
       throw new Error("Card data is required for encryption.");
     }
@@ -48,10 +61,31 @@ class CardDataEncryptor extends CipherEncryptor {
       ),
     } satisfies CipherCardData;
   }
+
+  async decryptDataForVaultContent(data: CipherCardData): Promise<CipherData> {
+    if (!data) {
+      throw new Error("Card data is required for decryption.");
+    }
+    return {
+      cardholderName: await this.cipherKey.decryptText(data.cardholderName),
+      number: await this.cipherKey.decryptText(data.number),
+      brand: await this.cipherKey.decryptText(data.brand),
+      expMonth: await this.cipherKey.decryptText(data.expMonth),
+      expYear: await this.cipherKey.decryptText(data.expYear),
+      securityCode: await this.cipherKey.decryptText(data.securityCode),
+    } satisfies CipherCardData;
+  }
+
+  async decryptDataForVaultItem(data: CipherCardData): Promise<string> {
+    if (!data) {
+      throw new Error("Card data is required for decryption.");
+    }
+    return await this.cipherKey.decryptText(data.cardholderName);
+  }
 }
 
 class LoginDataEncryptor extends CipherEncryptor {
-  async encryptData(data: CipherLoginData): Promise<EncryptedCipherData> {
+  async encryptData(data: CipherLoginData): Promise<CipherData> {
     if (!data) {
       throw new Error("Login data is required for encryption.");
     }
@@ -68,6 +102,25 @@ class LoginDataEncryptor extends CipherEncryptor {
       ),
     } satisfies CipherLoginData;
   }
+
+  async decryptDataForVaultContent(data: CipherLoginData): Promise<CipherData> {
+    if (!data) {
+      throw new Error("Login data is required for decryption.");
+    }
+
+    return {
+      username: await this.cipherKey.decryptText(data.username),
+      password: await this.cipherKey.decryptText(data.password),
+      authenticatorKey: await this.cipherKey.decryptText(data.authenticatorKey),
+    } satisfies CipherLoginData;
+  }
+
+  async decryptDataForVaultItem(data: CipherLoginData): Promise<string> {
+    if (!data) {
+      throw new Error("Login data is required for decryption.");
+    }
+    return await this.cipherKey.decryptText(data.username);
+  }
 }
 
 // No encryption needed for secure notes data.
@@ -75,6 +128,12 @@ class LoginDataEncryptor extends CipherEncryptor {
 class SecureNotesDataEncryptor extends CipherEncryptor {
   async encryptData(_?: CipherSecuresNoteData): Promise<null> {
     return null;
+  }
+  async decryptDataForVaultContent(_?: CipherSecuresNoteData): Promise<null> {
+    return null;
+  }
+  async decryptDataForVaultItem(_?: CipherSecuresNoteData): Promise<string> {
+    return "";
   }
 }
 
@@ -128,6 +187,12 @@ export async function encryptCipher({
   return cipher;
 }
 
+/**
+ * Decrypts a Cipher into a VaultItem displayed in the list (without full content).
+ * @param sk SymmetricKey.
+ * @param cipher Cipher to decrypt.
+ * @returns VaultItem.
+ */
 export async function decryptCipherForVaultItem(
   sk: SymmetricKey,
   cipher: Cipher
@@ -143,21 +208,18 @@ export async function decryptCipherForVaultItem(
     notes: await ck.decryptText(cipher.notes),
   };
 
-  // FIXME: refactor by using hashmap.
-  switch (cipher.type) {
-    case CipherType.LOGIN:
-      const loginData = cipher.data as CipherLoginData;
-      vaultData.content = await ck.decryptText(loginData.username);
-      break;
-    case CipherType.CARD:
-      const cipherCardData = cipher.data as CipherCardData;
-      vaultData.content = await ck.decryptText(cipherCardData.cardholderName);
-      break;
-  }
-
+  const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];
+  const encryptor = encryptorFactory(ck);
+  vaultData.content = await encryptor.decryptDataForVaultItem(cipher.data!);
   return vaultData as VaultItem;
 }
 
+/**
+ * Decrypts a Cipher into a VaultItemDetail with full content.
+ * @param sk SymmetricKey.
+ * @param cipher Cipher to decrypt.
+ * @returns VaultItemDetail.
+ */
 export async function decryptCipherForVaultContent<T extends CipherData>(
   sk: SymmetricKey,
   cipher: Cipher
@@ -175,30 +237,9 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     updated: new Date(cipher.updated!),
   } satisfies Partial<VaultItemDetail<T>>;
 
-  let data: any;
+  const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];
+  const encryptor = encryptorFactory(ck);
 
-  // FIXME: refactor by using hashmap.
-  switch (cipher.type) {
-    case CipherType.LOGIN:
-      const loginData = cipher.data as CipherLoginData;
-      data = {
-        username: await ck.decryptText(loginData.username),
-        password: await ck.decryptText(loginData.password),
-        authenticatorKey: await ck.decryptText(loginData.authenticatorKey),
-      } satisfies CipherLoginData;
-      break;
-    case CipherType.CARD:
-      const cardData = cipher.data as CipherCardData;
-      data = {
-        cardholderName: await ck.decryptText(cardData.cardholderName),
-        number: await ck.decryptText(cardData.number),
-        brand: await ck.decryptText(cardData.brand),
-        expMonth: await ck.decryptText(cardData.expMonth),
-        expYear: await ck.decryptText(cardData.expYear),
-        securityCode: await ck.decryptText(cardData.securityCode),
-      } satisfies CipherCardData;
-      break;
-  }
-
+  let data: any = await encryptor.decryptDataForVaultContent(cipher.data!);
   return { ...vaultItemDetail, data: data } satisfies VaultItemDetail<T>;
 }
