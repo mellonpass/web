@@ -6,6 +6,14 @@
     let togglePassword = $state(false);
     let toggleAuthKey = $state(false);
 
+    // TODO: Use data.websites. It must be available in the cipher data types or interfaces.
+    const websiteURIs = $state<Record<string, string | number>[]>([]);
+
+    const addWebsite = () => {
+        const newIndex = websiteURIs.length + 1;
+        websiteURIs.push({ uri: "", index: newIndex });
+    };
+
 </script>
 
 { /* @ts-ignore */ null }
@@ -63,4 +71,44 @@
         <span class="uk-text-meta uk-text-light">Fill 2-steps verification codes.</span>
     </div>
 
+</fieldset>
+
+{ /* @ts-ignore */ null }
+<fieldset class="uk-fieldset uk-margin" uk-grid>
+    <legend class="uk-legend uk-text-default uk-text-bold">Autofill options</legend>
+
+    {#each websiteURIs as website (website.index)}
+        <div class="uk-margin-small uk-width-1-1">
+            <div class="uk-inline uk-width-1-1">
+                <a
+                    class="uk-form-icon uk-form-icon-flip"
+                    aria-label="authenticator-key-toggle"
+                    href={null}
+                    onclick={() => websiteURIs.splice(websiteURIs.indexOf(website), 1)}
+                >
+                    <Icon icon="hugeicons:delete-02" width="16" height="16" style="color: #FF1744;" />
+                </a>
+                <input
+                    type="text"
+                    aria-label="website-uri"
+                    class="uk-input uk-border-rounded"
+                    placeholder="Website URI"
+                    bind:value={website.uri}
+                >
+            </div>
+        </div>
+    {/each}
+
+    <div class="uk-margin-small uk-width-1-1">
+        <div class="uk-inline uk-width-1-1">
+            <a
+                class="uk-inline"
+                aria-label="add-website-button"
+                href={null}
+                onclick={addWebsite}
+            >
+                <Icon icon="hugeicons:add-01" width="24" height="24" /> Add website
+            </a>   
+        </div>  
+    </div>
 </fieldset>
