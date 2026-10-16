@@ -88,8 +88,8 @@
 </div>
 
 <div class="uk-margin">
-    <label class="uk-form-label">Connection Type</label>
-    <div class="x-pill-toggle" role="group" aria-label="Connection type">
+    <span class="uk-form-label" id="form-db-connection-type">Connection Type</span>
+    <div class="x-pill-toggle" role="group" aria-labelledby="form-db-connection-type">
         <button
             type="button"
             class="x-pill-btn"
@@ -124,6 +124,7 @@
         </div>
     </div>
 
+    { /* @ts-ignore */ null }
     <div class="uk-grid-small uk-child-width-1-2@s" uk-grid>
         <div>
             <label class="uk-form-label" for="form-db-port">Port</label>
