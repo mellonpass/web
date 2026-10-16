@@ -145,11 +145,13 @@
                     value={generatedPassword}
                 >
             </div>
-            <progress
-                class="uk-progress uk-margin-remove-bottom {strengthClass}"
-                value={strengthValue}
-                max="100"
-            ></progress>
+            <div>
+                <progress
+                    class="uk-progress uk-margin-remove-bottom {strengthClass}"
+                    value={strengthValue}
+                    max="100"
+                ></progress>
+            </div>
         {/if}
 
         <div>
