@@ -1,10 +1,24 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
+    import PasswordGenerator from "./_PasswordGenerator.svelte";
 
     let { title, data } = $props();
 
     let togglePassword = $state(false);
     let toggleAuthKey = $state(false);
+    let showPasswordGenerator = $state(false);
+
+    let passwordValue = $state(data.password || "");
+
+    // Sync local state → prop when local changes
+    $effect(() => {
+        data.password = passwordValue;
+    });
+
+    const handleUseGeneratedPassword = (password: string) => {
+        passwordValue = password;
+        showPasswordGenerator = false;
+    };
 
 </script>
 
@@ -25,6 +39,14 @@
     <div class="uk-margin-small uk-width-1-1">
         <div class="uk-inline uk-width-1-1">
             <a
+                class="uk-form-icon uk-form-icon-flip password-generator-icon"
+                aria-label="password-generator-toggle"
+                href={null}
+                onclick={() => showPasswordGenerator = !showPasswordGenerator}
+            >
+                <Icon icon="mdi:{showPasswordGenerator ? 'close' : 'autorenew'}" width="20" height="20" />
+            </a>
+            <a
                 class="uk-form-icon uk-form-icon-flip"
                 aria-label="password-toggle"
                 href={null}
@@ -37,9 +59,13 @@
                 aria-label="password"
                 class="uk-input uk-border-rounded"
                 placeholder="Password"
-                bind:value={data.password}
+                bind:value={passwordValue}
             >
         </div>
+
+        {#if showPasswordGenerator}
+            <PasswordGenerator onUsePassword={handleUseGeneratedPassword} />
+        {/if}
     </div>
 
     <div class="uk-margin-small uk-width-1-1">
@@ -64,3 +90,9 @@
     </div>
 
 </fieldset>
+
+<style>
+    .password-generator-icon {
+        right: 2.5rem;
+    }
+</style>
