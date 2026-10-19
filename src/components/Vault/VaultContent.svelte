@@ -223,24 +223,26 @@
             {#if vaultItemDetail}
                 {#if vaultItemDetail.status == VaultStatus.ARCHIVED}
                     { /* @ts-ignore */ null }
-                    <div class="uk-alert uk-text-bold" uk-alert>
+                    <div class="uk-alert uk-text-bold uk-margin-remove" style="border-radius: 0; margin-bottom: 15px;" uk-alert>
                         <p>This vault item is archived.</p>
                     </div>
                 {/if}
 
                 {#if vaultItemDetail.status == VaultStatus.DELETED}
                     { /* @ts-ignore */ null }
-                    <div class="uk-alert-danger uk-text-bold" uk-alert>
+                    <div class="uk-alert-danger uk-text-bold uk-margin-remove" style="border-radius: 0; margin-bottom: 15px;" uk-alert>
                         <p>This vault item is scheduled to be deleted.</p>
                     </div>
                 {/if}
             {/if}
 
-            <VaultComponent
-                formId="vault-form"
-                vaultId={$selectedVaultItem!.id}
-                bind:isEditMode={isEditMode}
-            />
+            <div class="x-vault-inner">
+                <VaultComponent
+                    formId="vault-form"
+                    vaultId={$selectedVaultItem!.id}
+                    bind:isEditMode={isEditMode}
+                />
+            </div>
         </div>
     {/key}
 </div>
@@ -249,8 +251,11 @@
 <style>
 
     .x-vault-component {
-        padding: 0 15px;
         overflow: scroll;
+    }
+
+    .x-vault-inner {
+        padding: 0 15px;
     }
 
     .x-edit-panel {
