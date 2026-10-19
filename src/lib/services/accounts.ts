@@ -1,6 +1,23 @@
 import { PUBLIC_SERVER_URL } from "$env/static/public";
 import { requests } from "$lib/requests";
 
+export const checkEmail = async (email: string): Promise<boolean> => {
+  const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/check-email`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    headers: {
+      "content-type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    return true;
+  }
+
+  const payload = await response.json();
+  return Boolean(payload?.data?.is_valid);
+};
+
 export const createAccount = async (
   name: string,
   email: string,

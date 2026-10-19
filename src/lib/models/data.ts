@@ -1,21 +1,22 @@
 import { authenticator } from "otplib";
-
-import UIkit from "uikit";
-
-import type { CipherCardData, CipherData, CipherDatabaseData, CipherLoginData } from "$lib/types";
-
-const CLIPBOARD_CLEAR_DELAY = 1000 * 30; // 30 seconds
+import { toast } from "$lib/toast.svelte";
+import type {
+  CipherCardData,
+  CipherData,
+  CipherDatabaseData,
+  CipherLoginData,
+} from "$lib/types";
 
 export abstract class VaultDetailField {
   value: any | null;
   label: string;
-  type: "text" | "password" | "datetime" | "otp";
+  type: "text" | "password" | "datetime" | "otp" | "url";
   hidden: boolean;
 
   constructor(
     value: any | null,
     label: string,
-    type: "text" | "password" | "datetime" | "otp",
+    type: "text" | "password" | "datetime" | "otp" | "url",
     hidden: boolean = false
   ) {
     this.value = value;
@@ -29,25 +30,27 @@ export abstract class VaultDetailField {
   }
 
   public copyEvent() {
-    navigator.clipboard.writeText(this.value);
-    this.copyEventFeedback();
-  }
-
-  protected copyEventFeedback() {
-    setTimeout(() => {
-      navigator.clipboard.writeText("");
-    }, CLIPBOARD_CLEAR_DELAY);
-    UIkit.notification({
-      message: `<div class='uk-alert-success uk-text-default uk-padding-small'>${this.label} copied!<div>`,
-      pos: "top-right",
-      timeout: 5000,
-    });
+    const isSensitive = this.type === "password" || this.type === "otp";
+    toast.copySecret(String(this.value ?? ""), this.label, isSensitive);
   }
 }
 
 export class VaultDetailTextField extends VaultDetailField {
   constructor(value: any | null, label: string, hidden: boolean = false) {
     super(value, label, "text", hidden);
+  }
+}
+
+export class VaultDetailUrlField extends VaultDetailField {
+  constructor(value: any | null, label: string, hidden: boolean = false) {
+    super(value, label, "url", hidden);
+  }
+
+  get href(): string {
+    if (!this.value) return "#";
+    const str = String(this.value).trim();
+    if (/^https?:\/\//i.test(str)) return str;
+    return `https://${str}`;
   }
 }
 
@@ -59,7 +62,7 @@ export class VaultDetailPasswordField extends VaultDetailField {
   }
 
   displayValue() {
-    return this.toggleState ? this.value : "••••••••";
+    return this.toggleState ? this.value : "••••••••••••";
   }
 
   togglePassword(): boolean {
@@ -74,7 +77,12 @@ export class VaultDetailTOTPField extends VaultDetailField {
   }
 
   displayValue() {
-    return authenticator.generate(this.value);
+    try {
+      const cleanSecret = String(this.value || "").replace(/\s+/g, "").toUpperCase();
+      return authenticator.generate(cleanSecret);
+    } catch {
+      return "Invalid key";
+    }
   }
 
   getRemainingSeconds(): number {
@@ -82,8 +90,10 @@ export class VaultDetailTOTPField extends VaultDetailField {
   }
 
   public copyEvent() {
-    navigator.clipboard.writeText(this.displayValue());
-    this.copyEventFeedback();
+    const code = this.displayValue();
+    if (code && code !== "Invalid key") {
+      toast.copySecret(code, this.label, true);
+    }
   }
 }
 
@@ -97,7 +107,7 @@ abstract class VaultDetailComponentData<T extends CipherData> {
 
     // filter out empty fields.
     this.fields = this.fieldDefinitions().filter(
-      (field) => field.value !== null && field.value !== ""
+      (field) => field.value !== null && field.value !== undefined && field.value !== ""
     );
   }
 
@@ -117,34 +127,34 @@ export class VaultCardDetailComponentData extends VaultDetailComponentData<Ciphe
     ];
 
     if (this.data.expMonth || this.data.expYear) {
-      // Nothing to worry reaching year 3000.
       const currentMillennia = 2000;
       const month = this.data.expMonth || "__";
-      let year = this.data.expYear || "____";
+      let year = String(this.data.expYear || "____");
 
-      if (year.length > 4) {
-        const currentYear = new Date().getFullYear();
-        const currentYearWithinMillenia = currentYear - currentMillennia;
+      if (year !== "____") {
+        if (year.length > 4) {
+          const currentYear = new Date().getFullYear();
+          const currentYearWithinMillenia = currentYear - currentMillennia;
+          const calculatedYearWithinMillenia = year
+            .toString()
+            .slice(-String(currentYearWithinMillenia).length);
 
-        // Get the last x digit of the provided year
-        // where x is the char length of currentYearWithinMillenia.
-        const calculatedYearWithinMillenia = year
-          .toString()
-          .slice(-String(currentYearWithinMillenia).length);
-
-        year = (
-          currentMillennia + parseInt(calculatedYearWithinMillenia)
-        ).toString();
-      } else if (year.length < 4) {
-        year = (currentMillennia + parseInt(year)).toString();
+          year = (
+            currentMillennia + parseInt(calculatedYearWithinMillenia)
+          ).toString();
+        } else if (year.length < 4 && !isNaN(parseInt(year))) {
+          year = (currentMillennia + parseInt(year)).toString();
+        }
       }
 
-      // Index order is important for display.
       fields.push(
-        ...[
-          new VaultDetailTextField(`${month}/${year}`, "Expiration"),
-          new VaultDetailPasswordField(this.data.securityCode, "Security Code"),
-        ]
+        new VaultDetailTextField(`${month}/${year}`, "Expiration")
+      );
+    }
+
+    if (this.data.securityCode) {
+      fields.push(
+        new VaultDetailPasswordField(this.data.securityCode, "Security Code (CVV)")
       );
     }
 
@@ -165,6 +175,7 @@ export class VaultLoginDetailComponentData extends VaultDetailComponentData<Ciph
         this.data.authenticatorKey,
         "Verification code (TOTP)"
       ),
+      new VaultDetailUrlField(this.data.url, "Website"),
     ];
   }
 }
@@ -176,17 +187,26 @@ export class VaultDatabaseDetailComponentData extends VaultDetailComponentData<C
 
   protected fieldDefinitions() {
     const fields: Array<VaultDetailField> = [
-      new VaultDetailTextField(this.data.engine, "Engine")
+      new VaultDetailTextField(this.data.engine, "Engine"),
     ];
 
     if (this.data.connectionType === "URL") {
-      fields.push(new VaultDetailPasswordField(this.data.url, "Connection URL"));
+      fields.push(
+        new VaultDetailPasswordField(this.data.url, "Connection URL")
+      );
     } else {
-      if (this.data.host) fields.push(new VaultDetailTextField(this.data.host, "Host"));
-      if (this.data.port) fields.push(new VaultDetailTextField(this.data.port, "Port"));
-      if (this.data.database) fields.push(new VaultDetailTextField(this.data.database, "Database"));
-      if (this.data.username) fields.push(new VaultDetailTextField(this.data.username, "Username"));
-      if (this.data.password) fields.push(new VaultDetailPasswordField(this.data.password, "Password"));
+      if (this.data.host)
+        fields.push(new VaultDetailTextField(this.data.host, "Host"));
+      if (this.data.port)
+        fields.push(new VaultDetailTextField(this.data.port, "Port"));
+      if (this.data.database)
+        fields.push(new VaultDetailTextField(this.data.database, "Database"));
+      if (this.data.username)
+        fields.push(new VaultDetailTextField(this.data.username, "Username"));
+      if (this.data.password)
+        fields.push(
+          new VaultDetailPasswordField(this.data.password, "Password")
+        );
     }
 
     return fields;
