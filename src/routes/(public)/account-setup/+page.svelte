@@ -8,7 +8,7 @@
 
 
 {#if !data.isInvalidToken}
-    <AccountSetup verifiedEmail={data.verifiedEmail}/>
+    <AccountSetup verifiedEmail={data.verifiedEmail ?? ""}/>
 {:else}
-    <VerifyAccountInvalidToken message={data.validationError.error}/>
+    <VerifyAccountInvalidToken message={data.validationError?.error ?? "Invalid or expired verification token."}/>
 {/if}
