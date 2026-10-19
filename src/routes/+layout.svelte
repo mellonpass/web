@@ -1,7 +1,9 @@
 <script lang="ts">
     import "$lib/assets/css/styles.css";
-    import "uikit/dist/css/uikit.min.css";
-    import "uikit/dist/js/uikit.min.js";
+    import ToastContainer from "$components/ui/ToastContainer.svelte";
+
+    let { children } = $props();
 </script>
 
-<slot />
+{@render children()}
+<ToastContainer />
