@@ -1,25 +1,27 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    
     import type { VaultDetailPasswordField } from "$lib/models/data";
 
     let { fieldProps = $bindable() } = $props();
 
-    // To enable field typing.
-    let _field: VaultDetailPasswordField = fieldProps.field as VaultDetailPasswordField;
+    let _field: VaultDetailPasswordField =
+        fieldProps.field as VaultDetailPasswordField;
     let togglePassword = $state(_field.toggleState);
-
 </script>
 
-{ /* @ts-ignore */ null }
-<a
-    href={null}
-    aria-label="eye-icon"
-    class="uk-icon-button form-field-icon-button"
+<button
+    type="button"
+    aria-label={togglePassword ? "Hide secret" : "Reveal secret"}
+    title={togglePassword ? "Hide secret" : "Reveal secret"}
     onclick={() => {
         togglePassword = _field.togglePassword();
-        fieldProps.displayValue = _field.displayValue()
+        fieldProps.displayValue = _field.displayValue();
     }}
+    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
 >
-    <Icon icon="hugeicons:{togglePassword ? "view-off-slash" : "view"}"/>
-</a>
+    <Icon
+        icon="hugeicons:{togglePassword ? 'view-off-slash' : 'view'}"
+        width="16"
+        height="16"
+    />
+</button>
