@@ -12,6 +12,7 @@ export const CREATE_CIPHER = `
                     notes
                     isFavorite
                     status
+                    deleteOn
                     created
                     updated
                 }
@@ -37,6 +38,7 @@ export const UPDATE_CIPHER = `
                     notes
                     isFavorite
                     status
+                    deleteOn
                     created
                     updated
                 }
@@ -62,6 +64,9 @@ export const UPDATE_CIPHER_TO_DELETE = `
                     key
                     status
                     type
+                    deleteOn
+                    created
+                    updated
                 }
                 ... on CipherUpdateFailed {
                     message
@@ -85,6 +90,9 @@ export const RESTORE_CIPHER_FROM_DELETE = `
                     key
                     status
                     type
+                    deleteOn
+                    created
+                    updated
                 }
                 ... on CipherUpdateFailed {
                     __typename
@@ -109,6 +117,7 @@ export const GET_CIPHERS = `
                     data
                     notes
                     status
+                    deleteOn
                     created
                     updated
                 }
@@ -132,6 +141,7 @@ export const GET_CIPHER_DETAIL = `
             data
             notes
             status
+            deleteOn
             created
             updated
         }

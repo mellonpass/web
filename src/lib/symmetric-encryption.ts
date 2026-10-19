@@ -23,7 +23,7 @@ abstract class CipherEncryptor {
   }
 
   /**
-   * Encrpyts the given data using the cipher key before storing it in the database.
+   * Encrypts the given data using the cipher key before storing it in the database.
    * @param data
    */
   abstract encryptData(data?: CipherData): Promise<CipherData | null>;
@@ -81,7 +81,15 @@ class CardDataEncryptor extends CipherEncryptor {
     if (!data) {
       throw new Error("Card data is required for decryption.");
     }
-    return await this.cipherKey.decryptText(data.cardholderName);
+    const brand = data.brand ? await this.cipherKey.decryptText(data.brand) : "";
+    const number = data.number ? await this.cipherKey.decryptText(data.number) : "";
+    const holder = data.cardholderName ? await this.cipherKey.decryptText(data.cardholderName) : "";
+    const cleanNum = number.replace(/\s+/g, "");
+    const last4 = cleanNum.length >= 4 ? `•••• ${cleanNum.slice(-4)}` : "";
+    if (brand && last4) return `${brand} • ${last4}`;
+    if (brand) return brand;
+    if (last4) return last4;
+    return holder;
   }
 }
 
@@ -99,8 +107,11 @@ class LoginDataEncryptor extends CipherEncryptor {
         this.encoder.encode(data.password)
       ),
       authenticatorKey: await this.cipherKey.encrypt(
-        this.encoder.encode(data.authenticatorKey)
+        this.encoder.encode(data.authenticatorKey || "")
       ),
+      url: data.url
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.url))
+        : "",
     } satisfies CipherLoginData;
   }
 
@@ -112,7 +123,10 @@ class LoginDataEncryptor extends CipherEncryptor {
     return {
       username: await this.cipherKey.decryptText(data.username),
       password: await this.cipherKey.decryptText(data.password),
-      authenticatorKey: await this.cipherKey.decryptText(data.authenticatorKey),
+      authenticatorKey: data.authenticatorKey
+        ? await this.cipherKey.decryptText(data.authenticatorKey)
+        : "",
+      url: data.url ? await this.cipherKey.decryptText(data.url) : "",
     } satisfies CipherLoginData;
   }
 
@@ -132,17 +146,33 @@ class DatabaseDataEncryptor extends CipherEncryptor {
 
     return {
       engine: await this.cipherKey.encrypt(this.encoder.encode(data.engine)),
-      connectionType: await this.cipherKey.encrypt(this.encoder.encode(data.connectionType)),
-      url: data.url ? await this.cipherKey.encrypt(this.encoder.encode(data.url)) : "",
-      host: data.host ? await this.cipherKey.encrypt(this.encoder.encode(data.host)) : "",
-      port: data.port ? await this.cipherKey.encrypt(this.encoder.encode(data.port)) : "",
-      database: data.database ? await this.cipherKey.encrypt(this.encoder.encode(data.database)) : "",
-      username: data.username ? await this.cipherKey.encrypt(this.encoder.encode(data.username)) : "",
-      password: data.password ? await this.cipherKey.encrypt(this.encoder.encode(data.password)) : "",
+      connectionType: await this.cipherKey.encrypt(
+        this.encoder.encode(data.connectionType)
+      ),
+      url: data.url
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.url))
+        : "",
+      host: data.host
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.host))
+        : "",
+      port: data.port
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.port))
+        : "",
+      database: data.database
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.database))
+        : "",
+      username: data.username
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.username))
+        : "",
+      password: data.password
+        ? await this.cipherKey.encrypt(this.encoder.encode(data.password))
+        : "",
     } satisfies CipherDatabaseData;
   }
 
-  async decryptDataForVaultContent(data: CipherDatabaseData): Promise<CipherData> {
+  async decryptDataForVaultContent(
+    data: CipherDatabaseData
+  ): Promise<CipherData> {
     if (!data) {
       throw new Error("Database data is required for decryption.");
     }
@@ -153,9 +183,15 @@ class DatabaseDataEncryptor extends CipherEncryptor {
       url: data.url ? await this.cipherKey.decryptText(data.url) : "",
       host: data.host ? await this.cipherKey.decryptText(data.host) : "",
       port: data.port ? await this.cipherKey.decryptText(data.port) : "",
-      database: data.database ? await this.cipherKey.decryptText(data.database) : "",
-      username: data.username ? await this.cipherKey.decryptText(data.username) : "",
-      password: data.password ? await this.cipherKey.decryptText(data.password) : "",
+      database: data.database
+        ? await this.cipherKey.decryptText(data.database)
+        : "",
+      username: data.username
+        ? await this.cipherKey.decryptText(data.username)
+        : "",
+      password: data.password
+        ? await this.cipherKey.decryptText(data.password)
+        : "",
     } satisfies CipherDatabaseData;
   }
 
@@ -165,13 +201,17 @@ class DatabaseDataEncryptor extends CipherEncryptor {
     }
     const engine = await this.cipherKey.decryptText(data.engine);
     let extra = "";
-    const connectionType = await this.cipherKey.decryptText(data.connectionType);
+    const connectionType = await this.cipherKey.decryptText(
+      data.connectionType
+    );
     if (connectionType === "URL") {
-       extra = data.url ? await this.cipherKey.decryptText(data.url) : "";
+      const rawUrl = data.url ? await this.cipherKey.decryptText(data.url) : "";
+      // Mask password in list preview if present in URL
+      extra = rawUrl.replace(/:\/\/([^:]+):([^@]+)@/, "://$1:••••@");
     } else {
-       extra = data.host ? await this.cipherKey.decryptText(data.host) : "";
+      extra = data.host ? await this.cipherKey.decryptText(data.host) : "";
     }
-    return engine + (extra ? ` (${extra})` : "");
+    return engine + (extra ? ` • ${extra}` : "");
   }
 }
 
@@ -185,7 +225,7 @@ class SecureNotesDataEncryptor extends CipherEncryptor {
     return null;
   }
   async decryptDataForVaultItem(_?: CipherSecuresNoteData): Promise<string> {
-    return "";
+    return "Encrypted note";
   }
 }
 
@@ -260,6 +300,9 @@ export async function decryptCipherForVaultItem(
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
     notes: await ck.decryptText(cipher.notes),
+    deleteOn: cipher.deleteOn ? new Date(cipher.deleteOn) : null,
+    created: cipher.created ? new Date(cipher.created) : null,
+    updated: cipher.updated ? new Date(cipher.updated) : null,
   };
 
   const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];
@@ -287,8 +330,9 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     status: <VaultStatus>await ck.decryptText(cipher.status),
     name: await ck.decryptText(cipher.name),
     notes: await ck.decryptText(cipher.notes),
-    created: new Date(cipher.created!),
-    updated: new Date(cipher.updated!),
+    deleteOn: cipher.deleteOn ? new Date(cipher.deleteOn) : null,
+    created: cipher.created ? new Date(cipher.created) : new Date(),
+    updated: cipher.updated ? new Date(cipher.updated) : new Date(),
   } satisfies Partial<VaultItemDetail<T>>;
 
   const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];

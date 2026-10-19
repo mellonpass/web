@@ -22,6 +22,7 @@ export interface CipherLoginData {
   username: string;
   password: string;
   authenticatorKey: string;
+  url?: string;
 }
 
 export interface CipherSecuresNoteData {
@@ -62,8 +63,9 @@ export interface Cipher {
   name: string;
   notes: string;
   status: string;
-  created?: Date | null;
-  updated?: Date | null;
+  deleteOn?: string | Date | null;
+  created?: Date | string | null;
+  updated?: Date | string | null;
   data?: CipherData | null;
 }
 
@@ -74,16 +76,18 @@ export interface VaultData {
   name: string;
   notes: string;
   status: VaultStatus;
+  deleteOn?: Date | null;
+  created?: Date | null;
+  updated?: Date | null;
   content?: any;
 }
 
-// This is the items that are shown at the list of vault items
+// Items shown in the vault item list pane
 export interface VaultItem extends VaultData {
   content: string;
 }
 
-// This is the vault's data on view/edit form
-// when a user selects a vault item on the list.
+// Full decrypted detail shown in the view/edit pane
 export interface VaultItemDetail<T extends CipherData> extends VaultData {
   data: T;
   created: Date;
@@ -99,6 +103,7 @@ export enum CipherCategory {
   SECURE_NOTES = "SECURE_NOTES",
   DATABASES = "DATABASES",
   RECENTLY_DELETED = "DELETED",
+  WATCHTOWER = "WATCHTOWER",
 }
 
 export interface FormItemDetails {
