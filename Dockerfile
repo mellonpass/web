@@ -1,4 +1,6 @@
-FROM node:alpine AS build-stage
+# Pinned to a release patched for CVE-2026-111497 (Brotli decoder RCE).
+# Keep in sync with .nvmrc.
+FROM node:22.23.4-alpine AS build-stage
 
 WORKDIR /code
 
