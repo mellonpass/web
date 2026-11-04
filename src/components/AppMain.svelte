@@ -94,36 +94,29 @@
             items.filter((item) => item.status === VaultStatus.ACTIVE),
     };
 
-    const selectVaultItem = () => {
-        if ($vaultItemStore.length > 0) {
-            if ($selectedVaultItem == null) {
-                $selectedVaultItem = $vaultItemStore[0];
-            } else {
-                const updatedRef = $vaultItemStore.find(
-                    (item) => item.id == $selectedVaultItem!.id
-                );
-                if (!updatedRef) {
-                    $selectedVaultItem = $vaultItemStore[0];
-                } else {
-                    $selectedVaultItem = updatedRef;
-                }
-            }
-        } else {
-            $selectedVaultItem = null;
-        }
-    };
-
     const applyFilterFromCache = (
         allItems: VaultItem[],
-        category: CipherCategory
+        category: CipherCategory,
+        forceFirst: boolean = false
     ) => {
         const filtered = categoryFilterFactory[category]
             ? categoryFilterFactory[category](allItems)
             : allItems.filter((item) => item.status === VaultStatus.ACTIVE);
-        $vaultItemStore = [...filtered].sort((a, b) =>
+        const sorted = [...filtered].sort((a, b) =>
             a.name.localeCompare(b.name)
         );
-        selectVaultItem();
+        $vaultItemStore = sorted;
+
+        if (sorted.length === 0) {
+            $selectedVaultItem = null;
+        } else if (forceFirst) {
+            $selectedVaultItem = sorted[0];
+        } else {
+            const updatedRef = $selectedVaultItem
+                ? sorted.find((item) => item.id === $selectedVaultItem!.id)
+                : null;
+            $selectedVaultItem = updatedRef ?? sorted[0];
+        }
     };
 
     const decryptCiphers = async (
@@ -149,7 +142,7 @@
             }
             const decryptedAll = await decryptCiphers($cipherStore);
             $allVaultItemsStore = decryptedAll;
-            applyFilterFromCache(decryptedAll, $categoryFilter);
+            applyFilterFromCache(decryptedAll, $categoryFilter, true);
         } finally {
             isLoadingVault = false;
         }
@@ -158,12 +151,12 @@
     // Instant <1ms category filtering from in-memory decrypted store!
     const categoryFilterUnsubscriber = categoryFilter.subscribe((category) => {
         if (!isUnlock) return;
-        applyFilterFromCache($allVaultItemsStore, category);
+        applyFilterFromCache($allVaultItemsStore, category, true);
     });
 
     const allVaultItemsUnsubscriber = allVaultItemsStore.subscribe((allItems) => {
         if (!isUnlock) return;
-        applyFilterFromCache(allItems, $categoryFilter);
+        applyFilterFromCache(allItems, $categoryFilter, false);
     });
 
     // Called when a new vault item is created

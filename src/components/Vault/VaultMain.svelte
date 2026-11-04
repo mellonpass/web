@@ -35,6 +35,7 @@
     let demoBannerDismissed = $state(false);
     let mobileNavOpen = $state(false);
     let mobileDetailOpen = $state(false);
+    let itemListContainer: HTMLDivElement | null = $state(null);
 
     const categoryLabels: Record<CipherCategory, string> = {
         [CipherCategory.All]: "All Items",
@@ -78,20 +79,27 @@
         const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
         vaultItems = filterItems(sorted, $searchFilter);
 
-        if (vaultItems.length == 0) {
+        if (vaultItems.length === 0) {
             $selectedVaultItem = null;
             mobileDetailOpen = false;
         } else {
             setTimeout(() => {
-                if ($selectedVaultItem == null) return;
+                if ($selectedVaultItem == null) {
+                    if (itemListContainer) itemListContainer.scrollTop = 0;
+                    return;
+                }
                 const focusElement = document.getElementById(
                     `vault-item-${$selectedVaultItem.id}`
                 );
-                focusElement?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                });
-            }, 100);
+                if (focusElement) {
+                    focusElement.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                    });
+                } else if (itemListContainer) {
+                    itemListContainer.scrollTop = 0;
+                }
+            }, 50);
         }
     });
 
@@ -218,7 +226,7 @@
                         : 'flex'}"
                 >
                     <!-- List Header -->
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/70 px-4 py-2.5">
+                    <div class="flex h-13 shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 px-4">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             {categoryLabels[$categoryFilter] ?? "Vault Items"}
                         </span>
@@ -228,7 +236,7 @@
                     </div>
 
                     <!-- Scrollable Item List -->
-                    <div class="flex-1 overflow-y-auto p-2 space-y-1">
+                    <div bind:this={itemListContainer} class="flex-1 overflow-y-auto p-2 space-y-1">
                         {#if isLoadingVault}
                             {#each [1, 2, 3, 4, 5] as _}
                                 <div class="flex items-center gap-3 rounded-xl p-2.5 animate-pulse">

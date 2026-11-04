@@ -189,13 +189,13 @@
     });
 </script>
 
-{#if vaultItemDetail}
-    <!-- Top Action Toolbar -->
-    <div
-        class="flex h-13 shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 {isEditMode
-            ? 'bg-indigo-50/60 dark:bg-indigo-950/20'
-            : 'bg-white/60 dark:bg-slate-900/40'}"
-    >
+<!-- Top Action Toolbar -->
+<div
+    class="flex h-13 shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 {isEditMode
+        ? 'bg-indigo-50/60 dark:bg-indigo-950/20'
+        : 'bg-white/60 dark:bg-slate-900/40'}"
+>
+    {#if vaultItemDetail}
         <div class="flex items-center gap-2">
             {#if onBackToList}
                 <button
@@ -348,8 +348,25 @@
                 {/if}
             </div>
         {/if}
-    </div>
-{/if}
+    {:else}
+        <div class="flex items-center gap-2">
+            {#if onBackToList}
+                <button
+                    type="button"
+                    onclick={onBackToList}
+                    class="inline-flex md:hidden items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                    <Icon icon="hugeicons:arrow-left-01" width="16" height="16" />
+                    <span>Back</span>
+                </button>
+            {/if}
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-xl bg-slate-200/70 dark:bg-slate-800/70 animate-pulse"></div>
+            <div class="h-8 w-16 rounded-xl bg-slate-200/70 dark:bg-slate-800/70 animate-pulse"></div>
+        </div>
+    {/if}
+</div>
 
 <!-- Vault Content Display -->
 <div class="flex-1 overflow-y-auto">
@@ -379,15 +396,30 @@
                         </div>
                     </div>
                 {/if}
-            {/if}
 
-            <div class="px-4 sm:px-6 pt-4">
-                <VaultComponent
-                    formId="vault-form"
-                    vaultId={$selectedVaultItem!.id}
-                    bind:isEditMode
-                />
-            </div>
+                <div class="px-4 sm:px-6 pt-4">
+                    <VaultComponent
+                        formId="vault-form"
+                        vaultId={$selectedVaultItem!.id}
+                        bind:isEditMode
+                    />
+                </div>
+            {:else}
+                <div class="px-4 sm:px-6 pt-4 space-y-5 animate-pulse">
+                    <div class="flex items-center gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 shadow-2xs">
+                        <div class="h-12 w-12 rounded-2xl bg-slate-200 dark:bg-slate-800"></div>
+                        <div class="flex-1 space-y-2">
+                            <div class="h-4 w-40 rounded bg-slate-200 dark:bg-slate-800"></div>
+                            <div class="h-3 w-24 rounded bg-slate-100 dark:bg-slate-800/60"></div>
+                        </div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-2xs">
+                        <div class="h-3 w-28 rounded bg-slate-200 dark:bg-slate-800"></div>
+                        <div class="h-8 rounded bg-slate-100 dark:bg-slate-800/60"></div>
+                        <div class="h-8 rounded bg-slate-100 dark:bg-slate-800/60"></div>
+                    </div>
+                </div>
+            {/if}
         </div>
     {/key}
 </div>

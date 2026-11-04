@@ -4,6 +4,9 @@
         allVaultItemsStore,
         categoryFilter,
         isPasswordGeneratorOpen,
+        searchFilter,
+        selectedVaultItem,
+        vaultItemStore,
     } from "$lib/stores";
     import { CipherCategory, CipherType, VaultStatus } from "$lib/types";
 
@@ -29,7 +32,13 @@
     });
 
     function selectCat(cat: CipherCategory) {
-        $categoryFilter = cat;
+        $searchFilter = "";
+        if ($categoryFilter === cat) {
+            const items = $vaultItemStore;
+            $selectedVaultItem = items.length > 0 ? items[0] : null;
+        } else {
+            $categoryFilter = cat;
+        }
         onSelectCategory?.();
     }
 
