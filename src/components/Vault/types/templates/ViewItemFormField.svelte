@@ -25,6 +25,11 @@
         displayValue: field.displayValue(),
     });
 
+    $effect(() => {
+        fieldProps.field = field;
+        fieldProps.displayValue = field.displayValue();
+    });
+
     let justCopied = $state(false);
 
     const isRevealedPassword = $derived(
