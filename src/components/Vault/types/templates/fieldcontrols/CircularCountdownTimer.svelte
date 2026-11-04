@@ -33,11 +33,11 @@
 </script>
 
 <div
-    class="relative flex items-center justify-center select-none"
+    class="relative flex items-center justify-center select-none shrink-0"
     style="width:{size}px; height:{size}px;"
     title="TOTP code refreshes in {timeLeft}s"
 >
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} class="block">
         <circle
             cx={size / 2}
             cy={size / 2}
@@ -62,7 +62,7 @@
     </svg>
 
     <span
-        class="font-mono font-bold leading-none"
+        class="absolute inset-0 flex items-center justify-center font-mono font-bold leading-none pointer-events-none"
         style="color:{color}; font-size:{size * 0.38}px;"
     >
         {timeLeft}
