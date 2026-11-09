@@ -63,6 +63,12 @@
             );
             localStorage.setItem("mk", mkBase64);
             localStorage.setItem("epsk", response.data.psk);
+            if (response.data.rsa_protected_key) {
+                localStorage.setItem(
+                    "rsa_protected_key",
+                    response.data.rsa_protected_key
+                );
+            }
             window.location.assign(page.url.searchParams.get("next") ?? "/");
         } catch (error: any) {
             cfTurnsTileToken = null;

@@ -1,5 +1,6 @@
 import { PUBLIC_SERVER_URL } from "$env/static/public";
 import { requests } from "$lib/requests";
+import { clearUserRsaPrivateKey } from "$lib/crypto-client";
 
 export const checkEmail = async (email: string): Promise<boolean> => {
   const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/check-email`, {
@@ -102,6 +103,7 @@ export const loginAccount = async (
 };
 
 export const logoutAccount = async () => {
+  clearUserRsaPrivateKey();
   return await requests({
     method: "POST",
     url: `${PUBLIC_SERVER_URL}/accounts/logout`,

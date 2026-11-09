@@ -2,6 +2,11 @@
     import { onDestroy, onMount, setContext } from "svelte";
     import VaultLock from "$components/Vault/VaultLock.svelte";
     import VaultMain from "$components/Vault/VaultMain.svelte";
+    import {
+        clearUserRsaPrivateKey,
+        getUserRsaPrivateKey,
+        initializeUserRsaPrivateKey,
+    } from "$lib/crypto-client";
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
     import {
@@ -23,6 +28,7 @@
 
     const initialMk = localStorage.getItem("mk");
     const initialEpsk = localStorage.getItem("epsk");
+    const initialRsaProtectedKey = localStorage.getItem("rsa_protected_key");
 
     if (initialMk != null) {
         localStorage.removeItem("mk");
@@ -30,20 +36,48 @@
     if (initialEpsk != null) {
         localStorage.removeItem("epsk");
     }
+    if (initialRsaProtectedKey != null) {
+        localStorage.removeItem("rsa_protected_key");
+    }
 
     let mkState: string | null = $state(initialMk);
     let epskState: string | null = $state(initialEpsk);
+    let rsaProtectedKeyState: string | null = $state(initialRsaProtectedKey);
 
     // Keep backwards compatibility for child components calling getContext("mk") / getContext("epsk")
     setContext("mk", initialMk);
     setContext("epsk", initialEpsk);
+    setContext("getUserRsaPrivateKey", getUserRsaPrivateKey);
 
     let isUnlock = $state(Boolean(initialEpsk && initialMk));
     let isLoadingVault = $state(false);
 
+    $effect(() => {
+        if (
+            isUnlock &&
+            mkState &&
+            epskState &&
+            rsaProtectedKeyState &&
+            !getUserRsaPrivateKey()
+        ) {
+            extractSymmetricKey(mkState, epskState)
+                .then((sk) =>
+                    initializeUserRsaPrivateKey(sk, rsaProtectedKeyState!)
+                )
+                .catch((err) => {
+                    console.error(
+                        "Failed to decrypt and initialize user RSA private key:",
+                        err
+                    );
+                });
+        }
+    });
+
     export function lockVault() {
         mkState = null;
         epskState = null;
+        rsaProtectedKeyState = null;
+        clearUserRsaPrivateKey();
         $allVaultItemsStore = [];
         $vaultItemStore = [];
         $selectedVaultItem = null;

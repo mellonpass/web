@@ -1,7 +1,10 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import gravatar from "gravatar";
-    import { deriveLoginKeysAsync } from "$lib/crypto-client";
+    import {
+        clearUserRsaPrivateKey,
+        deriveLoginKeysAsync,
+    } from "$lib/crypto-client";
     import { logoutAccount, unlock } from "$lib/services/accounts";
     import { invalidateAll } from "$app/navigation";
     import { theme } from "$lib/theme.svelte";
@@ -23,6 +26,7 @@
 
     const handleLogout = async () => {
         await logoutAccount();
+        clearUserRsaPrivateKey();
         invalidateAll();
     };
 
@@ -52,6 +56,12 @@
             const response = await unlock(loginHash);
             localStorage.setItem("mk", mkBase64);
             localStorage.setItem("epsk", response.data.psk);
+            if (response.data.rsa_protected_key) {
+                localStorage.setItem(
+                    "rsa_protected_key",
+                    response.data.rsa_protected_key
+                );
+            }
             window.location.assign("/");
         } catch (err: any) {
             error = true;
