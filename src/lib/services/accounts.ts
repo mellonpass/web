@@ -1,6 +1,7 @@
 import { PUBLIC_SERVER_URL } from "$env/static/public";
 import { requests } from "$lib/requests";
 import { clearUserRsaPrivateKey } from "$lib/crypto-client";
+import { organizationStore } from "$lib/stores";
 
 export const checkEmail = async (email: string): Promise<boolean> => {
   const response = await fetch(`${PUBLIC_SERVER_URL}/accounts/check-email`, {
@@ -104,6 +105,7 @@ export const loginAccount = async (
 
 export const logoutAccount = async () => {
   clearUserRsaPrivateKey();
+  organizationStore.clear();
   try {
     if (typeof sessionStorage !== "undefined") {
       sessionStorage.removeItem("rsa_protected_key");

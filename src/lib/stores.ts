@@ -1,5 +1,11 @@
 import { get, writable, type Writable } from "svelte/store";
-import { CipherCategory, type Cipher, type VaultItem } from "./types";
+import type { SymmetricKey } from "./models/keys";
+import {
+  CipherCategory,
+  type Cipher,
+  type Organization,
+  type VaultItem,
+} from "./types";
 
 export const categoryFilter: Writable<CipherCategory> = writable(
   CipherCategory.All
@@ -43,3 +49,49 @@ export const cipherStore = createEntityStore<Cipher>();
 export const allVaultItemsStore = createEntityStore<VaultItem>();
 // Filtered vault list items for current category
 export const vaultItemStore = createEntityStore<VaultItem>();
+
+export interface OrganizationState {
+  organizations: Organization[];
+  activeOrganizationId: string | null; // null = Personal Vault
+}
+
+const createOrganizationStore = () => {
+  const { subscribe, set, update } = writable<OrganizationState>({
+    organizations: [],
+    activeOrganizationId: null,
+  });
+
+  // Decrypted Organization Symmetric Keys (OSKs) kept in memory only
+  const decryptedKeys = new Map<string, SymmetricKey>();
+
+  return {
+    subscribe,
+    setOrganizations: (organizations: Organization[]) => {
+      update((state) => ({ ...state, organizations }));
+    },
+    setActiveOrganizationId: (orgId: string | null) => {
+      update((state) => ({ ...state, activeOrganizationId: orgId }));
+    },
+    setDecryptedKey: (organizationId: string, osk: SymmetricKey) => {
+      decryptedKeys.set(organizationId, osk);
+    },
+    getDecryptedKey: (organizationId: string): SymmetricKey | undefined => {
+      return decryptedKeys.get(organizationId);
+    },
+    hasDecryptedKey: (organizationId: string): boolean => {
+      return decryptedKeys.has(organizationId);
+    },
+    removeDecryptedKey: (organizationId: string) => {
+      decryptedKeys.delete(organizationId);
+    },
+    clear: () => {
+      decryptedKeys.clear();
+      set({
+        organizations: [],
+        activeOrganizationId: null,
+      });
+    },
+  };
+};
+
+export const organizationStore = createOrganizationStore();
