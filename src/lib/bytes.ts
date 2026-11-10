@@ -20,28 +20,13 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer | Uint8Array) => {
 };
 
 /**
- * Normalizes standard and URL-safe base64 strings with required padding.
- * @param {string} base64
- * @returns {string} Normalized base64 string.
- */
-export const normalizeBase64 = (base64: string): string => {
-  let normalized = base64.trim().replace(/-/g, "+").replace(/_/g, "/");
-  const pad = normalized.length % 4;
-  if (pad) {
-    normalized += "=".repeat(4 - pad);
-  }
-  return normalized;
-};
-
-/**
  * Convert base64 string into Uint8Array.
- * Supports standard base64 and URL-safe base64 strings.
  * @param {string} base64
  * @returns {Uint8Array} Uint8Array.
  */
 export const base64ToArrayBuffer = (base64: string) => {
   // Decode the Base64 string into a binary string
-  const binaryString = atob(normalizeBase64(base64));
+  const binaryString = atob(base64);
 
   // Create a Uint8Array with the same length as the binary string
   const uint8Array = new Uint8Array(binaryString.length);
