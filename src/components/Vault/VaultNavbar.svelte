@@ -17,6 +17,7 @@
         type ModalItemType,
     } from "$lib/stores";
     import { logoutAccount } from "$lib/services/accounts";
+    import { clearUserRsaPrivateKey } from "$lib/crypto-client";
     import { theme } from "$lib/theme.svelte";
 
     let {
@@ -93,6 +94,9 @@
 
     const handleLogout = async () => {
         await logoutAccount();
+        clearUserRsaPrivateKey();
+        sessionStorage.removeItem("rsa_protected_key");
+        localStorage.removeItem("rsa_protected_key");
         invalidateAll();
     };
 
