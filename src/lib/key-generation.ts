@@ -200,6 +200,12 @@ export async function importRsaPublicKey(
     throw new Error("Invalid RSA public key format: unable to parse JWK");
   }
 
+  if ("d" in jwk) {
+    throw new Error(
+      "Expected public key JWK, received private key JWK with private exponent 'd'"
+    );
+  }
+
   return await crypto.subtle.importKey(
     "jwk",
     jwk,
@@ -225,6 +231,9 @@ export async function decryptPrivateKeyWithSymmetricKey(
   sk: SymmetricKey,
   rsaProtectedKey: string
 ): Promise<CryptoKey> {
+  if (!rsaProtectedKey || typeof rsaProtectedKey !== "string") {
+    throw new Error("Missing RSA protected key string");
+  }
   const decryptedJson = await sk.decryptText(rsaProtectedKey);
   const jwk = JSON.parse(decryptedJson) as JsonWebKey;
   return await crypto.subtle.importKey(
@@ -252,17 +261,36 @@ export const generateOrganizationKey = (): SymmetricKey => {
  * Encrypts a 64-byte Organization Symmetric Key (OSK) using a recipient's RSA-OAEP public key.
  *
  * @param publicKey Recipient's CryptoKey, JsonWebKey, or encoded string
- * @param oskBytes 64-byte Uint8Array of the Organization Symmetric Key (e.g. osk.keybuffer)
+ * @param osk 64-byte Uint8Array of the Organization Symmetric Key, or a SymmetricKey instance
  * @returns Base64-encoded ciphertext string
  */
 export async function encryptOrgKeyWithPublicKey(
   publicKey: CryptoKey | JsonWebKey | string,
-  oskBytes: Uint8Array
+  osk: SymmetricKey | Uint8Array
 ): Promise<string> {
-  const key =
-    publicKey instanceof CryptoKey
-      ? publicKey
-      : await importRsaPublicKey(publicKey);
+  const isCryptoKey =
+    (typeof CryptoKey !== "undefined" && publicKey instanceof CryptoKey) ||
+    (typeof publicKey === "object" &&
+      publicKey !== null &&
+      "algorithm" in publicKey &&
+      "type" in publicKey);
+
+  const key = isCryptoKey
+    ? (publicKey as CryptoKey)
+    : await importRsaPublicKey(publicKey as JsonWebKey | string);
+
+  if (key.type !== "public") {
+    throw new Error(
+      `Expected public CryptoKey for encryption, received '${key.type}'`
+    );
+  }
+
+  const oskBytes = osk instanceof Uint8Array ? osk : osk.keybuffer;
+  if (!oskBytes || oskBytes.byteLength !== 64) {
+    throw new Error(
+      `Invalid OSK length: expected 64 bytes, received ${oskBytes?.byteLength ?? 0}`
+    );
+  }
 
   const encryptedBuffer = await crypto.subtle.encrypt(
     { name: "RSA-OAEP" },
@@ -283,11 +311,24 @@ export async function decryptOrgKeyWithPrivateKey(
   privateKey: CryptoKey,
   encryptedOskBase64: string
 ): Promise<SymmetricKey> {
+  if (privateKey.type !== "private") {
+    throw new Error(
+      `Expected private CryptoKey for decryption, received '${privateKey.type}'`
+    );
+  }
+
   const encryptedBytes = base64ToArrayBuffer(encryptedOskBase64);
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: "RSA-OAEP" },
     privateKey,
     encryptedBytes
   );
+
+  if (decryptedBuffer.byteLength !== 64) {
+    throw new Error(
+      `Invalid OSK length: expected 64 bytes, received ${decryptedBuffer.byteLength}`
+    );
+  }
+
   return new SymmetricKey(new Uint8Array(decryptedBuffer));
 }
