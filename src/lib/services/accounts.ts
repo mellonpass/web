@@ -104,6 +104,16 @@ export const loginAccount = async (
 
 export const logoutAccount = async () => {
   clearUserRsaPrivateKey();
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem("rsa_protected_key");
+    }
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem("rsa_protected_key");
+    }
+  } catch {
+    // Ignore storage errors in non-browser environments
+  }
   return await requests({
     method: "POST",
     url: `${PUBLIC_SERVER_URL}/accounts/logout`,

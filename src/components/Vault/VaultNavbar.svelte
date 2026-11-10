@@ -95,6 +95,8 @@
     const handleLogout = async () => {
         await logoutAccount();
         clearUserRsaPrivateKey();
+        sessionStorage.removeItem("rsa_protected_key");
+        localStorage.removeItem("rsa_protected_key");
         invalidateAll();
     };
 

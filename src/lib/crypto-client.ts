@@ -18,21 +18,52 @@ export type CryptoProgressCallback = (step: string, percent: number) => void;
  * It is held in-memory during unlocked vault sessions and wiped on vault lock / logout.
  */
 let userRsaPrivateKey: CryptoKey | null = null;
+let rsaInitPromise: Promise<CryptoKey> | null = null;
 
 export function getUserRsaPrivateKey(): CryptoKey | null {
   return userRsaPrivateKey;
 }
 
+/**
+ * Returns the decrypted RSA private key if already initialized, or awaits
+ * the pending initialization promise. Returns null if vault is locked or initialization fails.
+ */
+export async function getOrAwaitUserRsaPrivateKey(): Promise<CryptoKey | null> {
+  if (userRsaPrivateKey) return userRsaPrivateKey;
+  if (rsaInitPromise) {
+    try {
+      return await rsaInitPromise;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Checks whether the user's RSA private key is currently loaded in memory.
+ */
+export function isUserRsaPrivateKeyReady(): boolean {
+  return userRsaPrivateKey !== null;
+}
+
+/**
+ * For testing and internal test harnesses: sets or resets the in-memory RSA private key.
+ * @internal
+ */
 export function setUserRsaPrivateKey(key: CryptoKey | null): void {
   userRsaPrivateKey = key;
+  rsaInitPromise = null;
 }
 
 export function clearUserRsaPrivateKey(): void {
   userRsaPrivateKey = null;
+  rsaInitPromise = null;
 }
 
 /**
  * Decrypts the user's RSA private key using their unlocked SymmetricKey and stores it in memory.
+ * Deduplicates concurrent initialization attempts.
  *
  * @param sk Unlocked SymmetricKey
  * @param rsaProtectedKey Encrypted and MAC-protected private key string
@@ -42,12 +73,31 @@ export async function initializeUserRsaPrivateKey(
   sk: SymmetricKey,
   rsaProtectedKey: string
 ): Promise<CryptoKey> {
-  const privateKey = await decryptPrivateKeyWithSymmetricKey(
-    sk,
-    rsaProtectedKey
-  );
-  userRsaPrivateKey = privateKey;
-  return privateKey;
+  if (userRsaPrivateKey) {
+    return userRsaPrivateKey;
+  }
+  if (rsaInitPromise) {
+    return await rsaInitPromise;
+  }
+
+  const promise = (async () => {
+    try {
+      const privateKey = await decryptPrivateKeyWithSymmetricKey(
+        sk,
+        rsaProtectedKey
+      );
+      userRsaPrivateKey = privateKey;
+      return privateKey;
+    } catch (err) {
+      userRsaPrivateKey = null;
+      throw err;
+    } finally {
+      rsaInitPromise = null;
+    }
+  })();
+
+  rsaInitPromise = promise;
+  return await promise;
 }
 
 function runWorkerTask<T>(

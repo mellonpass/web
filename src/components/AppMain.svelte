@@ -4,11 +4,14 @@
     import VaultMain from "$components/Vault/VaultMain.svelte";
     import {
         clearUserRsaPrivateKey,
+        getOrAwaitUserRsaPrivateKey,
         getUserRsaPrivateKey,
         initializeUserRsaPrivateKey,
     } from "$lib/crypto-client";
     import { extractSymmetricKey } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
+    import { toast } from "$lib/toast.svelte";
+    import type { SymmetricKey } from "$lib/models/keys";
     import {
         allVaultItemsStore,
         categoryFilter,
@@ -26,17 +29,23 @@
         VaultStatus,
     } from "$lib/types";
 
-    const initialMk = localStorage.getItem("mk");
-    const initialEpsk = localStorage.getItem("epsk");
-    const initialRsaProtectedKey = localStorage.getItem("rsa_protected_key");
+    const initialMk = localStorage.getItem("mk") ?? sessionStorage.getItem("mk");
+    const initialEpsk =
+        localStorage.getItem("epsk") ?? sessionStorage.getItem("epsk");
+    const initialRsaProtectedKey =
+        sessionStorage.getItem("rsa_protected_key") ??
+        localStorage.getItem("rsa_protected_key");
 
     if (initialMk != null) {
         localStorage.removeItem("mk");
+        sessionStorage.removeItem("mk");
     }
     if (initialEpsk != null) {
         localStorage.removeItem("epsk");
+        sessionStorage.removeItem("epsk");
     }
     if (initialRsaProtectedKey != null) {
+        sessionStorage.removeItem("rsa_protected_key");
         localStorage.removeItem("rsa_protected_key");
     }
 
@@ -48,9 +57,22 @@
     setContext("mk", initialMk);
     setContext("epsk", initialEpsk);
     setContext("getUserRsaPrivateKey", getUserRsaPrivateKey);
+    setContext("getOrAwaitUserRsaPrivateKey", getOrAwaitUserRsaPrivateKey);
 
     let isUnlock = $state(Boolean(initialEpsk && initialMk));
     let isLoadingVault = $state(false);
+    let rsaKeyInitAttempted = $state(false);
+
+    let cachedSkPromise: Promise<SymmetricKey> | null = null;
+    const getSymmetricKey = (): Promise<SymmetricKey> => {
+        if (!mkState || !epskState) {
+            return Promise.reject(new Error("Vault is locked"));
+        }
+        if (!cachedSkPromise) {
+            cachedSkPromise = extractSymmetricKey(mkState, epskState);
+        }
+        return cachedSkPromise;
+    };
 
     $effect(() => {
         if (
@@ -58,9 +80,11 @@
             mkState &&
             epskState &&
             rsaProtectedKeyState &&
-            !getUserRsaPrivateKey()
+            !getUserRsaPrivateKey() &&
+            !rsaKeyInitAttempted
         ) {
-            extractSymmetricKey(mkState, epskState)
+            rsaKeyInitAttempted = true;
+            getSymmetricKey()
                 .then((sk) =>
                     initializeUserRsaPrivateKey(sk, rsaProtectedKeyState!)
                 )
@@ -69,6 +93,12 @@
                         "Failed to decrypt and initialize user RSA private key:",
                         err
                     );
+                    toast.show({
+                        title: "Cryptographic Key Error",
+                        description:
+                            "Failed to decrypt user RSA private key. Organization features may be unavailable.",
+                        variant: "danger",
+                    });
                 });
         }
     });
@@ -77,7 +107,11 @@
         mkState = null;
         epskState = null;
         rsaProtectedKeyState = null;
+        rsaKeyInitAttempted = false;
+        cachedSkPromise = null;
         clearUserRsaPrivateKey();
+        sessionStorage.removeItem("rsa_protected_key");
+        localStorage.removeItem("rsa_protected_key");
         $allVaultItemsStore = [];
         $vaultItemStore = [];
         $selectedVaultItem = null;
@@ -157,7 +191,7 @@
         ciphers: Array<Cipher>
     ): Promise<Array<VaultItem>> => {
         if (!mkState || !epskState) return [];
-        const sk = await extractSymmetricKey(mkState, epskState);
+        const sk = await getSymmetricKey();
         return await Promise.all(
             ciphers.map((cipher) => decryptCipherForVaultItem(sk, cipher))
         );
@@ -208,6 +242,8 @@
     });
 
     onDestroy(() => {
+        clearUserRsaPrivateKey();
+        cachedSkPromise = null;
         newVaultItemUnsubscribe();
         categoryFilterUnsubscriber();
         allVaultItemsUnsubscriber();
