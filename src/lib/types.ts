@@ -67,6 +67,11 @@ export interface Cipher {
   created?: Date | string | null;
   updated?: Date | string | null;
   data?: CipherData | null;
+  organization?: {
+    id: string;
+    name: string;
+  } | null;
+  organizationId?: string | null;
 }
 
 export interface VaultData {
@@ -80,6 +85,11 @@ export interface VaultData {
   created?: Date | null;
   updated?: Date | null;
   content?: any;
+  organization?: {
+    id: string;
+    name: string;
+  } | null;
+  organizationId?: string | null;
 }
 
 // Items shown in the vault item list pane
@@ -117,3 +127,42 @@ export interface FormItemHistory {
 }
 
 export type FormCallBack = (args: any) => void;
+
+export enum OrganizationMemberRole {
+  OWNER = "OWNER",
+  ADMIN = "ADMIN",
+  MEMBER = "MEMBER",
+}
+
+export enum OrganizationMemberStatus {
+  INVITED = "INVITED",
+  ACCEPTED = "ACCEPTED",
+  CONFIRMED = "CONFIRMED",
+  REVOKED = "REVOKED",
+}
+
+export interface OrganizationMember {
+  id: string;
+  email: string;
+  role: OrganizationMemberRole;
+  status: OrganizationMemberStatus;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  } | null;
+  protectedSymmetricKey?: string | null;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  created?: string | Date;
+  updated?: string | Date;
+  currentUserMembership?: {
+    id?: string;
+    role: OrganizationMemberRole;
+    status: OrganizationMemberStatus;
+    protectedSymmetricKey?: string | null;
+  } | null;
+}

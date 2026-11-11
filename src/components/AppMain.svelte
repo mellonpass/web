@@ -17,6 +17,7 @@
         categoryFilter,
         cipherStore,
         newVaultItem,
+        organizationStore,
         selectedVaultItem,
         vaultItemStore,
     } from "$lib/stores";
@@ -110,6 +111,7 @@
         rsaKeyInitAttempted = false;
         cachedSkPromise = null;
         clearUserRsaPrivateKey();
+        organizationStore.clear();
         sessionStorage.removeItem("rsa_protected_key");
         localStorage.removeItem("rsa_protected_key");
         $allVaultItemsStore = [];
@@ -243,6 +245,7 @@
 
     onDestroy(() => {
         clearUserRsaPrivateKey();
+        organizationStore.clear();
         cachedSkPromise = null;
         newVaultItemUnsubscribe();
         categoryFilterUnsubscriber();

@@ -1,5 +1,17 @@
-import { get, writable, type Writable } from "svelte/store";
-import { CipherCategory, type Cipher, type VaultItem } from "./types";
+import {
+  derived,
+  get,
+  writable,
+  type Readable,
+  type Writable,
+} from "svelte/store";
+import type { SymmetricKey } from "./models/keys";
+import {
+  CipherCategory,
+  type Cipher,
+  type Organization,
+  type VaultItem,
+} from "./types";
 
 export const categoryFilter: Writable<CipherCategory> = writable(
   CipherCategory.All
@@ -43,3 +55,84 @@ export const cipherStore = createEntityStore<Cipher>();
 export const allVaultItemsStore = createEntityStore<VaultItem>();
 // Filtered vault list items for current category
 export const vaultItemStore = createEntityStore<VaultItem>();
+
+export interface OrganizationState {
+  organizations: Organization[];
+  activeOrganizationId: string | null; // null = Personal Vault
+}
+
+const createOrganizationStore = () => {
+  const { subscribe, set, update } = writable<OrganizationState>({
+    organizations: [],
+    activeOrganizationId: null,
+  });
+
+  // Decrypted Organization Symmetric Keys (OSKs) kept in memory only
+  const decryptedKeys = new Map<string, SymmetricKey>();
+
+  return {
+    subscribe,
+    setOrganizations: (organizations: Organization[]) => {
+      const validIds = new Set(organizations.map((org) => org.id));
+      for (const [id, osk] of decryptedKeys.entries()) {
+        if (!validIds.has(id)) {
+          try {
+            osk.keybuffer.fill(0);
+          } catch {}
+          decryptedKeys.delete(id);
+        }
+      }
+      update((state) => ({
+        ...state,
+        organizations,
+        activeOrganizationId:
+          state.activeOrganizationId &&
+          !validIds.has(state.activeOrganizationId)
+            ? null
+            : state.activeOrganizationId,
+      }));
+    },
+    setActiveOrganizationId: (orgId: string | null) => {
+      update((state) => ({ ...state, activeOrganizationId: orgId }));
+    },
+    setDecryptedKey: (organizationId: string, osk: SymmetricKey) => {
+      decryptedKeys.set(organizationId, osk);
+    },
+    getDecryptedKey: (organizationId: string): SymmetricKey | undefined => {
+      return decryptedKeys.get(organizationId);
+    },
+    hasDecryptedKey: (organizationId: string): boolean => {
+      return decryptedKeys.has(organizationId);
+    },
+    removeDecryptedKey: (organizationId: string) => {
+      const osk = decryptedKeys.get(organizationId);
+      if (osk) {
+        try {
+          osk.keybuffer.fill(0);
+        } catch {}
+        decryptedKeys.delete(organizationId);
+      }
+    },
+    clear: () => {
+      for (const osk of decryptedKeys.values()) {
+        try {
+          osk.keybuffer.fill(0);
+        } catch {}
+      }
+      decryptedKeys.clear();
+      set({
+        organizations: [],
+        activeOrganizationId: null,
+      });
+    },
+  };
+};
+
+export const organizationStore = createOrganizationStore();
+
+export const activeOrganization: Readable<Organization | null> = derived(
+  organizationStore,
+  ($state) =>
+    $state.organizations.find((o) => o.id === $state.activeOrganizationId) ??
+    null
+);

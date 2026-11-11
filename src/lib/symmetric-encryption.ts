@@ -81,9 +81,15 @@ class CardDataEncryptor extends CipherEncryptor {
     if (!data) {
       throw new Error("Card data is required for decryption.");
     }
-    const brand = data.brand ? await this.cipherKey.decryptText(data.brand) : "";
-    const number = data.number ? await this.cipherKey.decryptText(data.number) : "";
-    const holder = data.cardholderName ? await this.cipherKey.decryptText(data.cardholderName) : "";
+    const brand = data.brand
+      ? await this.cipherKey.decryptText(data.brand)
+      : "";
+    const number = data.number
+      ? await this.cipherKey.decryptText(data.number)
+      : "";
+    const holder = data.cardholderName
+      ? await this.cipherKey.decryptText(data.cardholderName)
+      : "";
     const cleanNum = number.replace(/\s+/g, "");
     const last4 = cleanNum.length >= 4 ? `•••• ${cleanNum.slice(-4)}` : "";
     if (brand && last4) return `${brand} • ${last4}`;
@@ -303,6 +309,8 @@ export async function decryptCipherForVaultItem(
     deleteOn: cipher.deleteOn ? new Date(cipher.deleteOn) : null,
     created: cipher.created ? new Date(cipher.created) : null,
     updated: cipher.updated ? new Date(cipher.updated) : null,
+    organization: cipher.organization,
+    organizationId: cipher.organizationId,
   };
 
   const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];
@@ -333,6 +341,8 @@ export async function decryptCipherForVaultContent<T extends CipherData>(
     deleteOn: cipher.deleteOn ? new Date(cipher.deleteOn) : null,
     created: cipher.created ? new Date(cipher.created) : new Date(),
     updated: cipher.updated ? new Date(cipher.updated) : new Date(),
+    organization: cipher.organization,
+    organizationId: cipher.organizationId,
   } satisfies Partial<VaultItemDetail<T>>;
 
   const encryptorFactory = ENCRYPTOR_FACTORY[cipher.type];
