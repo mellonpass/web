@@ -160,6 +160,7 @@ export interface Organization {
   created?: string | Date;
   updated?: string | Date;
   currentUserMembership?: {
+    id?: string;
     role: OrganizationMemberRole;
     status: OrganizationMemberStatus;
     protectedSymmetricKey?: string | null;

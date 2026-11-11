@@ -245,6 +245,7 @@
 
     onDestroy(() => {
         clearUserRsaPrivateKey();
+        organizationStore.clear();
         cachedSkPromise = null;
         newVaultItemUnsubscribe();
         categoryFilterUnsubscriber();

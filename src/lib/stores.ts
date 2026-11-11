@@ -1,4 +1,10 @@
-import { get, writable, type Writable } from "svelte/store";
+import {
+  derived,
+  get,
+  writable,
+  type Readable,
+  type Writable,
+} from "svelte/store";
 import type { SymmetricKey } from "./models/keys";
 import {
   CipherCategory,
@@ -67,7 +73,24 @@ const createOrganizationStore = () => {
   return {
     subscribe,
     setOrganizations: (organizations: Organization[]) => {
-      update((state) => ({ ...state, organizations }));
+      const validIds = new Set(organizations.map((org) => org.id));
+      for (const [id, osk] of decryptedKeys.entries()) {
+        if (!validIds.has(id)) {
+          try {
+            osk.keybuffer.fill(0);
+          } catch {}
+          decryptedKeys.delete(id);
+        }
+      }
+      update((state) => ({
+        ...state,
+        organizations,
+        activeOrganizationId:
+          state.activeOrganizationId &&
+          !validIds.has(state.activeOrganizationId)
+            ? null
+            : state.activeOrganizationId,
+      }));
     },
     setActiveOrganizationId: (orgId: string | null) => {
       update((state) => ({ ...state, activeOrganizationId: orgId }));
@@ -82,9 +105,20 @@ const createOrganizationStore = () => {
       return decryptedKeys.has(organizationId);
     },
     removeDecryptedKey: (organizationId: string) => {
-      decryptedKeys.delete(organizationId);
+      const osk = decryptedKeys.get(organizationId);
+      if (osk) {
+        try {
+          osk.keybuffer.fill(0);
+        } catch {}
+        decryptedKeys.delete(organizationId);
+      }
     },
     clear: () => {
+      for (const osk of decryptedKeys.values()) {
+        try {
+          osk.keybuffer.fill(0);
+        } catch {}
+      }
       decryptedKeys.clear();
       set({
         organizations: [],
@@ -95,3 +129,10 @@ const createOrganizationStore = () => {
 };
 
 export const organizationStore = createOrganizationStore();
+
+export const activeOrganization: Readable<Organization | null> = derived(
+  organizationStore,
+  ($state) =>
+    $state.organizations.find((o) => o.id === $state.activeOrganizationId) ??
+    null
+);
