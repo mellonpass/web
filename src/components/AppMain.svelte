@@ -8,20 +8,27 @@
         getUserRsaPrivateKey,
         initializeUserRsaPrivateKey,
     } from "$lib/crypto-client";
-    import { extractSymmetricKey } from "$lib/key-generation";
+    import {
+        decryptOrgKeyWithPrivateKey,
+        extractSymmetricKey,
+    } from "$lib/key-generation";
     import { getCiphers } from "$lib/services/ciphers";
+    import { getOrganizations } from "$lib/services/organizations";
     import { toast } from "$lib/toast.svelte";
     import type { SymmetricKey } from "$lib/models/keys";
     import {
         allVaultItemsStore,
         categoryFilter,
         cipherStore,
+        matchesVaultContext,
         newVaultItem,
         organizationStore,
         selectedVaultItem,
         vaultItemStore,
+        type VaultContext,
     } from "$lib/stores";
     import { decryptCipherForVaultItem } from "$lib/symmetric-encryption";
+    import { resolveCipherSymmetricKey } from "$lib/vaults";
     import {
         type Cipher,
         CipherCategory,
@@ -167,11 +174,15 @@
     const applyFilterFromCache = (
         allItems: VaultItem[],
         category: CipherCategory,
+        vaultContext: VaultContext = $organizationStore.vaultContext,
         forceFirst: boolean = false
     ) => {
+        const contextScoped = allItems.filter((item) =>
+            matchesVaultContext(item, vaultContext)
+        );
         const filtered = categoryFilterFactory[category]
-            ? categoryFilterFactory[category](allItems)
-            : allItems.filter((item) => item.status === VaultStatus.ACTIVE);
+            ? categoryFilterFactory[category](contextScoped)
+            : contextScoped.filter((item) => item.status === VaultStatus.ACTIVE);
         const sorted = [...filtered].sort((a, b) =>
             a.name.localeCompare(b.name)
         );
@@ -194,15 +205,87 @@
     ): Promise<Array<VaultItem>> => {
         if (!mkState || !epskState) return [];
         const sk = await getSymmetricKey();
-        return await Promise.all(
-            ciphers.map((cipher) => decryptCipherForVaultItem(sk, cipher))
+        const results = await Promise.allSettled(
+            ciphers.map((cipher) => {
+                const effectiveSk = resolveCipherSymmetricKey(cipher, sk);
+                return decryptCipherForVaultItem(effectiveSk, cipher);
+            })
         );
+        const decrypted: Array<VaultItem> = [];
+        for (const result of results) {
+            if (result.status === "fulfilled") {
+                decrypted.push(result.value);
+            } else {
+                console.error("Failed to decrypt cipher:", result.reason);
+            }
+        }
+        return decrypted;
     };
 
     const loadAllCiphers = async () => {
         isLoadingVault = true;
         try {
-            const ciphers = await getCiphers();
+            const sk = await getSymmetricKey();
+
+            if (rsaProtectedKeyState && !getUserRsaPrivateKey()) {
+                rsaKeyInitAttempted = true;
+                try {
+                    await initializeUserRsaPrivateKey(sk, rsaProtectedKeyState);
+                } catch (err) {
+                    console.error(
+                        "Failed to decrypt and initialize user RSA private key:",
+                        err
+                    );
+                }
+            }
+
+            let orgsWithKeys: string[] = [];
+            try {
+                const orgs = await getOrganizations();
+                organizationStore.setOrganizations(orgs);
+
+                const privateKey = await getOrAwaitUserRsaPrivateKey();
+                if (privateKey) {
+                    for (const org of orgs) {
+                        const protectedOsk =
+                            org.currentUserMembership?.protectedSymmetricKey;
+                        if (protectedOsk) {
+                            try {
+                                const osk = await decryptOrgKeyWithPrivateKey(
+                                    privateKey,
+                                    protectedOsk
+                                );
+                                organizationStore.setDecryptedKey(org.id, osk);
+                                orgsWithKeys.push(org.id);
+                            } catch (err) {
+                                console.error(
+                                    `Failed to decrypt OSK for organization ${org.name}:`,
+                                    err
+                                );
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load organizations:", err);
+            }
+
+            const [personalCiphers, ...orgCipherBatches] = await Promise.all([
+                getCiphers(null),
+                ...orgsWithKeys.map((orgId) => getCiphers(orgId)),
+            ]);
+
+            const cipherMap = new Map<string, Cipher>();
+            for (const c of personalCiphers) {
+                if (c.id) cipherMap.set(c.id, c);
+            }
+            for (const batch of orgCipherBatches) {
+                for (const c of batch) {
+                    if (c.id) cipherMap.set(c.id, c);
+                }
+            }
+
+            const ciphers = Array.from(cipherMap.values());
             $cipherStore = ciphers;
 
             if ($cipherStore.length <= 0) {
@@ -212,22 +295,55 @@
             }
             const decryptedAll = await decryptCiphers($cipherStore);
             $allVaultItemsStore = decryptedAll;
-            applyFilterFromCache(decryptedAll, $categoryFilter, true);
+            applyFilterFromCache(
+                decryptedAll,
+                $categoryFilter,
+                $organizationStore.vaultContext,
+                true
+            );
         } finally {
             isLoadingVault = false;
         }
     };
 
+    setContext("reloadVault", loadAllCiphers);
+
     // Instant <1ms category filtering from in-memory decrypted store!
     const categoryFilterUnsubscriber = categoryFilter.subscribe((category) => {
         if (!isUnlock) return;
-        applyFilterFromCache($allVaultItemsStore, category, true);
+        applyFilterFromCache(
+            $allVaultItemsStore,
+            category,
+            $organizationStore.vaultContext,
+            true
+        );
     });
 
     const allVaultItemsUnsubscriber = allVaultItemsStore.subscribe((allItems) => {
         if (!isUnlock) return;
-        applyFilterFromCache(allItems, $categoryFilter, false);
+        applyFilterFromCache(
+            allItems,
+            $categoryFilter,
+            $organizationStore.vaultContext,
+            false
+        );
     });
+
+    let lastVaultContext: VaultContext = $organizationStore.vaultContext;
+    const organizationStoreUnsubscriber = organizationStore.subscribe(
+        (state) => {
+            if (!isUnlock) return;
+            if (state.vaultContext !== lastVaultContext) {
+                lastVaultContext = state.vaultContext;
+                applyFilterFromCache(
+                    $allVaultItemsStore,
+                    $categoryFilter,
+                    state.vaultContext,
+                    true
+                );
+            }
+        }
+    );
 
     // Called when a new vault item is created
     const newVaultItemUnsubscribe = newVaultItem.subscribe((vaultItem) => {
@@ -250,6 +366,7 @@
         newVaultItemUnsubscribe();
         categoryFilterUnsubscriber();
         allVaultItemsUnsubscriber();
+        organizationStoreUnsubscriber();
     });
 </script>
 

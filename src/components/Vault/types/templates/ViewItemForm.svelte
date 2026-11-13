@@ -63,9 +63,17 @@
                 size="lg"
             />
             <div class="min-w-0 flex-1">
-                <h2 class="truncate text-lg font-bold text-slate-900 dark:text-white">
-                    {itemDetails.name}
-                </h2>
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="truncate text-lg font-bold text-slate-900 dark:text-white">
+                        {itemDetails.name}
+                    </h2>
+                    {#if itemDetails.organization?.name}
+                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                            <Icon icon="hugeicons:building-03" width="12" height="12" />
+                            <span>Shared in {itemDetails.organization.name}</span>
+                        </span>
+                    {/if}
+                </div>
                 {#if subtitle}
                     <p class="mt-0.5 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                         {subtitle}

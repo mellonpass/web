@@ -56,15 +56,49 @@ export const allVaultItemsStore = createEntityStore<VaultItem>();
 // Filtered vault list items for current category
 export const vaultItemStore = createEntityStore<VaultItem>();
 
+export type VaultContext = "ALL" | "PERSONAL" | string;
+
 export interface OrganizationState {
   organizations: Organization[];
-  activeOrganizationId: string | null; // null = Personal Vault
+  activeOrganizationId: string | null; // null = Personal Vault or All Vaults
+  vaultContext: VaultContext;
+}
+
+export function matchesVaultContext(
+  item: {
+    organization?: { id: string } | null;
+    organizationId?: string | null;
+  },
+  context: VaultContext
+): boolean {
+  if (context === "ALL") return true;
+
+  const isOrgItem = Boolean(item.organization?.id || item.organizationId);
+  if (context === "PERSONAL") return !isOrgItem;
+
+  if (item.organization?.id === context || item.organizationId === context) {
+    return true;
+  }
+
+  if (item.organizationId) {
+    try {
+      const decoded = atob(context);
+      if (decoded.endsWith(`:${item.organizationId}`)) {
+        return true;
+      }
+    } catch {
+      // Ignore non-base64 context IDs
+    }
+  }
+
+  return false;
 }
 
 const createOrganizationStore = () => {
   const { subscribe, set, update } = writable<OrganizationState>({
     organizations: [],
     activeOrganizationId: null,
+    vaultContext: "ALL",
   });
 
   // Decrypted Organization Symmetric Keys (OSKs) kept in memory only
@@ -82,18 +116,40 @@ const createOrganizationStore = () => {
           decryptedKeys.delete(id);
         }
       }
-      update((state) => ({
-        ...state,
-        organizations,
-        activeOrganizationId:
+      update((state) => {
+        const nextActiveId =
           state.activeOrganizationId &&
           !validIds.has(state.activeOrganizationId)
             ? null
-            : state.activeOrganizationId,
+            : state.activeOrganizationId;
+        const nextContext =
+          state.vaultContext !== "ALL" &&
+          state.vaultContext !== "PERSONAL" &&
+          !validIds.has(state.vaultContext)
+            ? "ALL"
+            : state.vaultContext;
+        return {
+          ...state,
+          organizations,
+          activeOrganizationId: nextActiveId,
+          vaultContext: nextContext,
+        };
+      });
+    },
+    setVaultContext: (context: VaultContext) => {
+      update((state) => ({
+        ...state,
+        vaultContext: context,
+        activeOrganizationId:
+          context === "ALL" || context === "PERSONAL" ? null : context,
       }));
     },
     setActiveOrganizationId: (orgId: string | null) => {
-      update((state) => ({ ...state, activeOrganizationId: orgId }));
+      update((state) => ({
+        ...state,
+        activeOrganizationId: orgId,
+        vaultContext: orgId ?? "PERSONAL",
+      }));
     },
     setDecryptedKey: (organizationId: string, osk: SymmetricKey) => {
       decryptedKeys.set(organizationId, osk);
@@ -123,6 +179,7 @@ const createOrganizationStore = () => {
       set({
         organizations: [],
         activeOrganizationId: null,
+        vaultContext: "ALL",
       });
     },
   };

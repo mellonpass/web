@@ -282,6 +282,16 @@
                                                             : 'text-amber-400'}"
                                                     />
                                                 {/if}
+                                                {#if item.organization?.name}
+                                                    <span
+                                                        class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shrink-0 {isSelected
+                                                            ? 'bg-white/20 text-white'
+                                                            : 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'}"
+                                                    >
+                                                        <Icon icon="hugeicons:building-03" width="10" height="10" />
+                                                        <span class="max-w-[5rem] truncate">{item.organization.name}</span>
+                                                    </span>
+                                                {/if}
                                             </div>
                                             {#if item.content}
                                                 <div

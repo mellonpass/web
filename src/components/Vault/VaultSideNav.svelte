@@ -1,12 +1,17 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
+    import { DropdownMenu } from "bits-ui";
     import {
+        activeOrganization,
         allVaultItemsStore,
         categoryFilter,
         isPasswordGeneratorOpen,
+        matchesVaultContext,
+        organizationStore,
         searchFilter,
         selectedVaultItem,
         vaultItemStore,
+        type VaultContext,
     } from "$lib/stores";
     import { CipherCategory, CipherType, VaultStatus } from "$lib/types";
 
@@ -16,8 +21,51 @@
         onSelectCategory?: (() => void) | undefined;
     } = $props();
 
+    const activeContextMeta = $derived.by(() => {
+        const ctx = $organizationStore.vaultContext;
+        if (ctx === "ALL") {
+            return {
+                label: "All Vaults",
+                subtitle: "Personal & shared items",
+                icon: "hugeicons:layers-01",
+                isOrg: false,
+            };
+        }
+        if (ctx === "PERSONAL") {
+            return {
+                label: "Personal Vault",
+                subtitle: "Private to you",
+                icon: "hugeicons:user-shield-01",
+                isOrg: false,
+            };
+        }
+        const org = $activeOrganization;
+        if (org) {
+            return {
+                label: `Organization: ${org.name}`,
+                subtitle: `Shared vault • ${org.currentUserMembership?.role ?? "MEMBER"}`,
+                icon: "hugeicons:building-03",
+                isOrg: true,
+            };
+        }
+        return {
+            label: "All Vaults",
+            subtitle: "Personal & shared items",
+            icon: "hugeicons:layers-01",
+            isOrg: false,
+        };
+    });
+
+    function switchVaultContext(ctx: VaultContext) {
+        organizationStore.setVaultContext(ctx);
+        onSelectCategory?.();
+    }
+
     const counts = $derived.by(() => {
-        const items = $allVaultItemsStore;
+        const ctx = $organizationStore.vaultContext;
+        const items = $allVaultItemsStore.filter((i) =>
+            matchesVaultContext(i, ctx)
+        );
         const active = items.filter((i) => i.status === VaultStatus.ACTIVE);
         return {
             all: active.length,
@@ -113,7 +161,7 @@
 <aside class="flex h-full w-full flex-col justify-between bg-slate-100/80 dark:bg-slate-900/90 border-r border-slate-200/80 dark:border-slate-800/80 select-none">
     <div class="flex-1 overflow-y-auto px-3 py-4">
         <!-- Brand Header -->
-        <div class="mb-5 flex items-center justify-between px-2.5">
+        <div class="mb-4 flex items-center justify-between px-2.5">
             <div class="flex items-center gap-2.5">
                 <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs shadow-indigo-500/30">
                     <Icon icon="hugeicons:shield-key" width="18" height="18" />
@@ -128,6 +176,108 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Vault Context Switcher -->
+        <div class="mb-4">
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                    aria-label="Switch vault context"
+                    class="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-2.5 py-2 text-left transition-all hover:border-indigo-300 dark:hover:border-indigo-500/40 shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg {activeContextMeta.isOrg
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                            : 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'}">
+                            <Icon icon={activeContextMeta.icon} width="15" height="15" />
+                        </div>
+                        <div class="min-w-0">
+                            <div class="truncate text-xs font-semibold text-slate-900 dark:text-white">
+                                {activeContextMeta.label}
+                            </div>
+                            <div class="truncate text-[10px] text-slate-400 dark:text-slate-500">
+                                {activeContextMeta.subtitle}
+                            </div>
+                        </div>
+                    </div>
+                    <Icon
+                        icon="hugeicons:unfold-more"
+                        width="14"
+                        height="14"
+                        class="shrink-0 text-slate-400"
+                    />
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        sideOffset={6}
+                        align="start"
+                        class="z-50 w-60 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 shadow-xl focus:outline-none"
+                    >
+                        <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Vault Context
+                        </div>
+
+                        <DropdownMenu.Item
+                            onSelect={() => switchVaultContext("ALL")}
+                            class="flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer focus:outline-none"
+                        >
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <Icon icon="hugeicons:layers-01" width="16" height="16" class="text-indigo-500 shrink-0" />
+                                <div class="min-w-0">
+                                    <div class="font-semibold">All Vaults</div>
+                                    <div class="text-[10px] text-slate-400">Personal & organizations</div>
+                                </div>
+                            </div>
+                            {#if $organizationStore.vaultContext === "ALL"}
+                                <Icon icon="hugeicons:tick-02" width="14" height="14" class="text-indigo-500 shrink-0" />
+                            {/if}
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item
+                            onSelect={() => switchVaultContext("PERSONAL")}
+                            class="flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer focus:outline-none"
+                        >
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <Icon icon="hugeicons:user-shield-01" width="16" height="16" class="text-indigo-500 shrink-0" />
+                                <div class="min-w-0">
+                                    <div class="font-semibold">Personal Vault</div>
+                                    <div class="text-[10px] text-slate-400">Private items only</div>
+                                </div>
+                            </div>
+                            {#if $organizationStore.vaultContext === "PERSONAL"}
+                                <Icon icon="hugeicons:tick-02" width="14" height="14" class="text-indigo-500 shrink-0" />
+                            {/if}
+                        </DropdownMenu.Item>
+
+                        {#if $organizationStore.organizations.length > 0}
+                            <DropdownMenu.Separator class="my-1 h-px bg-slate-100 dark:bg-slate-800" />
+                            <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Organizations
+                            </div>
+                            {#each $organizationStore.organizations as org (org.id)}
+                                <DropdownMenu.Item
+                                    onSelect={() => switchVaultContext(org.id)}
+                                    class="flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer focus:outline-none"
+                                >
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <Icon icon="hugeicons:building-03" width="16" height="16" class="text-emerald-500 shrink-0" />
+                                        <div class="min-w-0">
+                                            <div class="truncate font-semibold">{org.name}</div>
+                                            <div class="text-[10px] text-slate-400">
+                                                {org.currentUserMembership?.role ?? "MEMBER"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {#if $organizationStore.vaultContext === org.id}
+                                        <Icon icon="hugeicons:tick-02" width="14" height="14" class="text-emerald-500 shrink-0" />
+                                    {/if}
+                                </DropdownMenu.Item>
+                            {/each}
+                        {/if}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
         </div>
 
         <!-- Primary Navigation -->
