@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext, onMount } from "svelte";
+    import { getContext, untrack } from "svelte";
     import Icon from "@iconify/svelte";
     import { extractSymmetricKey } from "$lib/key-generation";
     import { decryptCipherForVaultContent } from "$lib/symmetric-encryption";
@@ -8,12 +8,17 @@
         allVaultItemsStore,
         categoryFilter,
         cipherStore,
+        matchesVaultContext,
+        organizationStore,
         selectedVaultItem,
+        type VaultContext,
     } from "$lib/stores";
+    import { resolveCipherSymmetricKey } from "$lib/vaults";
     import {
         CipherCategory,
         CipherType,
         VaultStatus,
+        type Cipher,
         type CipherDatabaseData,
         type CipherLoginData,
     } from "$lib/types";
@@ -64,18 +69,28 @@
     function openItem(id: string) {
         const found = $allVaultItemsStore.find((item) => item.id === id);
         if (found) {
+            if (!matchesVaultContext(found, $organizationStore.vaultContext)) {
+                organizationStore.setVaultContext("ALL");
+            }
             $categoryFilter = CipherCategory.All;
             $selectedVaultItem = found;
         }
     }
 
-    onMount(async () => {
+    let auditGeneration = 0;
+
+    async function runAudit(context: VaultContext, ciphers: Cipher[]) {
+        const currentGen = ++auditGeneration;
         loading = true;
         try {
             const sk = await extractSymmetricKey(mk, epsk);
-            const activeCiphers = $cipherStore.filter(
+            if (currentGen !== auditGeneration) return;
+
+            const activeCiphers = ciphers.filter(
                 (c) =>
-                    c.type === CipherType.LOGIN || c.type === CipherType.DATABASE
+                    (c.type === CipherType.LOGIN ||
+                        c.type === CipherType.DATABASE) &&
+                    matchesVaultContext(c, context)
             );
 
             const passwordCounts = new Map<string, number>();
@@ -89,39 +104,62 @@
             }> = [];
 
             for (const c of activeCiphers) {
-                const detail = await decryptCipherForVaultContent<any>(sk, c);
-                if (detail.status !== VaultStatus.ACTIVE) continue;
+                try {
+                    const effectiveSk = resolveCipherSymmetricKey(c, sk);
+                    const detail = await decryptCipherForVaultContent<any>(
+                        effectiveSk,
+                        c
+                    );
+                    if (currentGen !== auditGeneration) return;
+                    if (detail.status !== VaultStatus.ACTIVE) continue;
 
-                if (c.type === CipherType.LOGIN) {
-                    const d = detail.data as CipherLoginData;
-                    const pw = d.password || "";
-                    if (pw) {
-                        passwordCounts.set(pw, (passwordCounts.get(pw) || 0) + 1);
+                    if (c.type === CipherType.LOGIN) {
+                        const d = detail.data as CipherLoginData;
+                        const pw = d.password || "";
+                        if (pw) {
+                            passwordCounts.set(
+                                pw,
+                                (passwordCounts.get(pw) || 0) + 1
+                            );
+                        }
+                        tempDetails.push({
+                            id: detail.id,
+                            name: detail.name,
+                            subtitle: d.username || d.url || "Login",
+                            type: CipherType.LOGIN,
+                            password: pw,
+                            hasTotp: Boolean(
+                                d.authenticatorKey &&
+                                    d.authenticatorKey.trim() !== ""
+                            ),
+                        });
+                    } else if (c.type === CipherType.DATABASE) {
+                        const d = detail.data as CipherDatabaseData;
+                        const pw = d.password || "";
+                        if (pw) {
+                            passwordCounts.set(
+                                pw,
+                                (passwordCounts.get(pw) || 0) + 1
+                            );
+                        }
+                        tempDetails.push({
+                            id: detail.id,
+                            name: detail.name,
+                            subtitle: d.engine || "Database",
+                            type: CipherType.DATABASE,
+                            password: pw,
+                            hasTotp: true,
+                        });
                     }
-                    tempDetails.push({
-                        id: detail.id,
-                        name: detail.name,
-                        subtitle: d.username || d.url || "Login",
-                        type: CipherType.LOGIN,
-                        password: pw,
-                        hasTotp: Boolean(d.authenticatorKey && d.authenticatorKey.trim() !== ""),
-                    });
-                } else if (c.type === CipherType.DATABASE) {
-                    const d = detail.data as CipherDatabaseData;
-                    const pw = d.password || "";
-                    if (pw) {
-                        passwordCounts.set(pw, (passwordCounts.get(pw) || 0) + 1);
-                    }
-                    tempDetails.push({
-                        id: detail.id,
-                        name: detail.name,
-                        subtitle: d.engine || "Database",
-                        type: CipherType.DATABASE,
-                        password: pw,
-                        hasTotp: true,
-                    });
+                } catch (err) {
+                    console.error(
+                        "Failed to decrypt cipher in Watchtower:",
+                        err
+                    );
                 }
             }
+
+            if (currentGen !== auditGeneration) return;
 
             auditedItems = tempDetails.map((item) => {
                 const report = evaluatePasswordStrength(item.password);
@@ -134,13 +172,27 @@
                     score: report.score,
                     label: report.label,
                     isWeak: Boolean(item.password && report.score <= 2),
-                    isReused: Boolean(item.password && (passwordCounts.get(item.password) || 0) > 1),
-                    missing2FA: item.type === CipherType.LOGIN && !item.hasTotp,
+                    isReused: Boolean(
+                        item.password &&
+                            (passwordCounts.get(item.password) || 0) > 1
+                    ),
+                    missing2FA:
+                        item.type === CipherType.LOGIN && !item.hasTotp,
                 };
             });
         } finally {
-            loading = false;
+            if (currentGen === auditGeneration) {
+                loading = false;
+            }
         }
+    }
+
+    $effect(() => {
+        const ctx = $organizationStore.vaultContext;
+        const ciphers = $cipherStore;
+        untrack(() => {
+            void runAudit(ctx, ciphers);
+        });
     });
 </script>
 

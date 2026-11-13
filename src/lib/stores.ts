@@ -56,12 +56,20 @@ export const allVaultItemsStore = createEntityStore<VaultItem>();
 // Filtered vault list items for current category
 export const vaultItemStore = createEntityStore<VaultItem>();
 
-export type VaultContext = "ALL" | "PERSONAL" | string;
+export type VaultContext = "ALL" | "PERSONAL" | (string & {});
 
 export interface OrganizationState {
   organizations: Organization[];
   activeOrganizationId: string | null; // null = Personal Vault or All Vaults
   vaultContext: VaultContext;
+}
+
+function isGlobalIdForUuid(globalId: string, uuid: string): boolean {
+  try {
+    return atob(globalId) === `Organization:${uuid}`;
+  } catch {
+    return false;
+  }
 }
 
 export function matchesVaultContext(
@@ -80,18 +88,24 @@ export function matchesVaultContext(
     return true;
   }
 
-  if (item.organizationId) {
-    try {
-      const decoded = atob(context);
-      if (decoded.endsWith(`:${item.organizationId}`)) {
-        return true;
-      }
-    } catch {
-      // Ignore non-base64 context IDs
-    }
+  if (item.organizationId && isGlobalIdForUuid(context, item.organizationId)) {
+    return true;
+  }
+
+  if (
+    item.organization?.id &&
+    isGlobalIdForUuid(item.organization.id, context)
+  ) {
+    return true;
   }
 
   return false;
+}
+
+function zeroKeyBuffer(osk: SymmetricKey): void {
+  try {
+    osk.keybuffer.fill(0);
+  } catch {}
 }
 
 const createOrganizationStore = () => {
@@ -110,9 +124,7 @@ const createOrganizationStore = () => {
       const validIds = new Set(organizations.map((org) => org.id));
       for (const [id, osk] of decryptedKeys.entries()) {
         if (!validIds.has(id)) {
-          try {
-            osk.keybuffer.fill(0);
-          } catch {}
+          zeroKeyBuffer(osk);
           decryptedKeys.delete(id);
         }
       }
@@ -152,6 +164,10 @@ const createOrganizationStore = () => {
       }));
     },
     setDecryptedKey: (organizationId: string, osk: SymmetricKey) => {
+      const existing = decryptedKeys.get(organizationId);
+      if (existing && existing !== osk) {
+        zeroKeyBuffer(existing);
+      }
       decryptedKeys.set(organizationId, osk);
     },
     getDecryptedKey: (organizationId: string): SymmetricKey | undefined => {
@@ -163,17 +179,13 @@ const createOrganizationStore = () => {
     removeDecryptedKey: (organizationId: string) => {
       const osk = decryptedKeys.get(organizationId);
       if (osk) {
-        try {
-          osk.keybuffer.fill(0);
-        } catch {}
+        zeroKeyBuffer(osk);
         decryptedKeys.delete(organizationId);
       }
     },
     clear: () => {
       for (const osk of decryptedKeys.values()) {
-        try {
-          osk.keybuffer.fill(0);
-        } catch {}
+        zeroKeyBuffer(osk);
       }
       decryptedKeys.clear();
       set({

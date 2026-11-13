@@ -111,7 +111,11 @@
         }
     });
 
+    let loadGeneration = 0;
+
     export function lockVault() {
+        loadGeneration++;
+        isLoadingVault = false;
         mkState = null;
         epskState = null;
         rsaProtectedKeyState = null;
@@ -121,6 +125,7 @@
         organizationStore.clear();
         sessionStorage.removeItem("rsa_protected_key");
         localStorage.removeItem("rsa_protected_key");
+        $cipherStore = [];
         $allVaultItemsStore = [];
         $vaultItemStore = [];
         $selectedVaultItem = null;
@@ -223,9 +228,14 @@
     };
 
     const loadAllCiphers = async () => {
+        const currentGen = ++loadGeneration;
+        const isStale = () =>
+            currentGen !== loadGeneration || !isUnlock || !mkState || !epskState;
+
         isLoadingVault = true;
         try {
             const sk = await getSymmetricKey();
+            if (isStale()) return;
 
             if (rsaProtectedKeyState && !getUserRsaPrivateKey()) {
                 rsaKeyInitAttempted = true;
@@ -237,43 +247,94 @@
                         err
                     );
                 }
+                if (isStale()) return;
             }
 
             let orgsWithKeys: string[] = [];
+            const failedKeyOrgs: string[] = [];
             try {
                 const orgs = await getOrganizations();
+                if (isStale()) return;
                 organizationStore.setOrganizations(orgs);
 
                 const privateKey = await getOrAwaitUserRsaPrivateKey();
-                if (privateKey) {
-                    for (const org of orgs) {
-                        const protectedOsk =
-                            org.currentUserMembership?.protectedSymmetricKey;
-                        if (protectedOsk) {
-                            try {
-                                const osk = await decryptOrgKeyWithPrivateKey(
-                                    privateKey,
-                                    protectedOsk
-                                );
-                                organizationStore.setDecryptedKey(org.id, osk);
-                                orgsWithKeys.push(org.id);
-                            } catch (err) {
-                                console.error(
-                                    `Failed to decrypt OSK for organization ${org.name}:`,
-                                    err
-                                );
-                            }
-                        }
+                if (isStale()) return;
+
+                for (const org of orgs) {
+                    const protectedOsk =
+                        org.currentUserMembership?.protectedSymmetricKey;
+                    if (!protectedOsk) continue;
+                    if (!privateKey) {
+                        failedKeyOrgs.push(org.name);
+                        continue;
+                    }
+                    try {
+                        const osk = await decryptOrgKeyWithPrivateKey(
+                            privateKey,
+                            protectedOsk
+                        );
+                        if (isStale()) return;
+                        organizationStore.setDecryptedKey(org.id, osk);
+                        orgsWithKeys.push(org.id);
+                    } catch (err) {
+                        failedKeyOrgs.push(org.name);
+                        console.error(
+                            `Failed to decrypt OSK for organization ${org.name}:`,
+                            err
+                        );
                     }
                 }
             } catch (err) {
+                if (isStale()) return;
                 console.error("Failed to load organizations:", err);
+                toast.show({
+                    title: "Organization Load Error",
+                    description:
+                        "Failed to load organizations. Only personal items will be shown.",
+                    variant: "warning",
+                });
             }
 
-            const [personalCiphers, ...orgCipherBatches] = await Promise.all([
+            if (failedKeyOrgs.length > 0) {
+                toast.show({
+                    title: "Organization Key Unavailable",
+                    description: `Could not unlock shared vault key for: ${failedKeyOrgs.join(", ")}.`,
+                    variant: "warning",
+                });
+            }
+
+            const [personalResult, ...orgResults] = await Promise.allSettled([
                 getCiphers(null),
                 ...orgsWithKeys.map((orgId) => getCiphers(orgId)),
             ]);
+            if (isStale()) return;
+
+            if (personalResult.status === "rejected") {
+                throw personalResult.reason;
+            }
+            const personalCiphers = personalResult.value;
+
+            let failedOrgFetchCount = 0;
+            const orgCipherBatches: Array<Array<Cipher>> = [];
+            for (const res of orgResults) {
+                if (res.status === "fulfilled") {
+                    orgCipherBatches.push(res.value);
+                } else {
+                    failedOrgFetchCount++;
+                    console.error(
+                        "Failed to load organization ciphers:",
+                        res.reason
+                    );
+                }
+            }
+
+            if (failedOrgFetchCount > 0) {
+                toast.show({
+                    title: "Partial Vault Load",
+                    description: `Failed to fetch items for ${failedOrgFetchCount} organization${failedOrgFetchCount > 1 ? "s" : ""}.`,
+                    variant: "warning",
+                });
+            }
 
             const cipherMap = new Map<string, Cipher>();
             for (const c of personalCiphers) {
@@ -294,6 +355,8 @@
                 return;
             }
             const decryptedAll = await decryptCiphers($cipherStore);
+            if (isStale()) return;
+
             $allVaultItemsStore = decryptedAll;
             applyFilterFromCache(
                 decryptedAll,
@@ -302,7 +365,9 @@
                 true
             );
         } finally {
-            isLoadingVault = false;
+            if (currentGen === loadGeneration) {
+                isLoadingVault = false;
+            }
         }
     };
 
