@@ -62,6 +62,7 @@ export interface OrganizationState {
   organizations: Organization[];
   activeOrganizationId: string | null; // null = Personal Vault or All Vaults
   vaultContext: VaultContext;
+  decryptedKeyIds: string[];
 }
 
 function isGlobalIdForUuid(globalId: string, uuid: string): boolean {
@@ -70,6 +71,21 @@ function isGlobalIdForUuid(globalId: string, uuid: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Resolves an organization from a list using either its Relay GlobalID or raw UUID.
+ */
+export function findOrganizationById(
+  organizations: Organization[],
+  idOrUuid: string | null | undefined
+): Organization | null {
+  if (!idOrUuid) return null;
+  return (
+    organizations.find(
+      (org) => org.id === idOrUuid || isGlobalIdForUuid(org.id, idOrUuid)
+    ) ?? null
+  );
 }
 
 export function matchesVaultContext(
@@ -113,6 +129,7 @@ const createOrganizationStore = () => {
     organizations: [],
     activeOrganizationId: null,
     vaultContext: "ALL",
+    decryptedKeyIds: [],
   });
 
   // Decrypted Organization Symmetric Keys (OSKs) kept in memory only
@@ -145,6 +162,7 @@ const createOrganizationStore = () => {
           organizations,
           activeOrganizationId: nextActiveId,
           vaultContext: nextContext,
+          decryptedKeyIds: Array.from(decryptedKeys.keys()),
         };
       });
     },
@@ -155,6 +173,22 @@ const createOrganizationStore = () => {
         activeOrganizationId:
           context === "ALL" || context === "PERSONAL" ? null : context,
       }));
+    },
+    syncContextForItem: (organizationId: string | null) => {
+      const targetContext = organizationId ?? "PERSONAL";
+      update((state) => {
+        if (
+          state.vaultContext === "ALL" ||
+          state.vaultContext === targetContext
+        ) {
+          return state;
+        }
+        return {
+          ...state,
+          vaultContext: targetContext,
+          activeOrganizationId: organizationId,
+        };
+      });
     },
     setActiveOrganizationId: (orgId: string | null) => {
       update((state) => ({
@@ -169,6 +203,10 @@ const createOrganizationStore = () => {
         zeroKeyBuffer(existing);
       }
       decryptedKeys.set(organizationId, osk);
+      update((state) => ({
+        ...state,
+        decryptedKeyIds: Array.from(decryptedKeys.keys()),
+      }));
     },
     getDecryptedKey: (organizationId: string): SymmetricKey | undefined => {
       return decryptedKeys.get(organizationId);
@@ -181,6 +219,10 @@ const createOrganizationStore = () => {
       if (osk) {
         zeroKeyBuffer(osk);
         decryptedKeys.delete(organizationId);
+        update((state) => ({
+          ...state,
+          decryptedKeyIds: Array.from(decryptedKeys.keys()),
+        }));
       }
     },
     clear: () => {
@@ -192,6 +234,7 @@ const createOrganizationStore = () => {
         organizations: [],
         activeOrganizationId: null,
         vaultContext: "ALL",
+        decryptedKeyIds: [],
       });
     },
   };

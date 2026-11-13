@@ -66,6 +66,10 @@
     <ItemForm
         id={formId}
         bind:itemDetails={vaultItemDetail}
+        selectedOrganizationId={vaultItemDetail.organization?.id ??
+            vaultItemDetail.organizationId ??
+            null}
+        readonlyVault={true}
         onsubmit={onSave}
         {errors}
     />

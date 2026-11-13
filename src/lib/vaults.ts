@@ -1,8 +1,11 @@
 import { get } from "svelte/store";
 import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
 import {
+  activeOrganization,
   allVaultItemsStore,
   cipherStore,
+  findOrganizationById,
+  newVaultItem,
   organizationStore,
   vaultItemStore,
 } from "$lib/stores";
@@ -27,22 +30,13 @@ function lookupOrganizationKey(
   id: string
 ): { globalId: string; key: SymmetricKey } | null {
   const directKey = organizationStore.getDecryptedKey(id);
-  const orgs = get(organizationStore).organizations;
-
-  for (const org of orgs) {
-    if (org.id === id) {
-      const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
-      if (key) return { globalId: org.id, key };
-    }
-    try {
-      const decoded = atob(org.id);
-      if (decoded.endsWith(`:${id}`)) {
-        const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
-        if (key) return { globalId: org.id, key };
-      }
-    } catch {
-      // Ignore non-base64 IDs
-    }
+  const matchedOrg = findOrganizationById(
+    get(organizationStore).organizations,
+    id
+  );
+  if (matchedOrg) {
+    const key = organizationStore.getDecryptedKey(matchedOrg.id) ?? directKey;
+    if (key) return { globalId: matchedOrg.id, key };
   }
 
   if (directKey) {
@@ -87,6 +81,30 @@ export function resolveCipherSymmetricKey(
   throw new Error(
     "Organization encryption key is not available. Please unlock or reload your vault."
   );
+}
+
+/**
+ * Returns the active organization ID when its encryption key is available,
+ * otherwise falls back to null (Personal Vault).
+ */
+export function getDefaultVaultOrganizationId(): string | null {
+  const org = get(activeOrganization);
+  if (org && organizationStore.hasDecryptedKey(org.id)) {
+    return org.id;
+  }
+  return null;
+}
+
+/**
+ * Syncs the active vault context (unless viewing All Vaults) and selects
+ * the newly created vault item.
+ */
+export function handleCreatedVaultItem(
+  created: VaultItem,
+  organizationId: string | null
+): void {
+  organizationStore.syncContextForItem(organizationId);
+  newVaultItem.set(created);
 }
 
 export async function createVaultItem({
