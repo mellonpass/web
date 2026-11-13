@@ -58,6 +58,8 @@
         itemDetails={{
             name: vaultItemDetail.name,
             notes: vaultItemDetail.notes,
+            organization: vaultItemDetail.organization,
+            organizationId: vaultItemDetail.organizationId,
         }}
         itemHistory={{
             created: vaultItemDetail.created,

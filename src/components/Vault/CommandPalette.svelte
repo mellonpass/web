@@ -7,6 +7,8 @@
         categoryFilter,
         isCommandPaletteOpen,
         isPasswordGeneratorOpen,
+        matchesVaultContext,
+        organizationStore,
         selectedVaultItem,
     } from "$lib/stores";
     import { CipherCategory, VaultStatus, type VaultItem } from "$lib/types";
@@ -128,6 +130,9 @@
     });
 
     function selectVaultItemFromPalette(item: VaultItem) {
+        if (!matchesVaultContext(item, $organizationStore.vaultContext)) {
+            organizationStore.setVaultContext("ALL");
+        }
         $categoryFilter = CipherCategory.All;
         $selectedVaultItem = item;
         $isCommandPaletteOpen = false;

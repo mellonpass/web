@@ -13,9 +13,11 @@
 
     import {
         activeAddModal,
+        activeOrganization,
         categoryFilter,
         isCommandPaletteOpen,
         isPasswordGeneratorOpen,
+        organizationStore,
         searchFilter,
         selectedVaultItem,
         vaultItemStore,
@@ -226,11 +228,22 @@
                         : 'flex'}"
                 >
                     <!-- List Header -->
-                    <div class="flex h-13 shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 px-4">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            {categoryLabels[$categoryFilter] ?? "Vault Items"}
-                        </span>
-                        <span class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    <div class="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800/80 px-4">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="truncate text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                {categoryLabels[$categoryFilter] ?? "Vault Items"}
+                            </span>
+                            {#if $organizationStore.vaultContext === "PERSONAL"}
+                                <span class="rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300 shrink-0">
+                                    Personal
+                                </span>
+                            {:else if $activeOrganization}
+                                <span class="max-w-[7.5rem] truncate rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 shrink-0">
+                                    {$activeOrganization.name}
+                                </span>
+                            {/if}
+                        </div>
+                        <span class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                             {vaultItems.length}
                         </span>
                     </div>
@@ -281,6 +294,16 @@
                                                             ? 'text-amber-300'
                                                             : 'text-amber-400'}"
                                                     />
+                                                {/if}
+                                                {#if item.organization?.name}
+                                                    <span
+                                                        class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shrink-0 {isSelected
+                                                            ? 'bg-white/20 text-white'
+                                                            : 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'}"
+                                                    >
+                                                        <Icon icon="hugeicons:building-03" width="10" height="10" />
+                                                        <span class="max-w-[5rem] truncate">{item.organization.name}</span>
+                                                    </span>
                                                 {/if}
                                             </div>
                                             {#if item.content}
