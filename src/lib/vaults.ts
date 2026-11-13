@@ -23,6 +23,35 @@ import {
 } from "$lib/types";
 import { createCipher } from "./services/ciphers";
 
+function lookupOrganizationKey(
+  id: string
+): { globalId: string; key: SymmetricKey } | null {
+  const directKey = organizationStore.getDecryptedKey(id);
+  const orgs = get(organizationStore).organizations;
+
+  for (const org of orgs) {
+    if (org.id === id) {
+      const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
+      if (key) return { globalId: org.id, key };
+    }
+    try {
+      const decoded = atob(org.id);
+      if (decoded.endsWith(`:${id}`)) {
+        const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
+        if (key) return { globalId: org.id, key };
+      }
+    } catch {
+      // Ignore non-base64 IDs
+    }
+  }
+
+  if (directKey) {
+    return { globalId: id, key: directKey };
+  }
+
+  return null;
+}
+
 /**
  * Resolves the appropriate SymmetricKey for a cipher or vault item.
  * Returns the organization's decrypted OSK when the item belongs to an organization,
@@ -46,30 +75,13 @@ export function resolveCipherSymmetricKey(
   }
 
   if (orgGlobalId) {
-    const keyByGlobalId = organizationStore.getDecryptedKey(orgGlobalId);
-    if (keyByGlobalId) return keyByGlobalId;
+    const resolved = lookupOrganizationKey(orgGlobalId);
+    if (resolved) return resolved.key;
   }
 
   if (orgRawId) {
-    const keyByRawId = organizationStore.getDecryptedKey(orgRawId);
-    if (keyByRawId) return keyByRawId;
-
-    const orgs = get(organizationStore).organizations;
-    for (const org of orgs) {
-      if (org.id === orgRawId) {
-        const key = organizationStore.getDecryptedKey(org.id);
-        if (key) return key;
-      }
-      try {
-        const decoded = atob(org.id);
-        if (decoded.endsWith(`:${orgRawId}`)) {
-          const key = organizationStore.getDecryptedKey(org.id);
-          if (key) return key;
-        }
-      } catch {
-        // Ignore non-base64 IDs
-      }
-    }
+    const resolved = lookupOrganizationKey(orgRawId);
+    if (resolved) return resolved.key;
   }
 
   throw new Error(
@@ -97,12 +109,18 @@ export async function createVaultItem({
   organizationId?: string | null;
 }): Promise<VaultItem> {
   const sk = await extractSymmetricKey(mk, epsk);
-  const targetSk = organizationId
-    ? resolveCipherSymmetricKey(
-        { organization: { id: organizationId }, organizationId },
-        sk
-      )
-    : sk;
+  let targetSk = sk;
+  let resolvedOrganizationId: string | null = null;
+  if (organizationId) {
+    const resolved = lookupOrganizationKey(organizationId);
+    if (!resolved) {
+      throw new Error(
+        "Organization encryption key is not available. Please unlock or reload your vault."
+      );
+    }
+    targetSk = resolved.key;
+    resolvedOrganizationId = resolved.globalId;
+  }
   const ck = await generateCipherKey();
 
   const cipher = await encryptCipher({
@@ -116,8 +134,8 @@ export async function createVaultItem({
     data: itemData,
   });
 
-  if (organizationId) {
-    cipher.organizationId = organizationId;
+  if (resolvedOrganizationId) {
+    cipher.organizationId = resolvedOrganizationId;
   }
 
   const response = await createCipher(cipher);
@@ -144,7 +162,10 @@ export async function loadVaultItemDetailFromStore<T extends CipherData>(
   cipherId: string,
   sk: SymmetricKey
 ): Promise<VaultItemDetail<T>> {
-  const encryptedCipher = cipherStore.get(cipherId)!;
+  const encryptedCipher = cipherStore.get(cipherId);
+  if (!encryptedCipher) {
+    throw new Error(`Cipher ${cipherId} not found in store.`);
+  }
   const effectiveSk = resolveCipherSymmetricKey(encryptedCipher, sk);
   return await decryptCipherForVaultContent<T>(effectiveSk, encryptedCipher);
 }
@@ -165,7 +186,12 @@ export async function encryptVaultDetailForUpdate<T extends CipherData>({
     ...vaultDetail,
   };
   const _cipher: Cipher = await encryptCipher({ ...baseCipherData });
-  return { ..._cipher, id: vaultDetail.id } as Cipher;
+  return {
+    ..._cipher,
+    id: vaultDetail.id,
+    organization: vaultDetail.organization,
+    organizationId: vaultDetail.organizationId,
+  } as Cipher;
 }
 
 /**
