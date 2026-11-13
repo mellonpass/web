@@ -10,7 +10,7 @@ export const HTTPStatus = {
 };
 
 function getCookie(name: string) {
-  if (typeof document === 'undefined') return undefined;
+  if (typeof document === "undefined") return undefined;
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop()?.split(";").shift();
@@ -32,15 +32,15 @@ export async function requests({
   headers = { "content-type": "application/json" },
   options = {},
 }: RequestArgs): Promise<any> {
-    const csrftoken = getCookie("csrftoken");
-    const mergedHeaders = {
-        ...headers,
-    };
+  const csrftoken = getCookie("csrftoken");
+  const mergedHeaders = {
+    ...headers,
+  };
 
-    if (csrftoken) {
-        // @ts-ignore
-        mergedHeaders["X-CSRFToken"] = csrftoken;
-    }
+  if (csrftoken) {
+    // @ts-ignore
+    mergedHeaders["X-CSRFToken"] = csrftoken;
+  }
 
   const response = await fetch(url, {
     method: method,
@@ -79,4 +79,13 @@ export async function gqlClient({
     headers: headers,
     options: { credentials: "include" },
   });
+}
+
+/**
+ * Throws an Error if a GraphQL response contains top-level errors.
+ */
+export function assertNoGraphQLErrors(response: any) {
+  if (response?.errors?.length) {
+    throw new Error(response.errors[0]?.message || "GraphQL request failed.");
+  }
 }

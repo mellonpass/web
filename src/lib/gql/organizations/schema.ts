@@ -1,17 +1,37 @@
+const ORGANIZATION_FIELDS = `
+    id
+    name
+    created
+    updated
+    currentUserMembership {
+        id
+        email
+        role
+        status
+        protectedSymmetricKey
+    }
+`;
+
+const ORGANIZATION_MEMBER_FIELDS = `
+    id
+    email
+    role
+    status
+    publicKey
+    created
+    updated
+    user {
+        id
+        email
+        name
+        publicKey
+    }
+`;
+
 export const GET_ORGANIZATIONS = `
     query GetOrganizations {
         organizations {
-            id
-            name
-            created
-            updated
-            currentUserMembership {
-                id
-                email
-                role
-                status
-                protectedSymmetricKey
-            }
+            ${ORGANIZATION_FIELDS}
         }
     }
 `;
@@ -19,17 +39,7 @@ export const GET_ORGANIZATIONS = `
 export const GET_ORGANIZATION = `
     query GetOrganization($id: GlobalID!) {
         organization(id: $id) {
-            id
-            name
-            created
-            updated
-            currentUserMembership {
-                id
-                email
-                role
-                status
-                protectedSymmetricKey
-            }
+            ${ORGANIZATION_FIELDS}
         }
     }
 `;
@@ -37,19 +47,7 @@ export const GET_ORGANIZATION = `
 export const GET_ORGANIZATION_MEMBERS = `
     query GetOrganizationMembers($organizationId: GlobalID!) {
         organizationMembers(organizationId: $organizationId) {
-            id
-            email
-            role
-            status
-            publicKey
-            created
-            updated
-            user {
-                id
-                email
-                name
-                publicKey
-            }
+            ${ORGANIZATION_MEMBER_FIELDS}
         }
     }
 `;
@@ -57,19 +55,7 @@ export const GET_ORGANIZATION_MEMBERS = `
 export const GET_PENDING_MEMBERS = `
     query GetPendingMembers($organizationId: GlobalID!) {
         pendingMembers(organizationId: $organizationId) {
-            id
-            email
-            role
-            status
-            publicKey
-            created
-            updated
-            user {
-                id
-                email
-                name
-                publicKey
-            }
+            ${ORGANIZATION_MEMBER_FIELDS}
         }
     }
 `;
@@ -80,17 +66,7 @@ export const CREATE_ORGANIZATION = `
             create(input: $input) {
                 __typename
                 ... on Organization {
-                    id
-                    name
-                    created
-                    updated
-                    currentUserMembership {
-                        id
-                        email
-                        role
-                        status
-                        protectedSymmetricKey
-                    }
+                    ${ORGANIZATION_FIELDS}
                 }
                 ... on OrganizationMutateFailed {
                     message
@@ -106,19 +82,7 @@ export const INVITE_USER = `
             inviteUser(input: $input) {
                 __typename
                 ... on OrganizationMember {
-                    id
-                    email
-                    role
-                    status
-                    publicKey
-                    created
-                    updated
-                    user {
-                        id
-                        email
-                        name
-                        publicKey
-                    }
+                    ${ORGANIZATION_MEMBER_FIELDS}
                 }
                 ... on OrganizationMutateFailed {
                     message
@@ -134,12 +98,7 @@ export const ACCEPT_ORGANIZATION_INVITE = `
             acceptInvite(input: $input) {
                 __typename
                 ... on OrganizationMember {
-                    id
-                    email
-                    role
-                    status
-                    created
-                    updated
+                    ${ORGANIZATION_MEMBER_FIELDS}
                 }
                 ... on OrganizationMutateFailed {
                     message
@@ -155,19 +114,7 @@ export const CONFIRM_MEMBER = `
             confirmMember(input: $input) {
                 __typename
                 ... on OrganizationMember {
-                    id
-                    email
-                    role
-                    status
-                    publicKey
-                    created
-                    updated
-                    user {
-                        id
-                        email
-                        name
-                        publicKey
-                    }
+                    ${ORGANIZATION_MEMBER_FIELDS}
                 }
                 ... on OrganizationMutateFailed {
                     message
@@ -183,12 +130,7 @@ export const REVOKE_MEMBER = `
             revokeMember(input: $input) {
                 __typename
                 ... on OrganizationMember {
-                    id
-                    email
-                    role
-                    status
-                    created
-                    updated
+                    ${ORGANIZATION_MEMBER_FIELDS}
                 }
                 ... on OrganizationMutateFailed {
                     message

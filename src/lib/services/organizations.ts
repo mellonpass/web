@@ -9,18 +9,12 @@ import {
   INVITE_USER,
   REVOKE_MEMBER,
 } from "$lib/gql/organizations/schema";
-import { gqlClient } from "$lib/requests";
+import { assertNoGraphQLErrors, gqlClient } from "$lib/requests";
 import {
   OrganizationMemberRole,
   type Organization,
   type OrganizationMember,
 } from "$lib/types";
-
-function assertNoGraphQLErrors(response: any) {
-  if (response?.errors?.length) {
-    throw new Error(response.errors[0]?.message || "GraphQL request failed.");
-  }
-}
 
 function unwrapMutationPayload<T>(payload: any, expectedTypename: string): T {
   if (!payload || payload.__typename !== expectedTypename) {
