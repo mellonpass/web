@@ -6,11 +6,11 @@ import {
   UPDATE_CIPHER,
   UPDATE_CIPHER_TO_DELETE,
 } from "$lib/gql/ciphers/schema";
-import { gqlClient } from "$lib/requests";
+import { assertNoGraphQLErrors, gqlClient } from "$lib/requests";
 import { type Cipher } from "$lib/types";
 
 export const createCipher = async (cipher: Cipher) => {
-  return await gqlClient({
+  const response = await gqlClient({
     query: CREATE_CIPHER,
     variables: {
       input: {
@@ -21,17 +21,29 @@ export const createCipher = async (cipher: Cipher) => {
         notes: cipher.notes,
         isFavorite: cipher.isFavorite,
         status: cipher.status,
+        ...(cipher.organizationId
+          ? { organizationId: cipher.organizationId }
+          : {}),
       },
     },
   });
+  assertNoGraphQLErrors(response);
+  return response;
 };
 
-export const getCiphers = async (): Promise<Array<Cipher>> => {
+export const getCiphers = async (
+  organizationId?: string | null
+): Promise<Array<Cipher>> => {
   let result: Array<Cipher> = [];
   let hasNextPage = true;
-  const variables = {
+  const variables: {
+    first: number;
+    after?: string;
+    organizationId?: string;
+  } = {
     first: 100,
     after: undefined,
+    ...(organizationId ? { organizationId } : {}),
   };
 
   while (hasNextPage) {
@@ -39,8 +51,15 @@ export const getCiphers = async (): Promise<Array<Cipher>> => {
       query: GET_CIPHERS,
       variables: variables,
     });
-    const edges = response.data.ciphers.edges;
-    const pageInfo = response.data.ciphers.pageInfo;
+    assertNoGraphQLErrors(response);
+
+    const ciphersConnection = response?.data?.ciphers;
+    if (!ciphersConnection) {
+      throw new Error("Unexpected empty response when fetching ciphers.");
+    }
+
+    const edges = ciphersConnection.edges;
+    const pageInfo = ciphersConnection.pageInfo;
 
     variables.after = pageInfo.endCursor;
     hasNextPage = pageInfo.hasNextPage;
@@ -58,11 +77,12 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
     query: GET_CIPHER_DETAIL,
     variables: { id: id },
   });
+  assertNoGraphQLErrors(response);
   return response.data.cipher as Cipher;
 };
 
 export const updateCipher = async (cipher: Cipher) => {
-  return await gqlClient({
+  const response = await gqlClient({
     query: UPDATE_CIPHER,
     variables: {
       input: {
@@ -76,10 +96,12 @@ export const updateCipher = async (cipher: Cipher) => {
       },
     },
   });
+  assertNoGraphQLErrors(response);
+  return response;
 };
 
 export const updateCipherToDelete = async (cipher: Cipher) => {
-  return await gqlClient({
+  const response = await gqlClient({
     query: UPDATE_CIPHER_TO_DELETE,
     variables: {
       input: {
@@ -93,10 +115,12 @@ export const updateCipherToDelete = async (cipher: Cipher) => {
       },
     },
   });
+  assertNoGraphQLErrors(response);
+  return response;
 };
 
 export const restoreCipherFromDelete = async (cipher: Cipher) => {
-  return await gqlClient({
+  const response = await gqlClient({
     query: RESTORE_CIPHER_FROM_DELETE,
     variables: {
       input: {
@@ -110,4 +134,6 @@ export const restoreCipherFromDelete = async (cipher: Cipher) => {
       },
     },
   });
+  assertNoGraphQLErrors(response);
+  return response;
 };

@@ -1,7 +1,9 @@
+import { get } from "svelte/store";
 import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
 import {
   allVaultItemsStore,
   cipherStore,
+  organizationStore,
   vaultItemStore,
 } from "$lib/stores";
 import {
@@ -21,6 +23,72 @@ import {
 } from "$lib/types";
 import { createCipher } from "./services/ciphers";
 
+function lookupOrganizationKey(
+  id: string
+): { globalId: string; key: SymmetricKey } | null {
+  const directKey = organizationStore.getDecryptedKey(id);
+  const orgs = get(organizationStore).organizations;
+
+  for (const org of orgs) {
+    if (org.id === id) {
+      const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
+      if (key) return { globalId: org.id, key };
+    }
+    try {
+      const decoded = atob(org.id);
+      if (decoded.endsWith(`:${id}`)) {
+        const key = organizationStore.getDecryptedKey(org.id) ?? directKey;
+        if (key) return { globalId: org.id, key };
+      }
+    } catch {
+      // Ignore non-base64 IDs
+    }
+  }
+
+  if (directKey) {
+    return { globalId: id, key: directKey };
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the appropriate SymmetricKey for a cipher or vault item.
+ * Returns the organization's decrypted OSK when the item belongs to an organization,
+ * or falls back to the user's personal SymmetricKey for personal items.
+ */
+export function resolveCipherSymmetricKey(
+  item:
+    | {
+        organization?: { id: string } | null;
+        organizationId?: string | null;
+      }
+    | null
+    | undefined,
+  personalSk: SymmetricKey
+): SymmetricKey {
+  const orgGlobalId = item?.organization?.id;
+  const orgRawId = item?.organizationId;
+
+  if (!orgGlobalId && !orgRawId) {
+    return personalSk;
+  }
+
+  if (orgGlobalId) {
+    const resolved = lookupOrganizationKey(orgGlobalId);
+    if (resolved) return resolved.key;
+  }
+
+  if (orgRawId) {
+    const resolved = lookupOrganizationKey(orgRawId);
+    if (resolved) return resolved.key;
+  }
+
+  throw new Error(
+    "Organization encryption key is not available. Please unlock or reload your vault."
+  );
+}
+
 export async function createVaultItem({
   mk,
   epsk,
@@ -29,6 +97,7 @@ export async function createVaultItem({
   content,
   itemData,
   cipherType,
+  organizationId = null,
 }: {
   mk: string;
   epsk: string;
@@ -37,12 +106,25 @@ export async function createVaultItem({
   content: string;
   cipherType: CipherType;
   itemData?: CipherData;
+  organizationId?: string | null;
 }): Promise<VaultItem> {
   const sk = await extractSymmetricKey(mk, epsk);
+  let targetSk = sk;
+  let resolvedOrganizationId: string | null = null;
+  if (organizationId) {
+    const resolved = lookupOrganizationKey(organizationId);
+    if (!resolved) {
+      throw new Error(
+        "Organization encryption key is not available. Please unlock or reload your vault."
+      );
+    }
+    targetSk = resolved.key;
+    resolvedOrganizationId = resolved.globalId;
+  }
   const ck = await generateCipherKey();
 
   const cipher = await encryptCipher({
-    sk: sk,
+    sk: targetSk,
     ck: ck,
     name: name,
     notes: notes,
@@ -52,13 +134,20 @@ export async function createVaultItem({
     data: itemData,
   });
 
+  if (resolvedOrganizationId) {
+    cipher.organizationId = resolvedOrganizationId;
+  }
+
   const response = await createCipher(cipher);
 
   if (response.data.cipher.create.__typename == "Cipher") {
     const createdCipher = response.data.cipher.create as Cipher;
     cipherStore.add(createdCipher);
 
-    const createdVaultItem = await decryptCipherForVaultItem(sk, createdCipher);
+    const createdVaultItem = await decryptCipherForVaultItem(
+      targetSk,
+      createdCipher
+    );
     if (!createdVaultItem.content && content) {
       createdVaultItem.content = content;
     }
@@ -73,8 +162,12 @@ export async function loadVaultItemDetailFromStore<T extends CipherData>(
   cipherId: string,
   sk: SymmetricKey
 ): Promise<VaultItemDetail<T>> {
-  const encryptedCipher = cipherStore.get(cipherId)!;
-  return await decryptCipherForVaultContent<T>(sk, encryptedCipher);
+  const encryptedCipher = cipherStore.get(cipherId);
+  if (!encryptedCipher) {
+    throw new Error(`Cipher ${cipherId} not found in store.`);
+  }
+  const effectiveSk = resolveCipherSymmetricKey(encryptedCipher, sk);
+  return await decryptCipherForVaultContent<T>(effectiveSk, encryptedCipher);
 }
 
 export async function encryptVaultDetailForUpdate<T extends CipherData>({
@@ -84,15 +177,21 @@ export async function encryptVaultDetailForUpdate<T extends CipherData>({
   vaultDetail: VaultItemDetail<T>;
   sk: SymmetricKey;
 }): Promise<Cipher> {
+  const effectiveSk = resolveCipherSymmetricKey(vaultDetail, sk);
   const ck = await generateCipherKey();
 
   const baseCipherData = {
-    sk: sk,
+    sk: effectiveSk,
     ck: ck,
     ...vaultDetail,
   };
   const _cipher: Cipher = await encryptCipher({ ...baseCipherData });
-  return { ..._cipher, id: vaultDetail.id } as Cipher;
+  return {
+    ..._cipher,
+    id: vaultDetail.id,
+    organization: vaultDetail.organization,
+    organizationId: vaultDetail.organizationId,
+  } as Cipher;
 }
 
 /**
@@ -109,11 +208,12 @@ export async function handleCipherResponse<T extends CipherData>(
   }
 
   const cipher = payload as Cipher;
+  const effectiveSk = resolveCipherSymmetricKey(cipher, sk);
   cipherStore.edit(cipher);
 
-  const updatedVaultItem = await decryptCipherForVaultItem(sk, cipher);
+  const updatedVaultItem = await decryptCipherForVaultItem(effectiveSk, cipher);
   allVaultItemsStore.edit(updatedVaultItem);
   vaultItemStore.edit(updatedVaultItem);
 
-  return await decryptCipherForVaultContent<T>(sk, cipher);
+  return await decryptCipherForVaultContent<T>(effectiveSk, cipher);
 }

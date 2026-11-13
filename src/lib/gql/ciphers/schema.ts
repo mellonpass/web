@@ -15,6 +15,11 @@ export const CREATE_CIPHER = `
                     deleteOn
                     created
                     updated
+                    organizationId
+                    organization {
+                        id
+                        name
+                    }
                 }
                 ... on CipherCreateFailed {
                     message
@@ -41,6 +46,11 @@ export const UPDATE_CIPHER = `
                     deleteOn
                     created
                     updated
+                    organizationId
+                    organization {
+                        id
+                        name
+                    }
                 }
                 ... on CipherUpdateFailed {
                     message
@@ -67,6 +77,11 @@ export const UPDATE_CIPHER_TO_DELETE = `
                     deleteOn
                     created
                     updated
+                    organizationId
+                    organization {
+                        id
+                        name
+                    }
                 }
                 ... on CipherUpdateFailed {
                     message
@@ -93,6 +108,11 @@ export const RESTORE_CIPHER_FROM_DELETE = `
                     deleteOn
                     created
                     updated
+                    organizationId
+                    organization {
+                        id
+                        name
+                    }
                 }
                 ... on CipherUpdateFailed {
                     __typename
@@ -104,8 +124,8 @@ export const RESTORE_CIPHER_FROM_DELETE = `
 `;
 
 export const GET_CIPHERS = `
-    query GetGiphers($first: Int!, $after: String) {
-        ciphers(first: $first, after: $after) {
+    query GetGiphers($first: Int!, $after: String, $organizationId: GlobalID) {
+        ciphers(first: $first, after: $after, organizationId: $organizationId) {
             edges {
                 cursor
                 node {
@@ -120,6 +140,11 @@ export const GET_CIPHERS = `
                     deleteOn
                     created
                     updated
+                    organizationId
+                    organization {
+                        id
+                        name
+                    }
                 }
             }
             pageInfo {
@@ -144,6 +169,11 @@ export const GET_CIPHER_DETAIL = `
             deleteOn
             created
             updated
+            organizationId
+            organization {
+                id
+                name
+            }
         }
     }
 `;
