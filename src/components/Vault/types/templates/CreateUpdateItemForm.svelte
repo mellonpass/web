@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { organizationStore } from "$lib/stores";
     import type { FormCallBack, FormItemDetails } from "$lib/types";
     import Icon from "@iconify/svelte";
     import { marked } from "marked";
@@ -10,16 +11,33 @@
     let {
         id,
         itemDetails = $bindable(),
+        selectedOrganizationId = $bindable<string | null>(null),
+        readonlyVault = false,
         onsubmit,
         errors,
         children = null,
     }: {
         id: string;
         itemDetails: FormItemDetails;
+        selectedOrganizationId?: string | null;
+        readonlyVault?: boolean;
         onsubmit: FormCallBack;
         errors: Array<string>;
         children?: any;
     } = $props();
+
+    const selectedOrgName = $derived.by(() => {
+        if (itemDetails.organization?.name) {
+            return itemDetails.organization.name;
+        }
+        if (selectedOrganizationId) {
+            const found = $organizationStore.organizations.find(
+                (org) => org.id === selectedOrganizationId
+            );
+            if (found) return found.name;
+        }
+        return null;
+    });
 
     let invalidInput = $state(false);
     let previewNotes = $state(false);
@@ -48,6 +66,65 @@
 </script>
 
 <form {id} {onsubmit} class="space-y-5">
+    <!-- Vault Ownership Section -->
+    <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-2xs">
+        <div class="flex items-center justify-between gap-2">
+            <label
+                for="{id}-vault-select"
+                class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+            >
+                Vault
+            </label>
+            {#if readonlyVault}
+                <span class="text-[11px] font-medium text-slate-400">Read-only</span>
+            {/if}
+        </div>
+
+        {#if readonlyVault}
+            <div class="mt-2 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold {selectedOrgName || selectedOrganizationId || itemDetails.organizationId
+                ? 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200'}">
+                <Icon
+                    icon={selectedOrgName || selectedOrganizationId || itemDetails.organizationId
+                        ? "hugeicons:building-03"
+                        : "hugeicons:user-shield-01"}
+                    width="15"
+                    height="15"
+                />
+                <span>
+                    {selectedOrgName
+                        ? `Organization: ${selectedOrgName}`
+                        : selectedOrganizationId || itemDetails.organizationId
+                          ? "Organization: Shared Organization"
+                          : "Personal Vault"}
+                </span>
+            </div>
+        {:else}
+            <div class="mt-2">
+                <select
+                    id="{id}-vault-select"
+                    aria-label="Vault"
+                    value={selectedOrganizationId ?? ""}
+                    onchange={(e) => {
+                        const val = e.currentTarget.value;
+                        selectedOrganizationId = val ? val : null;
+                    }}
+                    class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3.5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white transition-colors focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                    <option value="">Personal Vault (Private)</option>
+                    {#each $organizationStore.organizations as org (org.id)}
+                        <option value={org.id}>Organization: {org.name}</option>
+                    {/each}
+                </select>
+                <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    {selectedOrganizationId
+                        ? "Encrypted with the selected organization's shared symmetric key."
+                        : "Encrypted with your personal vault symmetric key."}
+                </p>
+            </div>
+        {/if}
+    </div>
+
     <!-- Item Title Section -->
     <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-2xs">
         <label

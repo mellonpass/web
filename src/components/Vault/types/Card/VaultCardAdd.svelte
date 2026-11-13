@@ -5,7 +5,12 @@
     import CardForm from "$components/Vault/types/Card/_CardForm.svelte";
     import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    import { activeAddModal, newVaultItem } from "$lib/stores";
+    import {
+        activeAddModal,
+        activeOrganization,
+        newVaultItem,
+        organizationStore,
+    } from "$lib/stores";
     import { CipherType, type CipherCardData } from "$lib/types";
     import { createVaultItem } from "$lib/vaults";
     import { toast } from "$lib/toast.svelte";
@@ -31,6 +36,9 @@
         expYear: "",
         securityCode: "",
     });
+    let selectedOrganizationId: string | null = $state(
+        $activeOrganization?.id ?? null
+    );
     let errors: Array<string> = $state([]);
     let saving = $state(false);
 
@@ -46,7 +54,7 @@
         saving = true;
         errors = [];
         try {
-            $newVaultItem = await createVaultItem({
+            const created = await createVaultItem({
                 mk: mk,
                 epsk: epsk,
                 name: itemDetails.name,
@@ -54,7 +62,18 @@
                 content: itemData.brand || itemData.cardholderName,
                 itemData: itemData,
                 cipherType: CipherType.CARD,
+                organizationId: selectedOrganizationId,
             });
+            if (
+                $organizationStore.vaultContext !== "ALL" &&
+                $organizationStore.vaultContext !==
+                    (selectedOrganizationId ?? "PERSONAL")
+            ) {
+                organizationStore.setVaultContext(
+                    selectedOrganizationId ?? "PERSONAL"
+                );
+            }
+            $newVaultItem = created;
             toast.show({
                 title: `"${itemDetails.name}" saved to vault`,
                 variant: "success",
@@ -69,7 +88,13 @@
 </script>
 
 <div class="flex-1 overflow-y-auto px-6 py-4">
-    <ItemForm id="cardForm" onsubmit={onSubmit} bind:itemDetails {errors}>
+    <ItemForm
+        id="cardForm"
+        onsubmit={onSubmit}
+        bind:itemDetails
+        bind:selectedOrganizationId
+        {errors}
+    >
         <CardForm title="Card Details" bind:data={itemData} />
     </ItemForm>
 </div>
