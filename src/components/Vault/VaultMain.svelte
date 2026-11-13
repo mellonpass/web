@@ -8,6 +8,9 @@
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import VaultWatchtower from "$components/Vault/VaultWatchtower.svelte";
     import CommandPalette from "$components/Vault/CommandPalette.svelte";
+    import OrganizationAcceptInviteModal from "$components/Vault/OrganizationAcceptInviteModal.svelte";
+    import OrganizationAdminModal from "$components/Vault/OrganizationAdminModal.svelte";
+    import OrganizationCreateModal from "$components/Vault/OrganizationCreateModal.svelte";
     import PasswordGeneratorModal from "$components/ui/PasswordGeneratorModal.svelte";
     import ItemAvatar from "$components/ui/ItemAvatar.svelte";
 
@@ -414,3 +417,6 @@
 
 <CommandPalette {onLockVault} />
 <PasswordGeneratorModal bind:open={$isPasswordGeneratorOpen} />
+<OrganizationCreateModal />
+<OrganizationAcceptInviteModal />
+<OrganizationAdminModal />

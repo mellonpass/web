@@ -5,7 +5,10 @@
         activeAddModal,
         allVaultItemsStore,
         categoryFilter,
+        isAcceptInviteModalOpen,
         isCommandPaletteOpen,
+        isCreateOrgModalOpen,
+        isOrgAdminModalOpen,
         isPasswordGeneratorOpen,
         matchesVaultContext,
         organizationStore,
@@ -82,6 +85,36 @@
             },
         },
         {
+            id: "new-org",
+            label: "Create New Organization",
+            icon: "hugeicons:building-03",
+            shortcut: "O C",
+            action: () => {
+                $isCommandPaletteOpen = false;
+                $isCreateOrgModalOpen = true;
+            },
+        },
+        {
+            id: "accept-invite",
+            label: "Accept Organization Invite",
+            icon: "hugeicons:mail-open-02",
+            shortcut: "O A",
+            action: () => {
+                $isCommandPaletteOpen = false;
+                $isAcceptInviteModalOpen = true;
+            },
+        },
+        {
+            id: "manage-org",
+            label: "Manage Organization Members",
+            icon: "hugeicons:user-group",
+            shortcut: "O M",
+            action: () => {
+                $isCommandPaletteOpen = false;
+                $isOrgAdminModalOpen = true;
+            },
+        },
+        {
             id: "generator",
             label: "Open Password Generator",
             icon: "hugeicons:magic-wand-01",
@@ -125,8 +158,15 @@
 
     const filteredActions = $derived.by(() => {
         const q = query.trim().toLowerCase();
-        if (!q) return quickActions;
-        return quickActions.filter((a) => a.label.toLowerCase().includes(q));
+        const availableActions = quickActions.filter(
+            (a) =>
+                a.id !== "manage-org" ||
+                $organizationStore.organizations.length > 0
+        );
+        if (!q) return availableActions;
+        return availableActions.filter((a) =>
+            a.label.toLowerCase().includes(q)
+        );
     });
 
     function selectVaultItemFromPalette(item: VaultItem) {
