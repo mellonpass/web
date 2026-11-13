@@ -5,14 +5,13 @@
     import DatabaseForm from "$components/Vault/types/Database/_DatabaseForm.svelte";
     import ItemForm from "$components/Vault/types/templates/CreateUpdateItemForm.svelte";
 
-    import {
-        activeAddModal,
-        activeOrganization,
-        newVaultItem,
-        organizationStore,
-    } from "$lib/stores";
+    import { activeAddModal } from "$lib/stores";
     import { CipherType, type CipherDatabaseData } from "$lib/types";
-    import { createVaultItem } from "$lib/vaults";
+    import {
+        createVaultItem,
+        getDefaultVaultOrganizationId,
+        handleCreatedVaultItem,
+    } from "$lib/vaults";
     import { toast } from "$lib/toast.svelte";
 
     let {
@@ -39,7 +38,7 @@
         password: "",
     });
     let selectedOrganizationId: string | null = $state(
-        $activeOrganization?.id ?? null
+        getDefaultVaultOrganizationId()
     );
     let errors: Array<string> = $state([]);
     let saving = $state(false);
@@ -66,16 +65,7 @@
                 cipherType: CipherType.DATABASE,
                 organizationId: selectedOrganizationId,
             });
-            if (
-                $organizationStore.vaultContext !== "ALL" &&
-                $organizationStore.vaultContext !==
-                    (selectedOrganizationId ?? "PERSONAL")
-            ) {
-                organizationStore.setVaultContext(
-                    selectedOrganizationId ?? "PERSONAL"
-                );
-            }
-            $newVaultItem = created;
+            handleCreatedVaultItem(created, selectedOrganizationId);
             toast.show({
                 title: `"${itemDetails.name}" saved to vault`,
                 variant: "success",

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { organizationStore } from "$lib/stores";
+    import { findOrganizationById, organizationStore } from "$lib/stores";
     import type { FormCallBack, FormItemDetails } from "$lib/types";
     import Icon from "@iconify/svelte";
     import { marked } from "marked";
@@ -26,17 +26,22 @@
         children?: any;
     } = $props();
 
+    const unlockedOrgIds = $derived(new Set($organizationStore.decryptedKeyIds));
+    const hasAnyLockedOrg = $derived(
+        $organizationStore.organizations.some(
+            (org) => !unlockedOrgIds.has(org.id)
+        )
+    );
+
     const selectedOrgName = $derived.by(() => {
         if (itemDetails.organization?.name) {
             return itemDetails.organization.name;
         }
-        if (selectedOrganizationId) {
-            const found = $organizationStore.organizations.find(
-                (org) => org.id === selectedOrganizationId
-            );
-            if (found) return found.name;
-        }
-        return null;
+        const orgRef = selectedOrganizationId ?? itemDetails.organizationId;
+        return (
+            findOrganizationById($organizationStore.organizations, orgRef)
+                ?.name ?? null
+        );
     });
 
     let invalidInput = $state(false);
@@ -69,14 +74,18 @@
     <!-- Vault Ownership Section -->
     <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-2xs">
         <div class="flex items-center justify-between gap-2">
-            <label
-                for="{id}-vault-select"
-                class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
-            >
-                Vault
-            </label>
             {#if readonlyVault}
+                <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Vault
+                </span>
                 <span class="text-[11px] font-medium text-slate-400">Read-only</span>
+            {:else}
+                <label
+                    for="{id}-vault-select"
+                    class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                >
+                    Vault
+                </label>
             {/if}
         </div>
 
@@ -113,7 +122,10 @@
                 >
                     <option value="">Personal Vault (Private)</option>
                     {#each $organizationStore.organizations as org (org.id)}
-                        <option value={org.id}>Organization: {org.name}</option>
+                        {@const hasKey = unlockedOrgIds.has(org.id)}
+                        <option value={org.id} disabled={!hasKey}>
+                            Organization: {org.name}{hasKey ? "" : " (Key unavailable)"}
+                        </option>
                     {/each}
                 </select>
                 <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
@@ -121,6 +133,11 @@
                         ? "Encrypted with the selected organization's shared symmetric key."
                         : "Encrypted with your personal vault symmetric key."}
                 </p>
+                {#if hasAnyLockedOrg}
+                    <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                        Organizations without an unlocked encryption key are disabled. Reload or unlock your vault to access them.
+                    </p>
+                {/if}
             </div>
         {/if}
     </div>
