@@ -21,17 +21,27 @@ export const createCipher = async (cipher: Cipher) => {
         notes: cipher.notes,
         isFavorite: cipher.isFavorite,
         status: cipher.status,
+        ...(cipher.organizationId
+          ? { organizationId: cipher.organizationId }
+          : {}),
       },
     },
   });
 };
 
-export const getCiphers = async (): Promise<Array<Cipher>> => {
+export const getCiphers = async (
+  organizationId?: string | null
+): Promise<Array<Cipher>> => {
   let result: Array<Cipher> = [];
   let hasNextPage = true;
-  const variables = {
+  const variables: {
+    first: number;
+    after?: string;
+    organizationId?: string;
+  } = {
     first: 100,
     after: undefined,
+    ...(organizationId ? { organizationId } : {}),
   };
 
   while (hasNextPage) {

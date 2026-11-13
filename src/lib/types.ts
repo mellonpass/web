@@ -119,6 +119,11 @@ export enum CipherCategory {
 export interface FormItemDetails {
   name: string;
   notes: string | null;
+  organization?: {
+    id: string;
+    name: string;
+  } | null;
+  organizationId?: string | null;
 }
 
 export interface FormItemHistory {
@@ -146,12 +151,16 @@ export interface OrganizationMember {
   email: string;
   role: OrganizationMemberRole;
   status: OrganizationMemberStatus;
+  publicKey?: string | null;
   user?: {
     id: string;
     email: string;
-    name?: string;
+    name?: string | null;
+    publicKey?: string | null;
   } | null;
   protectedSymmetricKey?: string | null;
+  created?: string | Date;
+  updated?: string | Date;
 }
 
 export interface Organization {
@@ -161,6 +170,7 @@ export interface Organization {
   updated?: string | Date;
   currentUserMembership?: {
     id?: string;
+    email?: string;
     role: OrganizationMemberRole;
     status: OrganizationMemberStatus;
     protectedSymmetricKey?: string | null;
