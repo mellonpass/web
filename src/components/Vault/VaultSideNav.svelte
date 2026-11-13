@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { getContext } from "svelte";
     import Icon from "@iconify/svelte";
     import { DropdownMenu } from "bits-ui";
     import {
@@ -23,6 +24,10 @@
     }: {
         onSelectCategory?: (() => void) | undefined;
     } = $props();
+
+    const reloadVault = getContext<(() => Promise<void>) | undefined>(
+        "reloadVault"
+    );
 
     const activeContextMeta = $derived.by(() => {
         const ctx = $organizationStore.vaultContext;
@@ -314,6 +319,19 @@
                                 >
                                     <Icon icon="hugeicons:user-group" width="16" height="16" class="text-emerald-500 shrink-0" />
                                     <span>Manage Organization</span>
+                                </DropdownMenu.Item>
+                            {/if}
+
+                            {#if reloadVault}
+                                <DropdownMenu.Item
+                                    onSelect={() => {
+                                        void reloadVault();
+                                        onSelectCategory?.();
+                                    }}
+                                    class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer focus:outline-none"
+                                >
+                                    <Icon icon="hugeicons:refresh" width="16" height="16" class="text-slate-500 shrink-0" />
+                                    <span>Refresh Vaults &amp; Orgs</span>
                                 </DropdownMenu.Item>
                             {/if}
                         </DropdownMenu.Content>

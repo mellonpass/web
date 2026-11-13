@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Dialog } from "bits-ui";
     import Icon from "@iconify/svelte";
+    import { getErrorMessage } from "$lib/requests";
     import { acceptOrganizationInvite } from "$lib/services/organizations";
     import { isAcceptInviteModalOpen } from "$lib/stores";
     import { toast } from "$lib/toast.svelte";
@@ -10,9 +11,11 @@
     let submitting = $state(false);
     let errorMsg: string | null = $state(null);
     let acceptedMembership: OrganizationMember | null = $state(null);
+    let modalSession = 0;
 
     $effect(() => {
         if (!$isAcceptInviteModalOpen) {
+            modalSession++;
             inviteToken = "";
             errorMsg = null;
             submitting = false;
@@ -28,20 +31,29 @@
             return;
         }
 
+        const session = modalSession;
         submitting = true;
         errorMsg = null;
         try {
-            acceptedMembership = await acceptOrganizationInvite(trimmed);
+            const membership = await acceptOrganizationInvite(trimmed);
             toast.show({
                 title: "Invitation accepted",
                 description:
                     "An organization Owner or Admin must now confirm your membership to share the vault key.",
                 variant: "success",
             });
-        } catch (err: any) {
-            errorMsg = err?.message || "Failed to accept organization invite.";
+            if (session !== modalSession) return;
+            acceptedMembership = membership;
+        } catch (err: unknown) {
+            if (session !== modalSession) return;
+            errorMsg = getErrorMessage(
+                err,
+                "Failed to accept organization invite."
+            );
         } finally {
-            submitting = false;
+            if (session === modalSession) {
+                submitting = false;
+            }
         }
     }
 </script>

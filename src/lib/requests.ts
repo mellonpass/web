@@ -89,3 +89,20 @@ export function assertNoGraphQLErrors(response: any) {
     throw new Error(response.errors[0]?.message || "GraphQL request failed.");
   }
 }
+
+/**
+ * Extracts a human-readable message from Error instances or structured API error payloads.
+ */
+export function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (err && typeof err === "object") {
+    const record = err as Record<string, unknown>;
+    if (typeof record.message === "string" && record.message) {
+      return record.message;
+    }
+    if (typeof record.error === "string" && record.error) {
+      return record.error;
+    }
+  }
+  return fallback;
+}

@@ -5,6 +5,7 @@
         encryptOrgKeyWithPublicKey,
         generateOrganizationKey,
     } from "$lib/key-generation";
+    import { getErrorMessage } from "$lib/requests";
     import { whoami as fetchWhoami } from "$lib/services/accounts";
     import { createOrganization } from "$lib/services/organizations";
     import { isCreateOrgModalOpen, organizationStore } from "$lib/stores";
@@ -13,9 +14,11 @@
     let orgName = $state("");
     let submitting = $state(false);
     let errorMsg: string | null = $state(null);
+    let modalSession = 0;
 
     $effect(() => {
         if (!$isCreateOrgModalOpen) {
+            modalSession++;
             orgName = "";
             errorMsg = null;
             submitting = false;
@@ -59,6 +62,7 @@
             return;
         }
 
+        const session = modalSession;
         submitting = true;
         errorMsg = null;
         const osk = generateOrganizationKey();
@@ -78,26 +82,36 @@
             organizationStore.setDecryptedKey(newOrg.id, osk);
             saved = true;
 
-            organizationStore.setOrganizations([
-                ...$organizationStore.organizations,
-                newOrg,
-            ]);
-            organizationStore.setVaultContext(newOrg.id);
+            const existingOrgs = $organizationStore.organizations.filter(
+                (org) => org.id !== newOrg.id
+            );
+            organizationStore.setOrganizations([...existingOrgs, newOrg]);
 
             toast.show({
                 title: `Organization "${newOrg.name}" created`,
                 variant: "success",
             });
-            $isCreateOrgModalOpen = false;
-        } catch (err: any) {
-            errorMsg = err?.message || "Failed to create organization.";
+
+            if (session === modalSession) {
+                organizationStore.setVaultContext(newOrg.id);
+                $isCreateOrgModalOpen = false;
+            }
+        } catch (err: unknown) {
+            if (session === modalSession) {
+                errorMsg = getErrorMessage(
+                    err,
+                    "Failed to create organization."
+                );
+            }
         } finally {
             if (!saved) {
                 try {
                     osk.keybuffer.fill(0);
                 } catch {}
             }
-            submitting = false;
+            if (session === modalSession) {
+                submitting = false;
+            }
         }
     }
 </script>
