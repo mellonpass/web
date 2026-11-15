@@ -28,9 +28,11 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-### Checking, Building & Formatting
+### Testing, Checking, Building & Formatting
 
 ```sh
+npm test              # Vitest E2EE unit test suite
+npm run test:watch    # Vitest watch mode
 npm run check         # Svelte + TypeScript type check
 npm run check:watch   # Watch mode
 npm run build         # Production static SPA output in /build
@@ -111,4 +113,4 @@ src/
 - **Enforce clipboard auto-clear**: Route copying of sensitive secrets (`password`, `securityCode`, `number`, `authenticatorKey`, `notes`) through `toast.copySecret(value, label, true)` so the 30-second clipboard wipe countdown (`CLIPBOARD_CLEAR_SECONDS = 30`) is active.
 - **Rotate `CipherKey` on every edit**: Keep `encryptVaultDetailForUpdate()` generating a fresh 512-bit `CipherKey` on each item update.
 - **Static SPA mode**: All routes run client-side (`adapter-static`, no SSR); keep auth checks in `+layout.ts` / `+page.ts` loaders. Path alias `$components` maps to `src/components/`.
-- **Verification**: Always run `npm run check` and `npm run build` after changes, and verify interactive crypto flows end-to-end when modifying key derivation, worker messaging, or vault decryption.
+- **Verification**: Always run `npm test`, `npm run check`, and `npm run build` after changes, and verify interactive crypto flows end-to-end when modifying key derivation, worker messaging, or vault decryption.

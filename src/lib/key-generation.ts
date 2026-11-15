@@ -332,3 +332,27 @@ export async function decryptOrgKeyWithPrivateKey(
 
   return new SymmetricKey(new Uint8Array(decryptedBuffer));
 }
+
+export const generateLoginHash = generateLoginhash;
+
+export const generateRSAOAEPKeyPair = generateAsymmetricKeys;
+
+export async function encryptRSAPrivateKey(
+  sk: SymmetricKey,
+  privateKey: JsonWebKey
+): Promise<string> {
+  if (
+    !privateKey ||
+    typeof privateKey !== "object" ||
+    privateKey.kty !== "RSA" ||
+    !("d" in privateKey)
+  ) {
+    throw new Error("Invalid RSA private key JWK");
+  }
+  const encoder = new TextEncoder();
+  return await sk.encrypt(encoder.encode(JSON.stringify(privateKey)));
+}
+
+export const extractRSAPrivateKey = decryptPrivateKeyWithSymmetricKey;
+
+export const generateOrganizationSymmetricKey = generateOrganizationKey;
