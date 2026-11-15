@@ -8,6 +8,9 @@ const nodeEnv = (
 ).process?.env;
 if (nodeEnv) {
   nodeEnv.PUBLIC_SERVER_URL ??= "http://localhost:8000";
+  nodeEnv.PUBLIC_DEMO_MODE ??= "false";
+  nodeEnv.PUBLIC_CF_ENABLE_TURNSTILE ??= "false";
+  nodeEnv.PUBLIC_CF_TURNSTILE_SITE_KEY ??= "";
 }
 
 export default defineConfig({

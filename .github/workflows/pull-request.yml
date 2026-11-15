@@ -8,6 +8,9 @@ on:
 
 env:
   PUBLIC_SERVER_URL: "http://localhost:8000"
+  PUBLIC_DEMO_MODE: "false"
+  PUBLIC_CF_ENABLE_TURNSTILE: "false"
+  PUBLIC_CF_TURNSTILE_SITE_KEY: ""
 
 jobs:
   test:
