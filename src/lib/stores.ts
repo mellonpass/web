@@ -245,6 +245,18 @@ const createOrganizationStore = () => {
 
 export const organizationStore = createOrganizationStore();
 
+export const unlockedOrgKeysStore: Readable<ReadonlyMap<string, SymmetricKey>> =
+  derived(organizationStore, ($state) => {
+    const keys = new Map<string, SymmetricKey>();
+    for (const orgId of $state.decryptedKeyIds) {
+      const key = organizationStore.getDecryptedKey(orgId);
+      if (key) {
+        keys.set(orgId, key);
+      }
+    }
+    return keys;
+  });
+
 export const activeOrganization: Readable<Organization | null> = derived(
   organizationStore,
   ($state) =>

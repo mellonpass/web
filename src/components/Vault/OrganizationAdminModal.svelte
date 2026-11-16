@@ -9,16 +9,23 @@
     } from "$lib/key-generation";
     import type { SymmetricKey } from "$lib/models/keys";
     import { getErrorMessage } from "$lib/requests";
+    import { getCiphers } from "$lib/services/ciphers";
     import {
         confirmOrganizationMember,
+        getMemberPublicKey,
+        getOrganization,
         getOrganizationMembers,
+        getOrganizations,
         getPendingMembers,
         inviteOrganizationUser,
+        prepareMemberRevocationRotation,
         revokeOrganizationMember,
     } from "$lib/services/organizations";
     import {
         activeOrganization,
+        cipherStore,
         isOrgAdminModalOpen,
+        matchesVaultContext,
         organizationStore,
     } from "$lib/stores";
     import { toast } from "$lib/toast.svelte";
@@ -82,6 +89,8 @@
         ).length
     );
 
+    const isAnyMemberBusy = $derived(Object.keys(busyMemberIds).length > 0);
+
     function setMemberBusy(memberId: string, busy: boolean) {
         if (busy) {
             busyMemberIds = { ...busyMemberIds, [memberId]: true };
@@ -90,10 +99,6 @@
         const next = { ...busyMemberIds };
         delete next[memberId];
         busyMemberIds = next;
-    }
-
-    function getMemberPublicKey(member: OrganizationMember): string | null {
-        return member.publicKey || member.user?.publicKey || null;
     }
 
     function isSelfMembership(
@@ -269,7 +274,12 @@
 
     async function handleConfirmMember(member: OrganizationMember) {
         const org = targetOrg;
-        if (!org || loadedOrgId !== org.id || !canConfirmMember(member)) {
+        if (
+            !org ||
+            loadedOrgId !== org.id ||
+            isAnyMemberBusy ||
+            !canConfirmMember(member)
+        ) {
             return;
         }
 
@@ -310,9 +320,60 @@
         }
     }
 
+    function zeroSymmetricKey(key: SymmetricKey | null | undefined) {
+        if (!key) return;
+        try {
+            key.keybuffer.fill(0);
+        } catch {}
+    }
+
+    async function refreshOrganizationMetadata(
+        org: Organization,
+        expectedKeyVersion: number,
+        memberKeys: { memberId: string; protectedSymmetricKey: string }[]
+    ): Promise<Organization> {
+        const myMembershipId = org.currentUserMembership?.id;
+        const myNewProtectedKey = myMembershipId
+            ? memberKeys.find((mk) => mk.memberId === myMembershipId)
+                  ?.protectedSymmetricKey
+            : undefined;
+        const fallbackOrg: Organization = {
+            ...org,
+            keyVersion: expectedKeyVersion + 1,
+            currentUserMembership: org.currentUserMembership
+                ? {
+                      ...org.currentUserMembership,
+                      ...(myNewProtectedKey
+                          ? { protectedSymmetricKey: myNewProtectedKey }
+                          : {}),
+                  }
+                : org.currentUserMembership,
+        };
+
+        try {
+            const refreshedOrgs = await getOrganizations();
+            organizationStore.setOrganizations(refreshedOrgs);
+            return (
+                refreshedOrgs.find((o) => o.id === org.id) ?? fallbackOrg
+            );
+        } catch {
+            organizationStore.setOrganizations(
+                $organizationStore.organizations.map((o) =>
+                    o.id === org.id ? fallbackOrg : o
+                )
+            );
+            return fallbackOrg;
+        }
+    }
+
     async function handleRevokeMember(member: OrganizationMember) {
         const org = targetOrg;
-        if (!org || loadedOrgId !== org.id || !canRevokeMember(member)) {
+        if (
+            !org ||
+            loadedOrgId !== org.id ||
+            isAnyMemberBusy ||
+            !canRevokeMember(member)
+        ) {
             return;
         }
 
@@ -321,16 +382,76 @@
         confirmRevokeMemberId = null;
         setMemberBusy(member.id, true);
         actionError = null;
+
+        let newOsk: SymmetricKey | null = null;
+        let mutationSucceeded = false;
+
         try {
-            await revokeOrganizationMember(member.id);
+            let oldOsk = await resolveOrgSymmetricKey(org);
+            const [freshOrg, allMembers, orgCiphers] = await Promise.all([
+                getOrganization(org.id),
+                getOrganizationMembers(org.id),
+                getCiphers(org.id),
+            ]);
+
+            // Refresh our in-memory OSK if another admin rotated it since last sync
+            if (
+                freshOrg &&
+                freshOrg.keyVersion !== undefined &&
+                org.keyVersion !== undefined &&
+                freshOrg.keyVersion !== org.keyVersion
+            ) {
+                const updatedProtectedKey =
+                    freshOrg.currentUserMembership?.protectedSymmetricKey;
+                if (!updatedProtectedKey) {
+                    throw new Error(
+                        "Your organization membership key is out of date. Please reload your vault and try again."
+                    );
+                }
+                const privateKey = await getOrAwaitUserRsaPrivateKey();
+                if (!privateKey) {
+                    throw new Error(
+                        "Your RSA private key is not unlocked in memory. Please unlock your vault again."
+                    );
+                }
+                oldOsk = await decryptOrgKeyWithPrivateKey(
+                    privateKey,
+                    updatedProtectedKey
+                );
+                organizationStore.setDecryptedKey(org.id, oldOsk);
+            }
+
+            const expectedKeyVersion =
+                freshOrg?.keyVersion ?? org.keyVersion ?? 1;
+            const prepared = await prepareMemberRevocationRotation({
+                oldOsk,
+                revokedMemberId: member.id,
+                members: allMembers,
+                ciphers: orgCiphers,
+                expectedKeyVersion,
+            });
+            newOsk = prepared.newOsk;
+
+            await revokeOrganizationMember(member.id, prepared.rotation);
+            mutationSucceeded = true;
+
             toast.show({
                 title: revokingSelf
                     ? `Left ${org.name}`
                     : `Revoked access for ${member.email}`,
+                description: revokingSelf
+                    ? undefined
+                    : "Organization encryption key rotated for remaining members.",
                 variant: "warning",
             });
 
             if (revokingSelf) {
+                zeroSymmetricKey(oldOsk);
+                zeroSymmetricKey(newOsk);
+                organizationStore.removeDecryptedKey(org.id);
+                cipherStore.update((items) =>
+                    items.filter((item) => !matchesVaultContext(item, org.id))
+                );
                 const remainingOrgs = $organizationStore.organizations.filter(
                     (o) => o.id !== org.id
                 );
@@ -342,10 +463,38 @@
                 return;
             }
 
+            zeroSymmetricKey(oldOsk);
+            organizationStore.setDecryptedKey(org.id, newOsk);
+
+            const rotatedKeyById = new Map(
+                prepared.rotation.cipherKeys.map((entry) => [
+                    entry.cipherId,
+                    entry.key,
+                ])
+            );
+            cipherStore.update((items) =>
+                items.map((item) => {
+                    const updatedKey = item.id
+                        ? rotatedKeyById.get(item.id)
+                        : undefined;
+                    return updatedKey ? { ...item, key: updatedKey } : item;
+                })
+            );
+
+            const refreshedOrg = await refreshOrganizationMetadata(
+                org,
+                expectedKeyVersion,
+                prepared.rotation.memberKeys
+            );
+            void reloadVault?.();
+
             if (session === modalSession && targetOrg?.id === org.id) {
-                await loadMembersForOrg(org);
+                await loadMembersForOrg(refreshedOrg);
             }
         } catch (err: unknown) {
+            if (!mutationSucceeded) {
+                zeroSymmetricKey(newOsk);
+            }
             if (session === modalSession) {
                 actionError = getErrorMessage(err, "Failed to revoke member.");
             }
@@ -528,7 +677,7 @@
                                         {:else}
                                             <button
                                                 type="button"
-                                                disabled={!isOrgDataReady || !hasPublicKey || Boolean(busyMemberIds[pending.id])}
+                                                disabled={!isOrgDataReady || isAnyMemberBusy || !hasPublicKey}
                                                 onclick={() => handleConfirmMember(pending)}
                                                 class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
                                             >
@@ -616,7 +765,7 @@
                                                                 {#if canConfirmMember(member)}
                                                                     <button
                                                                         type="button"
-                                                                        disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                        disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                         onclick={() => handleConfirmMember(member)}
                                                                         class="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors cursor-pointer"
                                                                     >
@@ -627,7 +776,7 @@
                                                                     {#if confirmRevokeMemberId === member.id}
                                                                         <button
                                                                             type="button"
-                                                                            disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                            disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                             onclick={() => handleRevokeMember(member)}
                                                                             class="rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors cursor-pointer"
                                                                         >
@@ -637,7 +786,7 @@
                                                                         </button>
                                                                         <button
                                                                             type="button"
-                                                                            disabled={Boolean(busyMemberIds[member.id])}
+                                                                            disabled={isAnyMemberBusy}
                                                                             onclick={() => (confirmRevokeMemberId = null)}
                                                                             class="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer"
                                                                         >
@@ -646,13 +795,19 @@
                                                                     {:else}
                                                                         <button
                                                                             type="button"
-                                                                            disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                            disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                             onclick={() => (confirmRevokeMemberId = member.id)}
                                                                             class="rounded-lg border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer"
                                                                         >
-                                                                            {isSelfMembership(targetOrg, member)
-                                                                                ? "Leave"
-                                                                                : "Revoke"}
+                                                                            {#if busyMemberIds[member.id]}
+                                                                                {isSelfMembership(targetOrg, member)
+                                                                                    ? "Leaving..."
+                                                                                    : "Rotating Keys..."}
+                                                                            {:else}
+                                                                                {isSelfMembership(targetOrg, member)
+                                                                                    ? "Leave"
+                                                                                    : "Revoke"}
+                                                                            {/if}
                                                                         </button>
                                                                     {/if}
                                                                 {/if}

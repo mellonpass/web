@@ -356,3 +356,23 @@ export async function encryptRSAPrivateKey(
 export const extractRSAPrivateKey = decryptPrivateKeyWithSymmetricKey;
 
 export const generateOrganizationSymmetricKey = generateOrganizationKey;
+
+/**
+ * Unwraps a CipherKey using the current Organization Symmetric Key (oldOsk)
+ * and re-wraps it under a rotated Organization Symmetric Key (newOsk).
+ */
+export async function rewrapCipherKey(
+  oldOsk: SymmetricKey,
+  newOsk: SymmetricKey,
+  encryptedCipherKey: string
+): Promise<string> {
+  const ck = await extractCipherKey(oldOsk, encryptedCipherKey);
+  try {
+    const newPck = await newOsk.protectKey(ck);
+    return newPck.toBase64();
+  } finally {
+    try {
+      ck.keybuffer.fill(0);
+    } catch {}
+  }
+}
