@@ -1,3 +1,4 @@
+import { get } from "svelte/store";
 import {
   CREATE_CIPHER,
   GET_CIPHER_DETAIL,
@@ -7,9 +8,20 @@ import {
   UPDATE_CIPHER_TO_DELETE,
 } from "$lib/gql/ciphers/schema";
 import { assertNoGraphQLErrors, gqlClient } from "$lib/requests";
+import { organizationStore } from "$lib/stores";
 import { type Cipher } from "$lib/types";
 
+function getExpectedOrgKeyVersion(
+  organizationId?: string | null
+): number | undefined {
+  if (!organizationId) return undefined;
+  return get(organizationStore).organizations.find(
+    (org) => org.id === organizationId
+  )?.keyVersion;
+}
+
 export const createCipher = async (cipher: Cipher) => {
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
   const response = await gqlClient({
     query: CREATE_CIPHER,
     variables: {
@@ -24,6 +36,7 @@ export const createCipher = async (cipher: Cipher) => {
         ...(cipher.organizationId
           ? { organizationId: cipher.organizationId }
           : {}),
+        ...(expectedKeyVersion !== undefined ? { expectedKeyVersion } : {}),
       },
     },
   });
@@ -82,6 +95,7 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
 };
 
 export const updateCipher = async (cipher: Cipher) => {
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
   const response = await gqlClient({
     query: UPDATE_CIPHER,
     variables: {
@@ -93,6 +107,7 @@ export const updateCipher = async (cipher: Cipher) => {
         status: cipher.status,
         data: cipher.data,
         notes: cipher.notes,
+        ...(expectedKeyVersion !== undefined ? { expectedKeyVersion } : {}),
       },
     },
   });
@@ -101,6 +116,7 @@ export const updateCipher = async (cipher: Cipher) => {
 };
 
 export const updateCipherToDelete = async (cipher: Cipher) => {
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
   const response = await gqlClient({
     query: UPDATE_CIPHER_TO_DELETE,
     variables: {
@@ -112,6 +128,7 @@ export const updateCipherToDelete = async (cipher: Cipher) => {
         status: cipher.status,
         data: cipher.data,
         notes: cipher.notes,
+        ...(expectedKeyVersion !== undefined ? { expectedKeyVersion } : {}),
       },
     },
   });
@@ -120,6 +137,7 @@ export const updateCipherToDelete = async (cipher: Cipher) => {
 };
 
 export const restoreCipherFromDelete = async (cipher: Cipher) => {
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
   const response = await gqlClient({
     query: RESTORE_CIPHER_FROM_DELETE,
     variables: {
@@ -131,6 +149,7 @@ export const restoreCipherFromDelete = async (cipher: Cipher) => {
         status: cipher.status,
         data: cipher.data,
         notes: cipher.notes,
+        ...(expectedKeyVersion !== undefined ? { expectedKeyVersion } : {}),
       },
     },
   });

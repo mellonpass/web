@@ -299,7 +299,11 @@
                 memberPublicKey,
                 osk
             );
-            await confirmOrganizationMember(member.id, protectedOsk);
+            await confirmOrganizationMember(
+                member.id,
+                protectedOsk,
+                org.keyVersion
+            );
 
             toast.show({
                 title: `Confirmed ${member.email}`,

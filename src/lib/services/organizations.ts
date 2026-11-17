@@ -226,7 +226,8 @@ export const acceptOrganizationInvite = async (
 
 export const confirmOrganizationMember = async (
   memberId: string,
-  protectedSymmetricKey: string
+  protectedSymmetricKey: string,
+  expectedKeyVersion?: number
 ): Promise<OrganizationMember> => {
   const response = await gqlClient({
     query: CONFIRM_MEMBER,
@@ -234,6 +235,7 @@ export const confirmOrganizationMember = async (
       input: {
         memberId,
         protectedSymmetricKey,
+        ...(expectedKeyVersion !== undefined ? { expectedKeyVersion } : {}),
       },
     },
   });
