@@ -166,6 +166,7 @@ export interface OrganizationMember {
 export interface Organization {
   id: string;
   name: string;
+  keyVersion?: number;
   created?: string | Date;
   updated?: string | Date;
   currentUserMembership?: {
@@ -175,4 +176,20 @@ export interface Organization {
     status: OrganizationMemberStatus;
     protectedSymmetricKey?: string | null;
   } | null;
+}
+
+export interface RotatedMemberKeyInput {
+  memberId: string;
+  protectedSymmetricKey: string;
+}
+
+export interface RotatedCipherKeyInput {
+  cipherId: string;
+  key: string;
+}
+
+export interface RevokeOrganizationMemberRotationInput {
+  expectedKeyVersion?: number;
+  memberKeys: RotatedMemberKeyInput[];
+  cipherKeys: RotatedCipherKeyInput[];
 }

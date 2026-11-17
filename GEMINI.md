@@ -114,3 +114,4 @@ src/
 - **Rotate `CipherKey` on every edit**: Keep `encryptVaultDetailForUpdate()` generating a fresh 512-bit `CipherKey` on each item update.
 - **Static SPA mode**: All routes run client-side (`adapter-static`, no SSR); keep auth checks in `+layout.ts` / `+page.ts` loaders. Path alias `$components` maps to `src/components/`.
 - **Verification**: Always run `npm test`, `npm run check`, and `npm run build` after changes, and verify interactive crypto flows end-to-end when modifying key derivation, worker messaging, or vault decryption.
+- **Pull Request Descriptions**: Link the ticket and any companion PRs; structure changes as concise `**<what changed>**: <why it was needed>` bullets (avoiding long prose or heavy sub-headings); and include a **Verification** section with exact commands and results.

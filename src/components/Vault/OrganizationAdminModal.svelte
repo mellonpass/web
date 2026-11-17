@@ -1,20 +1,17 @@
 <script lang="ts">
-    import { getContext, untrack } from "svelte";
+    import { getContext, onDestroy, untrack } from "svelte";
     import { Dialog } from "bits-ui";
     import Icon from "@iconify/svelte";
-    import { getOrAwaitUserRsaPrivateKey } from "$lib/crypto-client";
-    import {
-        decryptOrgKeyWithPrivateKey,
-        encryptOrgKeyWithPublicKey,
-    } from "$lib/key-generation";
-    import type { SymmetricKey } from "$lib/models/keys";
+    import { encryptOrgKeyWithPublicKey } from "$lib/key-generation";
     import { getErrorMessage } from "$lib/requests";
     import {
         confirmOrganizationMember,
+        getMemberPublicKey,
         getOrganizationMembers,
         getPendingMembers,
         inviteOrganizationUser,
-        revokeOrganizationMember,
+        revokeMemberWithRotation,
+        syncOrganizationAndKey,
     } from "$lib/services/organizations";
     import {
         activeOrganization,
@@ -50,6 +47,13 @@
 
     let loadGeneration = 0;
     let modalSession = 0;
+    let isDestroyed = false;
+
+    onDestroy(() => {
+        isDestroyed = true;
+        modalSession++;
+        loadGeneration++;
+    });
 
     const targetOrg: Organization | null = $derived.by(() => {
         const orgs = $organizationStore.organizations;
@@ -82,6 +86,8 @@
         ).length
     );
 
+    const isAnyMemberBusy = $derived(Object.keys(busyMemberIds).length > 0);
+
     function setMemberBusy(memberId: string, busy: boolean) {
         if (busy) {
             busyMemberIds = { ...busyMemberIds, [memberId]: true };
@@ -90,10 +96,6 @@
         const next = { ...busyMemberIds };
         delete next[memberId];
         busyMemberIds = next;
-    }
-
-    function getMemberPublicKey(member: OrganizationMember): string | null {
-        return member.publicKey || member.user?.publicKey || null;
     }
 
     function isSelfMembership(
@@ -153,6 +155,12 @@
                 canViewPending
                     ? getPendingMembers(org.id)
                     : Promise.resolve([]),
+                syncOrganizationAndKey(org, {
+                    isAborted: () =>
+                        isDestroyed ||
+                        currentGen !== loadGeneration ||
+                        session !== modalSession,
+                }),
             ]);
             if (currentGen !== loadGeneration || session !== modalSession) {
                 return;
@@ -210,30 +218,6 @@
         }
     });
 
-    async function resolveOrgSymmetricKey(
-        org: Organization
-    ): Promise<SymmetricKey> {
-        const cached = organizationStore.getDecryptedKey(org.id);
-        if (cached) return cached;
-
-        const protectedKey = org.currentUserMembership?.protectedSymmetricKey;
-        if (!protectedKey) {
-            throw new Error(
-                "Protected organization key is missing for your membership."
-            );
-        }
-        const privateKey = await getOrAwaitUserRsaPrivateKey();
-        if (!privateKey) {
-            throw new Error(
-                "Your RSA private key is not unlocked in memory. Please unlock your vault again."
-            );
-        }
-
-        const osk = await decryptOrgKeyWithPrivateKey(privateKey, protectedKey);
-        organizationStore.setDecryptedKey(org.id, osk);
-        return osk;
-    }
-
     async function handleInvite(e: SubmitEvent) {
         e.preventDefault();
         const org = targetOrg;
@@ -269,7 +253,12 @@
 
     async function handleConfirmMember(member: OrganizationMember) {
         const org = targetOrg;
-        if (!org || loadedOrgId !== org.id || !canConfirmMember(member)) {
+        if (
+            !org ||
+            loadedOrgId !== org.id ||
+            isAnyMemberBusy ||
+            !canConfirmMember(member)
+        ) {
             return;
         }
 
@@ -284,12 +273,20 @@
                 );
             }
 
-            const osk = await resolveOrgSymmetricKey(org);
+            const synced = await syncOrganizationAndKey(org, {
+                isAborted: () => isDestroyed || session !== modalSession,
+            });
+            if (!synced) return;
+
             const protectedOsk = await encryptOrgKeyWithPublicKey(
                 memberPublicKey,
-                osk
+                synced.osk
             );
-            await confirmOrganizationMember(member.id, protectedOsk);
+            await confirmOrganizationMember(
+                member.id,
+                protectedOsk,
+                synced.org.keyVersion
+            );
 
             toast.show({
                 title: `Confirmed ${member.email}`,
@@ -297,7 +294,7 @@
                 variant: "success",
             });
             if (session === modalSession && targetOrg?.id === org.id) {
-                await loadMembersForOrg(org);
+                await loadMembersForOrg(synced.org);
             }
         } catch (err: unknown) {
             if (session === modalSession) {
@@ -312,7 +309,12 @@
 
     async function handleRevokeMember(member: OrganizationMember) {
         const org = targetOrg;
-        if (!org || loadedOrgId !== org.id || !canRevokeMember(member)) {
+        if (
+            !org ||
+            loadedOrgId !== org.id ||
+            isAnyMemberBusy ||
+            !canRevokeMember(member)
+        ) {
             return;
         }
 
@@ -321,29 +323,37 @@
         confirmRevokeMemberId = null;
         setMemberBusy(member.id, true);
         actionError = null;
+
         try {
-            await revokeOrganizationMember(member.id);
+            const result = await revokeMemberWithRotation({
+                org,
+                memberId: member.id,
+                revokingSelf,
+                isAborted: () => isDestroyed,
+            });
+            if (result.aborted) return;
+
             toast.show({
                 title: revokingSelf
                     ? `Left ${org.name}`
                     : `Revoked access for ${member.email}`,
+                description: revokingSelf
+                    ? undefined
+                    : "Organization encryption key rotated for remaining members.",
                 variant: "warning",
             });
 
-            if (revokingSelf) {
-                const remainingOrgs = $organizationStore.organizations.filter(
-                    (o) => o.id !== org.id
-                );
-                organizationStore.setOrganizations(remainingOrgs);
-                void reloadVault?.();
-                if (session === modalSession && remainingOrgs.length === 0) {
+            void reloadVault?.();
+
+            if (result.revokingSelf) {
+                if (session === modalSession && result.remainingOrgCount === 0) {
                     $isOrgAdminModalOpen = false;
                 }
                 return;
             }
 
             if (session === modalSession && targetOrg?.id === org.id) {
-                await loadMembersForOrg(org);
+                await loadMembersForOrg(result.refreshedOrg);
             }
         } catch (err: unknown) {
             if (session === modalSession) {
@@ -528,7 +538,7 @@
                                         {:else}
                                             <button
                                                 type="button"
-                                                disabled={!isOrgDataReady || !hasPublicKey || Boolean(busyMemberIds[pending.id])}
+                                                disabled={!isOrgDataReady || isAnyMemberBusy || !hasPublicKey}
                                                 onclick={() => handleConfirmMember(pending)}
                                                 class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
                                             >
@@ -616,7 +626,7 @@
                                                                 {#if canConfirmMember(member)}
                                                                     <button
                                                                         type="button"
-                                                                        disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                        disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                         onclick={() => handleConfirmMember(member)}
                                                                         class="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors cursor-pointer"
                                                                     >
@@ -627,7 +637,7 @@
                                                                     {#if confirmRevokeMemberId === member.id}
                                                                         <button
                                                                             type="button"
-                                                                            disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                            disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                             onclick={() => handleRevokeMember(member)}
                                                                             class="rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors cursor-pointer"
                                                                         >
@@ -637,7 +647,7 @@
                                                                         </button>
                                                                         <button
                                                                             type="button"
-                                                                            disabled={Boolean(busyMemberIds[member.id])}
+                                                                            disabled={isAnyMemberBusy}
                                                                             onclick={() => (confirmRevokeMemberId = null)}
                                                                             class="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer"
                                                                         >
@@ -646,13 +656,19 @@
                                                                     {:else}
                                                                         <button
                                                                             type="button"
-                                                                            disabled={!isOrgDataReady || Boolean(busyMemberIds[member.id])}
+                                                                            disabled={!isOrgDataReady || isAnyMemberBusy}
                                                                             onclick={() => (confirmRevokeMemberId = member.id)}
                                                                             class="rounded-lg border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-50 px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer"
                                                                         >
-                                                                            {isSelfMembership(targetOrg, member)
-                                                                                ? "Leave"
-                                                                                : "Revoke"}
+                                                                            {#if busyMemberIds[member.id]}
+                                                                                {isSelfMembership(targetOrg, member)
+                                                                                    ? "Leaving..."
+                                                                                    : "Rotating Keys..."}
+                                                                            {:else}
+                                                                                {isSelfMembership(targetOrg, member)
+                                                                                    ? "Leave"
+                                                                                    : "Revoke"}
+                                                                            {/if}
                                                                         </button>
                                                                     {/if}
                                                                 {/if}

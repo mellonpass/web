@@ -1,6 +1,7 @@
 const ORGANIZATION_FIELDS = `
     id
     name
+    keyVersion
     created
     updated
     currentUserMembership {
