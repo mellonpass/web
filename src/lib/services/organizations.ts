@@ -1,3 +1,5 @@
+import { get } from "svelte/store";
+import { getOrAwaitUserRsaPrivateKey } from "$lib/crypto-client";
 import {
   ACCEPT_ORGANIZATION_INVITE,
   CONFIRM_MEMBER,
@@ -10,12 +12,19 @@ import {
   REVOKE_MEMBER,
 } from "$lib/gql/organizations/schema";
 import {
+  decryptOrgKeyWithPrivateKey,
   encryptOrgKeyWithPublicKey,
   generateOrganizationSymmetricKey,
   rewrapCipherKey,
 } from "$lib/key-generation";
 import type { SymmetricKey } from "$lib/models/keys";
 import { assertNoGraphQLErrors, gqlClient } from "$lib/requests";
+import { getCiphers } from "$lib/services/ciphers";
+import {
+  cipherStore,
+  matchesVaultContext,
+  organizationStore,
+} from "$lib/stores";
 import {
   OrganizationMemberRole,
   OrganizationMemberStatus,
@@ -279,3 +288,291 @@ export const revokeOrganizationMember = async (
     "OrganizationMember"
   );
 };
+
+export function zeroSymmetricKey(key: SymmetricKey | null | undefined): void {
+  if (!key) return;
+  try {
+    key.keybuffer.fill(0);
+  } catch {}
+}
+
+function applyFreshOrganizationMetadata(freshOrg: Organization): void {
+  const current = get(organizationStore).organizations;
+  if (!current.some((o) => o.id === freshOrg.id)) return;
+  organizationStore.setOrganizations(
+    current.map((o) => (o.id === freshOrg.id ? freshOrg : o))
+  );
+}
+
+export async function resolveOrgSymmetricKey(
+  org: Organization
+): Promise<SymmetricKey> {
+  const cached = organizationStore.getDecryptedKey(org.id);
+  if (cached) return cached;
+
+  const protectedKey = org.currentUserMembership?.protectedSymmetricKey;
+  if (!protectedKey) {
+    throw new Error(
+      "Protected organization key is missing for your membership."
+    );
+  }
+  const privateKey = await getOrAwaitUserRsaPrivateKey();
+  if (!privateKey) {
+    throw new Error(
+      "Your RSA private key is not unlocked in memory. Please unlock your vault again."
+    );
+  }
+
+  const osk = await decryptOrgKeyWithPrivateKey(privateKey, protectedKey);
+  organizationStore.setDecryptedKey(org.id, osk);
+  return osk;
+}
+
+async function reconcileOrganizationKey(
+  cachedOrg: Organization,
+  freshOrg: Organization,
+  isAborted?: () => boolean
+): Promise<SymmetricKey | null> {
+  const cachedKey = organizationStore.getDecryptedKey(cachedOrg.id);
+  const keyVersionMatches =
+    freshOrg.keyVersion === undefined ||
+    cachedOrg.keyVersion === undefined ||
+    freshOrg.keyVersion === cachedOrg.keyVersion;
+  const protectedKeyMatches =
+    freshOrg.currentUserMembership?.protectedSymmetricKey ===
+    cachedOrg.currentUserMembership?.protectedSymmetricKey;
+
+  if (cachedKey && keyVersionMatches && protectedKeyMatches) {
+    return cachedKey;
+  }
+
+  const updatedProtectedKey =
+    freshOrg.currentUserMembership?.protectedSymmetricKey;
+  if (!updatedProtectedKey) {
+    if (cachedKey) return cachedKey;
+    throw new Error(
+      "Your organization membership key is out of date. Please reload your vault and try again."
+    );
+  }
+
+  const privateKey = await getOrAwaitUserRsaPrivateKey();
+  if (isAborted?.()) return null;
+  if (!privateKey) {
+    throw new Error(
+      "Your RSA private key is not unlocked in memory. Please unlock your vault again."
+    );
+  }
+
+  const freshOsk = await decryptOrgKeyWithPrivateKey(
+    privateKey,
+    updatedProtectedKey
+  );
+  if (isAborted?.()) {
+    zeroSymmetricKey(freshOsk);
+    return null;
+  }
+
+  organizationStore.setDecryptedKey(cachedOrg.id, freshOsk);
+  return freshOsk;
+}
+
+export async function syncOrganizationAndKey(
+  org: Organization,
+  options?: { isAborted?: () => boolean }
+): Promise<{ org: Organization; osk: SymmetricKey } | null> {
+  const freshOrg = await getOrganization(org.id);
+  if (options?.isAborted?.()) return null;
+  if (!freshOrg) {
+    throw new Error(
+      "Organization no longer exists or your access was revoked."
+    );
+  }
+
+  applyFreshOrganizationMetadata(freshOrg);
+  const osk = await reconcileOrganizationKey(org, freshOrg, options?.isAborted);
+  if (!osk) return null;
+
+  return { org: freshOrg, osk };
+}
+
+async function refreshOrganizationMetadata(
+  org: Organization,
+  expectedKeyVersion: number,
+  memberKeys: RotatedMemberKeyInput[],
+  isAborted?: () => boolean
+): Promise<Organization> {
+  const myMembershipId = org.currentUserMembership?.id;
+  const myNewProtectedKey = myMembershipId
+    ? memberKeys.find((mk) => mk.memberId === myMembershipId)
+        ?.protectedSymmetricKey
+    : undefined;
+  const fallbackOrg: Organization = {
+    ...org,
+    keyVersion: expectedKeyVersion + 1,
+    currentUserMembership: org.currentUserMembership
+      ? {
+          ...org.currentUserMembership,
+          ...(myNewProtectedKey
+            ? { protectedSymmetricKey: myNewProtectedKey }
+            : {}),
+        }
+      : org.currentUserMembership,
+  };
+
+  try {
+    const refreshedOrgs = await getOrganizations();
+    if (isAborted?.()) return fallbackOrg;
+    organizationStore.setOrganizations(refreshedOrgs);
+    return refreshedOrgs.find((o) => o.id === org.id) ?? fallbackOrg;
+  } catch {
+    if (isAborted?.()) return fallbackOrg;
+    organizationStore.setOrganizations(
+      get(organizationStore).organizations.map((o) =>
+        o.id === org.id ? fallbackOrg : o
+      )
+    );
+    return fallbackOrg;
+  }
+}
+
+export interface RevokeMemberWithRotationResult {
+  aborted: boolean;
+  revokingSelf: boolean;
+  refreshedOrg: Organization | null;
+  remainingOrgCount: number;
+}
+
+export async function revokeMemberWithRotation({
+  org,
+  memberId,
+  revokingSelf,
+  isAborted,
+}: {
+  org: Organization;
+  memberId: string;
+  revokingSelf: boolean;
+  isAborted?: () => boolean;
+}): Promise<RevokeMemberWithRotationResult> {
+  let newOsk: SymmetricKey | null = null;
+  let mutationSucceeded = false;
+
+  try {
+    const [freshOrg, allMembers, orgCiphers] = await Promise.all([
+      getOrganization(org.id),
+      getOrganizationMembers(org.id),
+      getCiphers(org.id),
+    ]);
+
+    if (isAborted?.()) {
+      return {
+        aborted: true,
+        revokingSelf,
+        refreshedOrg: null,
+        remainingOrgCount: 0,
+      };
+    }
+
+    if (!freshOrg) {
+      throw new Error(
+        "Organization no longer exists or your access was revoked."
+      );
+    }
+
+    applyFreshOrganizationMetadata(freshOrg);
+
+    const oldOsk = await reconcileOrganizationKey(org, freshOrg, isAborted);
+    if (!oldOsk) {
+      return {
+        aborted: true,
+        revokingSelf,
+        refreshedOrg: null,
+        remainingOrgCount: 0,
+      };
+    }
+
+    const expectedKeyVersion = freshOrg.keyVersion ?? org.keyVersion ?? 1;
+    const prepared = await prepareMemberRevocationRotation({
+      oldOsk,
+      revokedMemberId: memberId,
+      members: allMembers,
+      ciphers: orgCiphers,
+      expectedKeyVersion,
+    });
+    newOsk = prepared.newOsk;
+
+    if (isAborted?.()) {
+      zeroSymmetricKey(newOsk);
+      return {
+        aborted: true,
+        revokingSelf,
+        refreshedOrg: null,
+        remainingOrgCount: 0,
+      };
+    }
+
+    await revokeOrganizationMember(memberId, prepared.rotation);
+    mutationSucceeded = true;
+
+    if (isAborted?.()) {
+      zeroSymmetricKey(oldOsk);
+      zeroSymmetricKey(newOsk);
+      return {
+        aborted: true,
+        revokingSelf,
+        refreshedOrg: null,
+        remainingOrgCount: 0,
+      };
+    }
+
+    if (revokingSelf) {
+      zeroSymmetricKey(oldOsk);
+      zeroSymmetricKey(newOsk);
+      organizationStore.removeDecryptedKey(org.id);
+      cipherStore.update((items) =>
+        items.filter((item) => !matchesVaultContext(item, org.id))
+      );
+      const remainingOrgs = get(organizationStore).organizations.filter(
+        (o) => o.id !== org.id
+      );
+      organizationStore.setOrganizations(remainingOrgs);
+      return {
+        aborted: false,
+        revokingSelf: true,
+        refreshedOrg: null,
+        remainingOrgCount: remainingOrgs.length,
+      };
+    }
+
+    zeroSymmetricKey(oldOsk);
+    organizationStore.setDecryptedKey(org.id, newOsk);
+
+    const rotatedKeyById = new Map(
+      prepared.rotation.cipherKeys.map((entry) => [entry.cipherId, entry.key])
+    );
+    cipherStore.update((items) =>
+      items.map((item) => {
+        const updatedKey = item.id ? rotatedKeyById.get(item.id) : undefined;
+        return updatedKey ? { ...item, key: updatedKey } : item;
+      })
+    );
+
+    const refreshedOrg = await refreshOrganizationMetadata(
+      freshOrg,
+      expectedKeyVersion,
+      prepared.rotation.memberKeys,
+      isAborted
+    );
+
+    return {
+      aborted: false,
+      revokingSelf: false,
+      refreshedOrg,
+      remainingOrgCount: get(organizationStore).organizations.length,
+    };
+  } catch (err) {
+    if (!mutationSucceeded) {
+      zeroSymmetricKey(newOsk);
+    }
+    throw err;
+  }
+}

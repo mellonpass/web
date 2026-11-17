@@ -1,31 +1,21 @@
 <script lang="ts">
-    import { getContext, untrack } from "svelte";
+    import { getContext, onDestroy, untrack } from "svelte";
     import { Dialog } from "bits-ui";
     import Icon from "@iconify/svelte";
-    import { getOrAwaitUserRsaPrivateKey } from "$lib/crypto-client";
-    import {
-        decryptOrgKeyWithPrivateKey,
-        encryptOrgKeyWithPublicKey,
-    } from "$lib/key-generation";
-    import type { SymmetricKey } from "$lib/models/keys";
+    import { encryptOrgKeyWithPublicKey } from "$lib/key-generation";
     import { getErrorMessage } from "$lib/requests";
-    import { getCiphers } from "$lib/services/ciphers";
     import {
         confirmOrganizationMember,
         getMemberPublicKey,
-        getOrganization,
         getOrganizationMembers,
-        getOrganizations,
         getPendingMembers,
         inviteOrganizationUser,
-        prepareMemberRevocationRotation,
-        revokeOrganizationMember,
+        revokeMemberWithRotation,
+        syncOrganizationAndKey,
     } from "$lib/services/organizations";
     import {
         activeOrganization,
-        cipherStore,
         isOrgAdminModalOpen,
-        matchesVaultContext,
         organizationStore,
     } from "$lib/stores";
     import { toast } from "$lib/toast.svelte";
@@ -57,6 +47,13 @@
 
     let loadGeneration = 0;
     let modalSession = 0;
+    let isDestroyed = false;
+
+    onDestroy(() => {
+        isDestroyed = true;
+        modalSession++;
+        loadGeneration++;
+    });
 
     const targetOrg: Organization | null = $derived.by(() => {
         const orgs = $organizationStore.organizations;
@@ -158,6 +155,12 @@
                 canViewPending
                     ? getPendingMembers(org.id)
                     : Promise.resolve([]),
+                syncOrganizationAndKey(org, {
+                    isAborted: () =>
+                        isDestroyed ||
+                        currentGen !== loadGeneration ||
+                        session !== modalSession,
+                }),
             ]);
             if (currentGen !== loadGeneration || session !== modalSession) {
                 return;
@@ -215,30 +218,6 @@
         }
     });
 
-    async function resolveOrgSymmetricKey(
-        org: Organization
-    ): Promise<SymmetricKey> {
-        const cached = organizationStore.getDecryptedKey(org.id);
-        if (cached) return cached;
-
-        const protectedKey = org.currentUserMembership?.protectedSymmetricKey;
-        if (!protectedKey) {
-            throw new Error(
-                "Protected organization key is missing for your membership."
-            );
-        }
-        const privateKey = await getOrAwaitUserRsaPrivateKey();
-        if (!privateKey) {
-            throw new Error(
-                "Your RSA private key is not unlocked in memory. Please unlock your vault again."
-            );
-        }
-
-        const osk = await decryptOrgKeyWithPrivateKey(privateKey, protectedKey);
-        organizationStore.setDecryptedKey(org.id, osk);
-        return osk;
-    }
-
     async function handleInvite(e: SubmitEvent) {
         e.preventDefault();
         const org = targetOrg;
@@ -294,15 +273,19 @@
                 );
             }
 
-            const osk = await resolveOrgSymmetricKey(org);
+            const synced = await syncOrganizationAndKey(org, {
+                isAborted: () => isDestroyed || session !== modalSession,
+            });
+            if (!synced) return;
+
             const protectedOsk = await encryptOrgKeyWithPublicKey(
                 memberPublicKey,
-                osk
+                synced.osk
             );
             await confirmOrganizationMember(
                 member.id,
                 protectedOsk,
-                org.keyVersion
+                synced.org.keyVersion
             );
 
             toast.show({
@@ -311,7 +294,7 @@
                 variant: "success",
             });
             if (session === modalSession && targetOrg?.id === org.id) {
-                await loadMembersForOrg(org);
+                await loadMembersForOrg(synced.org);
             }
         } catch (err: unknown) {
             if (session === modalSession) {
@@ -321,52 +304,6 @@
             if (session === modalSession) {
                 setMemberBusy(member.id, false);
             }
-        }
-    }
-
-    function zeroSymmetricKey(key: SymmetricKey | null | undefined) {
-        if (!key) return;
-        try {
-            key.keybuffer.fill(0);
-        } catch {}
-    }
-
-    async function refreshOrganizationMetadata(
-        org: Organization,
-        expectedKeyVersion: number,
-        memberKeys: { memberId: string; protectedSymmetricKey: string }[]
-    ): Promise<Organization> {
-        const myMembershipId = org.currentUserMembership?.id;
-        const myNewProtectedKey = myMembershipId
-            ? memberKeys.find((mk) => mk.memberId === myMembershipId)
-                  ?.protectedSymmetricKey
-            : undefined;
-        const fallbackOrg: Organization = {
-            ...org,
-            keyVersion: expectedKeyVersion + 1,
-            currentUserMembership: org.currentUserMembership
-                ? {
-                      ...org.currentUserMembership,
-                      ...(myNewProtectedKey
-                          ? { protectedSymmetricKey: myNewProtectedKey }
-                          : {}),
-                  }
-                : org.currentUserMembership,
-        };
-
-        try {
-            const refreshedOrgs = await getOrganizations();
-            organizationStore.setOrganizations(refreshedOrgs);
-            return (
-                refreshedOrgs.find((o) => o.id === org.id) ?? fallbackOrg
-            );
-        } catch {
-            organizationStore.setOrganizations(
-                $organizationStore.organizations.map((o) =>
-                    o.id === org.id ? fallbackOrg : o
-                )
-            );
-            return fallbackOrg;
         }
     }
 
@@ -387,57 +324,14 @@
         setMemberBusy(member.id, true);
         actionError = null;
 
-        let newOsk: SymmetricKey | null = null;
-        let mutationSucceeded = false;
-
         try {
-            let oldOsk = await resolveOrgSymmetricKey(org);
-            const [freshOrg, allMembers, orgCiphers] = await Promise.all([
-                getOrganization(org.id),
-                getOrganizationMembers(org.id),
-                getCiphers(org.id),
-            ]);
-
-            // Refresh our in-memory OSK if another admin rotated it since last sync
-            if (
-                freshOrg &&
-                freshOrg.keyVersion !== undefined &&
-                org.keyVersion !== undefined &&
-                freshOrg.keyVersion !== org.keyVersion
-            ) {
-                const updatedProtectedKey =
-                    freshOrg.currentUserMembership?.protectedSymmetricKey;
-                if (!updatedProtectedKey) {
-                    throw new Error(
-                        "Your organization membership key is out of date. Please reload your vault and try again."
-                    );
-                }
-                const privateKey = await getOrAwaitUserRsaPrivateKey();
-                if (!privateKey) {
-                    throw new Error(
-                        "Your RSA private key is not unlocked in memory. Please unlock your vault again."
-                    );
-                }
-                oldOsk = await decryptOrgKeyWithPrivateKey(
-                    privateKey,
-                    updatedProtectedKey
-                );
-                organizationStore.setDecryptedKey(org.id, oldOsk);
-            }
-
-            const expectedKeyVersion =
-                freshOrg?.keyVersion ?? org.keyVersion ?? 1;
-            const prepared = await prepareMemberRevocationRotation({
-                oldOsk,
-                revokedMemberId: member.id,
-                members: allMembers,
-                ciphers: orgCiphers,
-                expectedKeyVersion,
+            const result = await revokeMemberWithRotation({
+                org,
+                memberId: member.id,
+                revokingSelf,
+                isAborted: () => isDestroyed,
             });
-            newOsk = prepared.newOsk;
-
-            await revokeOrganizationMember(member.id, prepared.rotation);
-            mutationSucceeded = true;
+            if (result.aborted) return;
 
             toast.show({
                 title: revokingSelf
@@ -449,56 +343,19 @@
                 variant: "warning",
             });
 
-            if (revokingSelf) {
-                zeroSymmetricKey(oldOsk);
-                zeroSymmetricKey(newOsk);
-                organizationStore.removeDecryptedKey(org.id);
-                cipherStore.update((items) =>
-                    items.filter((item) => !matchesVaultContext(item, org.id))
-                );
-                const remainingOrgs = $organizationStore.organizations.filter(
-                    (o) => o.id !== org.id
-                );
-                organizationStore.setOrganizations(remainingOrgs);
-                void reloadVault?.();
-                if (session === modalSession && remainingOrgs.length === 0) {
+            void reloadVault?.();
+
+            if (result.revokingSelf) {
+                if (session === modalSession && result.remainingOrgCount === 0) {
                     $isOrgAdminModalOpen = false;
                 }
                 return;
             }
 
-            zeroSymmetricKey(oldOsk);
-            organizationStore.setDecryptedKey(org.id, newOsk);
-
-            const rotatedKeyById = new Map(
-                prepared.rotation.cipherKeys.map((entry) => [
-                    entry.cipherId,
-                    entry.key,
-                ])
-            );
-            cipherStore.update((items) =>
-                items.map((item) => {
-                    const updatedKey = item.id
-                        ? rotatedKeyById.get(item.id)
-                        : undefined;
-                    return updatedKey ? { ...item, key: updatedKey } : item;
-                })
-            );
-
-            const refreshedOrg = await refreshOrganizationMetadata(
-                org,
-                expectedKeyVersion,
-                prepared.rotation.memberKeys
-            );
-            void reloadVault?.();
-
             if (session === modalSession && targetOrg?.id === org.id) {
-                await loadMembersForOrg(refreshedOrg);
+                await loadMembersForOrg(result.refreshedOrg);
             }
         } catch (err: unknown) {
-            if (!mutationSucceeded) {
-                zeroSymmetricKey(newOsk);
-            }
             if (session === modalSession) {
                 actionError = getErrorMessage(err, "Failed to revoke member.");
             }

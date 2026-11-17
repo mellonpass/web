@@ -8,20 +8,19 @@ import {
   UPDATE_CIPHER_TO_DELETE,
 } from "$lib/gql/ciphers/schema";
 import { assertNoGraphQLErrors, gqlClient } from "$lib/requests";
-import { organizationStore } from "$lib/stores";
+import { findOrganizationById, organizationStore } from "$lib/stores";
 import { type Cipher } from "$lib/types";
 
 function getExpectedOrgKeyVersion(
-  organizationId?: string | null
+  cipher: Pick<Cipher, "organization" | "organizationId">
 ): number | undefined {
-  if (!organizationId) return undefined;
-  return get(organizationStore).organizations.find(
-    (org) => org.id === organizationId
-  )?.keyVersion;
+  const idOrUuid = cipher.organization?.id ?? cipher.organizationId;
+  return findOrganizationById(get(organizationStore).organizations, idOrUuid)
+    ?.keyVersion;
 }
 
 export const createCipher = async (cipher: Cipher) => {
-  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher);
   const response = await gqlClient({
     query: CREATE_CIPHER,
     variables: {
@@ -95,7 +94,7 @@ export const getCipherById = async (id: string): Promise<Cipher> => {
 };
 
 export const updateCipher = async (cipher: Cipher) => {
-  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher);
   const response = await gqlClient({
     query: UPDATE_CIPHER,
     variables: {
@@ -116,7 +115,7 @@ export const updateCipher = async (cipher: Cipher) => {
 };
 
 export const updateCipherToDelete = async (cipher: Cipher) => {
-  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher);
   const response = await gqlClient({
     query: UPDATE_CIPHER_TO_DELETE,
     variables: {
@@ -137,7 +136,7 @@ export const updateCipherToDelete = async (cipher: Cipher) => {
 };
 
 export const restoreCipherFromDelete = async (cipher: Cipher) => {
-  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher.organizationId);
+  const expectedKeyVersion = getExpectedOrgKeyVersion(cipher);
   const response = await gqlClient({
     query: RESTORE_CIPHER_FROM_DELETE,
     variables: {

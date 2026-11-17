@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
 import { arrayBufferToBase64 } from "$lib/bytes";
+import * as cryptoClient from "$lib/crypto-client";
 import {
   GET_ORGANIZATION,
   GET_ORGANIZATIONS,
@@ -19,10 +20,23 @@ import {
 } from "$lib/key-generation";
 import { SymmetricKey } from "$lib/models/keys";
 import {
+  createCipher,
+  restoreCipherFromDelete,
+  updateCipher,
+  updateCipherToDelete,
+} from "$lib/services/ciphers";
+import {
+  confirmOrganizationMember,
   prepareMemberRevocationRotation,
+  revokeMemberWithRotation,
   revokeOrganizationMember,
+  syncOrganizationAndKey,
 } from "$lib/services/organizations";
-import { organizationStore, unlockedOrgKeysStore } from "$lib/stores";
+import {
+  cipherStore,
+  organizationStore,
+  unlockedOrgKeysStore,
+} from "$lib/stores";
 import {
   decryptCipherForVaultContent,
   encryptCipher,
@@ -91,6 +105,7 @@ describe("OrganizationSymmetricKey & CipherKey rotation on member revocation", (
 
   afterEach(() => {
     organizationStore.clear();
+    cipherStore.set([]);
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -588,5 +603,283 @@ describe("OrganizationSymmetricKey & CipherKey rotation on member revocation", (
     ).rejects.toThrow(
       "Organization key version mismatch. Please refresh and try again."
     );
+  });
+
+  it("propagates expectedKeyVersion on org cipher mutations (including raw UUID organizationId) and confirmOrganizationMember", async () => {
+    const rawOrgUuid = "11111111-2222-3333-4444-555555555555";
+    const orgGlobalId = btoa(`Organization:${rawOrgUuid}`);
+    organizationStore.setOrganizations([
+      {
+        id: orgGlobalId,
+        name: "Acme",
+        keyVersion: 4,
+      },
+    ]);
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          cipher: {
+            create: { __typename: "Cipher", id: "cipher-new" },
+            update: { __typename: "Cipher", id: "cipher-1" },
+            updateToDelete: { __typename: "Cipher", id: "cipher-1" },
+            restoreCipherFromDelete: { __typename: "Cipher", id: "cipher-1" },
+          },
+          organization: {
+            confirmMember: {
+              __typename: "OrganizationMember",
+              id: "mem-dave",
+              email: "dave@acme.io",
+              role: "MEMBER",
+              status: "CONFIRMED",
+            },
+          },
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const serverShapedOrgCipher: Cipher = {
+      id: "cipher-1",
+      type: CipherType.LOGIN,
+      key: "enc-ck",
+      name: "enc-name",
+      notes: "",
+      isFavorite: "false",
+      status: VaultStatus.ACTIVE,
+      organizationId: rawOrgUuid,
+      organization: { id: orgGlobalId, name: "Acme" },
+      data: { username: "u", password: "p", authenticatorKey: "", url: "" },
+    };
+
+    await updateCipher(serverShapedOrgCipher);
+    await updateCipherToDelete(serverShapedOrgCipher);
+    await restoreCipherFromDelete(serverShapedOrgCipher);
+
+    // Raw UUID alone (even if organization object is absent) also resolves via findOrganizationById
+    await updateCipher({
+      ...serverShapedOrgCipher,
+      organization: null,
+    });
+
+    // createVaultItem sets organizationId to the Relay GlobalID
+    await createCipher({
+      ...serverShapedOrgCipher,
+      id: undefined,
+      organization: undefined,
+      organizationId: orgGlobalId,
+    });
+
+    for (const call of fetchMock.mock.calls) {
+      const parsed = JSON.parse(call[1].body as string);
+      expect(parsed.variables.input.expectedKeyVersion).toBe(4);
+    }
+
+    // Personal cipher omits expectedKeyVersion
+    fetchMock.mockClear();
+    await updateCipher({
+      ...serverShapedOrgCipher,
+      organization: null,
+      organizationId: null,
+    });
+    const personalVars = JSON.parse(fetchMock.mock.calls[0][1].body as string)
+      .variables.input;
+    expect("expectedKeyVersion" in personalVars).toBe(false);
+
+    // confirmOrganizationMember sends expectedKeyVersion when provided and omits when undefined
+    fetchMock.mockClear();
+    await confirmOrganizationMember("mem-dave", "enc-osk-dave", 4);
+    expect(
+      JSON.parse(fetchMock.mock.calls[0][1].body as string).variables.input
+    ).toEqual({
+      memberId: "mem-dave",
+      protectedSymmetricKey: "enc-osk-dave",
+      expectedKeyVersion: 4,
+    });
+
+    await confirmOrganizationMember("mem-dave", "enc-osk-dave");
+    const confirmWithoutVersion = JSON.parse(
+      fetchMock.mock.calls[1][1].body as string
+    ).variables.input;
+    expect("expectedKeyVersion" in confirmWithoutVersion).toBe(false);
+  });
+
+  it("syncOrganizationAndKey refreshes stale keyVersion and OSK and zeroes retired buffer", async () => {
+    const orgId = btoa("Organization:22222222-2222-2222-2222-222222222222");
+    const v1Osk = generateOrganizationSymmetricKey();
+    const v2Osk = generateOrganizationSymmetricKey();
+    const v1Protected = await encryptOrgKeyWithPublicKey(
+      alice.publicJwk,
+      v1Osk
+    );
+    const v2Protected = await encryptOrgKeyWithPublicKey(
+      alice.publicJwk,
+      v2Osk
+    );
+
+    const staleOrg = {
+      id: orgId,
+      name: "Acme",
+      keyVersion: 1,
+      currentUserMembership: {
+        id: alice.memberId,
+        email: alice.email,
+        role: alice.role,
+        status: OrganizationMemberStatus.CONFIRMED,
+        protectedSymmetricKey: v1Protected,
+      },
+    };
+    organizationStore.setOrganizations([staleOrg]);
+    organizationStore.setDecryptedKey(orgId, v1Osk);
+
+    vi.spyOn(cryptoClient, "getOrAwaitUserRsaPrivateKey").mockResolvedValue(
+      alice.privateKey
+    );
+
+    const freshOrg = {
+      ...staleOrg,
+      keyVersion: 2,
+      currentUserMembership: {
+        ...staleOrg.currentUserMembership,
+        protectedSymmetricKey: v2Protected,
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: { organization: freshOrg },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const synced = await syncOrganizationAndKey(staleOrg);
+    expect(synced).not.toBeNull();
+    expect(synced!.org.keyVersion).toBe(2);
+    expect(synced!.osk.keybuffer).toEqual(v2Osk.keybuffer);
+    expect(v1Osk.keybuffer.every((b) => b === 0)).toBe(true);
+    expect(get(organizationStore).organizations[0].keyVersion).toBe(2);
+    expect(get(unlockedOrgKeysStore).get(orgId)?.keybuffer).toEqual(
+      v2Osk.keybuffer
+    );
+  });
+
+  it("revokeMemberWithRotation zeroes newOsk without repopulating stores when aborted mid-mutation", async () => {
+    const orgId = btoa("Organization:33333333-3333-3333-3333-333333333333");
+    const oldOsk = generateOrganizationSymmetricKey();
+    const oldOskProtected = await encryptOrgKeyWithPublicKey(
+      alice.publicJwk,
+      oldOsk
+    );
+    const org = {
+      id: orgId,
+      name: "Acme",
+      keyVersion: 1,
+      currentUserMembership: {
+        id: alice.memberId,
+        email: alice.email,
+        role: alice.role,
+        status: OrganizationMemberStatus.CONFIRMED,
+        protectedSymmetricKey: oldOskProtected,
+      },
+    };
+    organizationStore.setOrganizations([org]);
+    organizationStore.setDecryptedKey(orgId, oldOsk);
+
+    const origGetRandom = crypto.getRandomValues.bind(crypto);
+    const getRandomSpy = vi
+      .spyOn(crypto, "getRandomValues")
+      .mockImplementation((arr) => origGetRandom(arr));
+
+    let aborted = false;
+    const fetchMock = vi.fn().mockImplementation(async (_url, init) => {
+      const body = JSON.parse(init.body as string);
+      if (body.query === GET_ORGANIZATION) {
+        return {
+          ok: true,
+          json: async () => ({ data: { organization: org } }),
+        };
+      }
+      if (body.query.includes("GetOrganizationMembers")) {
+        return {
+          ok: true,
+          json: async () => ({
+            data: {
+              organizationMembers: [
+                {
+                  id: alice.memberId,
+                  email: alice.email,
+                  role: alice.role,
+                  status: OrganizationMemberStatus.CONFIRMED,
+                  publicKey: JSON.stringify(alice.publicJwk),
+                },
+                {
+                  id: carol.memberId,
+                  email: carol.email,
+                  role: carol.role,
+                  status: OrganizationMemberStatus.CONFIRMED,
+                  publicKey: JSON.stringify(carol.publicJwk),
+                },
+              ],
+            },
+          }),
+        };
+      }
+      if (body.query.includes("GetGiphers")) {
+        return {
+          ok: true,
+          json: async () => ({
+            data: {
+              ciphers: {
+                edges: [],
+                pageInfo: { endCursor: null, hasNextPage: false },
+              },
+            },
+          }),
+        };
+      }
+      if (body.query === REVOKE_MEMBER) {
+        // Simulate vault lock / component unmount occurring while mutation is in flight
+        aborted = true;
+        organizationStore.clear();
+        return {
+          ok: true,
+          json: async () => ({
+            data: {
+              organization: {
+                revokeMember: {
+                  __typename: "OrganizationMember",
+                  id: carol.memberId,
+                  email: carol.email,
+                  role: carol.role,
+                  status: OrganizationMemberStatus.REVOKED,
+                },
+              },
+            },
+          }),
+        };
+      }
+      throw new Error(`Unexpected query: ${body.query}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await revokeMemberWithRotation({
+      org,
+      memberId: carol.memberId,
+      revokingSelf: false,
+      isAborted: () => aborted,
+    });
+
+    expect(result.aborted).toBe(true);
+    expect(get(unlockedOrgKeysStore).size).toBe(0);
+    expect(get(organizationStore).organizations).toEqual([]);
+
+    const allocated64ByteBuffers = getRandomSpy.mock.results
+      .map((r) => r.value)
+      .filter(
+        (v): v is Uint8Array => v instanceof Uint8Array && v.byteLength === 64
+      );
+    expect(allocated64ByteBuffers).toHaveLength(1);
+    expect(allocated64ByteBuffers[0].every((b) => b === 0)).toBe(true);
   });
 });
