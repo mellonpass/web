@@ -8,9 +8,16 @@ import {
   generateProtectedSymmetricKey,
   generateStretchedMasterKey,
 } from "$lib/key-generation";
-import type { SymmetricKey } from "$lib/models/keys";
+import { StretchedMasterKey, type SymmetricKey } from "$lib/models/keys";
 
 export type CryptoProgressCallback = (step: string, percent: number) => void;
+
+export interface ChangePasswordDerivedKeys {
+  currentLoginHash: string;
+  newMasterKey: Uint8Array;
+  newLoginHash: string;
+  newStretchedMasterKey: StretchedMasterKey;
+}
 
 /**
  * In-memory storage for the user's decrypted RSA-OAEP private key.
@@ -100,42 +107,99 @@ export async function initializeUserRsaPrivateKey(
   return await promise;
 }
 
+function createAbortError(): Error {
+  if (typeof DOMException !== "undefined") {
+    return new DOMException("Operation aborted", "AbortError");
+  }
+  const err = new Error("Operation aborted");
+  err.name = "AbortError";
+  return err;
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    err instanceof Error &&
+    (err.name === "AbortError" || err.message === "Operation aborted")
+  );
+}
+
 function runWorkerTask<T>(
-  type: "DERIVE_LOGIN_KEYS" | "DERIVE_SETUP_KEYS",
+  type:
+    | "DERIVE_LOGIN_KEYS"
+    | "DERIVE_SETUP_KEYS"
+    | "DERIVE_CHANGE_PASSWORD_KEYS",
   payload: Record<string, any>,
-  onProgress?: CryptoProgressCallback
+  onProgress?: CryptoProgressCallback,
+  signal?: AbortSignal
 ): Promise<T> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(createAbortError());
+      return;
+    }
+
+    let worker: Worker | null = null;
+    let settled = false;
+
+    const cleanup = () => {
+      signal?.removeEventListener("abort", onAbort);
+    };
+
+    const onAbort = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      try {
+        worker?.terminate();
+      } catch {}
+      reject(createAbortError());
+    };
+
     try {
-      const worker = new Worker(
+      worker = new Worker(
         new URL("./workers/crypto.worker.ts", import.meta.url),
         { type: "module" }
       );
       const id = crypto.randomUUID();
+      signal?.addEventListener("abort", onAbort, { once: true });
 
       worker.onmessage = (event: MessageEvent) => {
         const data = event.data;
-        if (data.id !== id) return;
+        if (data.id !== id || settled) return;
 
         if (data.type === "PROGRESS") {
           onProgress?.(data.step, data.percent);
         } else if (data.type === "RESULT") {
-          worker.terminate();
+          settled = true;
+          cleanup();
+          worker?.terminate();
           resolve(data.result as T);
         } else if (data.type === "ERROR") {
-          worker.terminate();
+          settled = true;
+          cleanup();
+          worker?.terminate();
           reject(new Error(data.error));
         }
       };
 
       worker.onerror = (err) => {
-        worker.terminate();
+        if (settled) return;
+        settled = true;
+        cleanup();
+        worker?.terminate();
         reject(err);
       };
 
       worker.postMessage({ id, type, payload });
     } catch (err) {
-      reject(err);
+      if (!settled) {
+        settled = true;
+        cleanup();
+        try {
+          worker?.terminate();
+        } catch {}
+        reject(err);
+      }
     }
   });
 }
@@ -206,5 +270,111 @@ export async function deriveSetupKeysAsync(
       rsaProtectedKey,
       rsaEncodedPublicKey,
     };
+  }
+}
+
+export async function deriveChangePasswordKeysAsync(
+  email: string,
+  currentMasterPassword: string,
+  newMasterPassword: string,
+  onProgress?: CryptoProgressCallback,
+  signal?: AbortSignal
+): Promise<ChangePasswordDerivedKeys> {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+
+  try {
+    const workerResult = await runWorkerTask<{
+      currentLoginHash: string;
+      newMasterKey: Uint8Array;
+      newLoginHash: string;
+      newStretchedMasterKey: Uint8Array;
+    }>(
+      "DERIVE_CHANGE_PASSWORD_KEYS",
+      { email, currentMasterPassword, newMasterPassword },
+      onProgress,
+      signal
+    );
+
+    const newMasterKey =
+      workerResult.newMasterKey instanceof Uint8Array
+        ? workerResult.newMasterKey
+        : new Uint8Array(workerResult.newMasterKey);
+    const smkBytes =
+      workerResult.newStretchedMasterKey instanceof Uint8Array
+        ? workerResult.newStretchedMasterKey
+        : new Uint8Array(workerResult.newStretchedMasterKey);
+    const newStretchedMasterKey = new StretchedMasterKey(smkBytes);
+
+    if (signal?.aborted) {
+      newMasterKey.fill(0);
+      newStretchedMasterKey.zero();
+      throw createAbortError();
+    }
+
+    return {
+      currentLoginHash: workerResult.currentLoginHash,
+      newMasterKey,
+      newLoginHash: workerResult.newLoginHash,
+      newStretchedMasterKey,
+    };
+  } catch (err) {
+    if (signal?.aborted || isAbortError(err)) {
+      throw isAbortError(err) ? err : createAbortError();
+    }
+
+    // Fallback to main thread if Worker fails to initialize
+    let currentMk: Uint8Array | null = null;
+    let newMk: Uint8Array | null = null;
+    let newSmk: StretchedMasterKey | null = null;
+    let succeeded = false;
+
+    try {
+      onProgress?.(
+        "Deriving current master key (720,000 PBKDF2 iterations)...",
+        15
+      );
+      currentMk = await generateMasterKey(email, currentMasterPassword);
+      if (signal?.aborted) throw createAbortError();
+
+      onProgress?.("Computing current login verification hash...", 35);
+      const currentLoginHash = await generateLoginhash(
+        currentMk,
+        currentMasterPassword
+      );
+      currentMk.fill(0);
+      currentMk = null;
+      if (signal?.aborted) throw createAbortError();
+
+      onProgress?.(
+        "Deriving new master key (720,000 PBKDF2 iterations)...",
+        60
+      );
+      newMk = await generateMasterKey(email, newMasterPassword);
+      if (signal?.aborted) throw createAbortError();
+
+      onProgress?.("Computing new zero-knowledge login hash...", 80);
+      const newLoginHash = await generateLoginhash(newMk, newMasterPassword);
+      if (signal?.aborted) throw createAbortError();
+
+      onProgress?.("Stretching new master key (HKDF-SHA512)...", 92);
+      newSmk = await generateStretchedMasterKey(newMk);
+      if (signal?.aborted) throw createAbortError();
+
+      succeeded = true;
+      return {
+        currentLoginHash,
+        newMasterKey: newMk,
+        newLoginHash,
+        newStretchedMasterKey: newSmk,
+      };
+    } finally {
+      currentMk?.fill(0);
+      if (!succeeded) {
+        newMk?.fill(0);
+        newSmk?.zero();
+      }
+    }
   }
 }

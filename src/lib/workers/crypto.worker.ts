@@ -6,6 +6,7 @@ import {
   generateProtectedSymmetricKey,
   generateStretchedMasterKey,
 } from "../key-generation";
+import type { StretchedMasterKey } from "../models/keys";
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -47,7 +48,10 @@ self.onmessage = async (event: MessageEvent) => {
       sendProgress("Computing zero-knowledge login hash...", 45);
       const loginHash = await generateLoginhash(mk, masterPassword);
 
-      sendProgress("Stretching master key (HKDF-SHA512) & generating vault key...", 65);
+      sendProgress(
+        "Stretching master key (HKDF-SHA512) & generating vault key...",
+        65
+      );
       const smk = await generateStretchedMasterKey(mk);
       const psk = await generateProtectedSymmetricKey(smk);
       const mkBase64 = uint8ToBase64(mk);
@@ -77,6 +81,65 @@ self.onmessage = async (event: MessageEvent) => {
           rsaEncodedPublicKey,
         },
       });
+    } else if (type === "DERIVE_CHANGE_PASSWORD_KEYS") {
+      const { email, currentMasterPassword, newMasterPassword } = payload;
+      let currentMk: Uint8Array | null = null;
+      let newMk: Uint8Array | null = null;
+      let newSmk: StretchedMasterKey | null = null;
+
+      try {
+        sendProgress(
+          "Deriving current master key (720,000 PBKDF2 iterations)...",
+          15
+        );
+        currentMk = await generateMasterKey(email, currentMasterPassword);
+
+        sendProgress("Computing current login verification hash...", 35);
+        const currentLoginHash = await generateLoginhash(
+          currentMk,
+          currentMasterPassword
+        );
+        currentMk.fill(0);
+        currentMk = null;
+
+        sendProgress(
+          "Deriving new master key (720,000 PBKDF2 iterations)...",
+          60
+        );
+        newMk = await generateMasterKey(email, newMasterPassword);
+
+        sendProgress("Computing new zero-knowledge login hash...", 80);
+        const newLoginHash = await generateLoginhash(newMk, newMasterPassword);
+
+        sendProgress("Stretching new master key (HKDF-SHA512)...", 92);
+        newSmk = await generateStretchedMasterKey(newMk);
+
+        const newMasterKeyTransfer = new Uint8Array(newMk);
+        const newStretchedMasterKeyTransfer = new Uint8Array(newSmk.keybuffer);
+
+        self.postMessage(
+          {
+            id,
+            type: "RESULT",
+            result: {
+              currentLoginHash,
+              newMasterKey: newMasterKeyTransfer,
+              newLoginHash,
+              newStretchedMasterKey: newStretchedMasterKeyTransfer,
+            },
+          },
+          {
+            transfer: [
+              newMasterKeyTransfer.buffer,
+              newStretchedMasterKeyTransfer.buffer,
+            ],
+          }
+        );
+      } finally {
+        currentMk?.fill(0);
+        newMk?.fill(0);
+        newSmk?.zero();
+      }
     }
   } catch (err: any) {
     self.postMessage({
