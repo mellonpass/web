@@ -1,4 +1,8 @@
 import {
+  deriveChangePasswordKeys,
+  type ChangePasswordDerivedKeys,
+} from "../change-password-derivation";
+import {
   extractSymmetricKey,
   generateAsymmetricKeys,
   generateLoginhash,
@@ -6,7 +10,6 @@ import {
   generateProtectedSymmetricKey,
   generateStretchedMasterKey,
 } from "../key-generation";
-import type { StretchedMasterKey } from "../models/keys";
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -83,48 +86,32 @@ self.onmessage = async (event: MessageEvent) => {
       });
     } else if (type === "DERIVE_CHANGE_PASSWORD_KEYS") {
       const { email, currentMasterPassword, newMasterPassword } = payload;
-      let currentMk: Uint8Array | null = null;
-      let newMk: Uint8Array | null = null;
-      let newSmk: StretchedMasterKey | null = null;
+      let derived: ChangePasswordDerivedKeys | null = null;
+      let newMasterKeyTransfer: Uint8Array | null = null;
+      let newStretchedMasterKeyTransfer: Uint8Array | null = null;
+      let posted = false;
 
       try {
-        sendProgress(
-          "Deriving current master key (720,000 PBKDF2 iterations)...",
-          15
+        derived = await deriveChangePasswordKeys(
+          email,
+          currentMasterPassword,
+          newMasterPassword,
+          sendProgress
         );
-        currentMk = await generateMasterKey(email, currentMasterPassword);
 
-        sendProgress("Computing current login verification hash...", 35);
-        const currentLoginHash = await generateLoginhash(
-          currentMk,
-          currentMasterPassword
+        newMasterKeyTransfer = new Uint8Array(derived.newMasterKey);
+        newStretchedMasterKeyTransfer = new Uint8Array(
+          derived.newStretchedMasterKey.keybuffer
         );
-        currentMk.fill(0);
-        currentMk = null;
-
-        sendProgress(
-          "Deriving new master key (720,000 PBKDF2 iterations)...",
-          60
-        );
-        newMk = await generateMasterKey(email, newMasterPassword);
-
-        sendProgress("Computing new zero-knowledge login hash...", 80);
-        const newLoginHash = await generateLoginhash(newMk, newMasterPassword);
-
-        sendProgress("Stretching new master key (HKDF-SHA512)...", 92);
-        newSmk = await generateStretchedMasterKey(newMk);
-
-        const newMasterKeyTransfer = new Uint8Array(newMk);
-        const newStretchedMasterKeyTransfer = new Uint8Array(newSmk.keybuffer);
 
         self.postMessage(
           {
             id,
             type: "RESULT",
             result: {
-              currentLoginHash,
+              currentLoginHash: derived.currentLoginHash,
               newMasterKey: newMasterKeyTransfer,
-              newLoginHash,
+              newLoginHash: derived.newLoginHash,
               newStretchedMasterKey: newStretchedMasterKeyTransfer,
             },
           },
@@ -135,10 +122,14 @@ self.onmessage = async (event: MessageEvent) => {
             ],
           }
         );
+        posted = true;
       } finally {
-        currentMk?.fill(0);
-        newMk?.fill(0);
-        newSmk?.zero();
+        derived?.newMasterKey.fill(0);
+        derived?.newStretchedMasterKey.zero();
+        if (!posted) {
+          newMasterKeyTransfer?.fill(0);
+          newStretchedMasterKeyTransfer?.fill(0);
+        }
       }
     }
   } catch (err: any) {

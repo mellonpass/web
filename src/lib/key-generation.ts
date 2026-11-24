@@ -366,6 +366,10 @@ export const extractRSAPrivateKey = decryptPrivateKeyWithSymmetricKey;
 
 export const generateOrganizationSymmetricKey = generateOrganizationKey;
 
+function isAllZero(bytes: Uint8Array): boolean {
+  return bytes.every((b) => b === 0);
+}
+
 /**
  * Re-wraps an existing SymmetricKey (SK) under a new StretchedMasterKey (newSmk)
  * without altering SK or re-encrypting vault items / RSA keys.
@@ -374,6 +378,23 @@ export async function rewrapSymmetricKey(
   sk: SymmetricKey,
   newSmk: StretchedMasterKey
 ): Promise<ProtectedSymmetricKey> {
+  if (!sk?.keybuffer || sk.keybuffer.byteLength !== 64) {
+    throw new Error(
+      `Invalid SymmetricKey length: expected 64 bytes, received ${sk?.keybuffer?.byteLength ?? 0}`
+    );
+  }
+  if (isAllZero(sk.keybuffer)) {
+    throw new Error("Invalid SymmetricKey: key material is zeroed");
+  }
+  if (!newSmk?.keybuffer || newSmk.keybuffer.byteLength !== 64) {
+    throw new Error(
+      `Invalid StretchedMasterKey length: expected 64 bytes, received ${newSmk?.keybuffer?.byteLength ?? 0}`
+    );
+  }
+  if (isAllZero(newSmk.keybuffer)) {
+    throw new Error("Invalid StretchedMasterKey: key material is zeroed");
+  }
+
   return await newSmk.protectKey(sk);
 }
 

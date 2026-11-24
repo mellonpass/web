@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { arrayBufferToBase64 } from "$lib/bytes";
+import { isAbortError } from "$lib/change-password-derivation";
 import * as cryptoClient from "$lib/crypto-client";
 import {
   decryptOrgKeyWithPrivateKey,
@@ -17,7 +18,11 @@ import {
   rewrapSymmetricKey,
 } from "$lib/key-generation";
 import * as keyGeneration from "$lib/key-generation";
-import { ProtectedSymmetricKey, StretchedMasterKey } from "$lib/models/keys";
+import {
+  ProtectedSymmetricKey,
+  StretchedMasterKey,
+  SymmetricKey,
+} from "$lib/models/keys";
 import {
   decryptCipherForVaultContent,
   encryptCipher,
@@ -340,10 +345,12 @@ describe("Crypto Password Rotation Keys & Worker Derivation", () => {
     };
 
     vi.stubGlobal("self", mockSelf);
+    vi.resetModules();
 
+    const freshKeyGeneration = await import("$lib/key-generation");
     const workerMasterKeys: Uint8Array[] = [];
-    const origGenMk = keyGeneration.generateMasterKey;
-    vi.spyOn(keyGeneration, "generateMasterKey").mockImplementation(
+    const origGenMk = freshKeyGeneration.generateMasterKey;
+    vi.spyOn(freshKeyGeneration, "generateMasterKey").mockImplementation(
       async (e, pw) => {
         const buf = await origGenMk(e, pw);
         workerMasterKeys.push(buf);
@@ -352,14 +359,15 @@ describe("Crypto Password Rotation Keys & Worker Derivation", () => {
     );
 
     const workerSmks: StretchedMasterKey[] = [];
-    const origGenSmk = keyGeneration.generateStretchedMasterKey;
-    vi.spyOn(keyGeneration, "generateStretchedMasterKey").mockImplementation(
-      async (mk) => {
-        const smk = await origGenSmk(mk);
-        workerSmks.push(smk);
-        return smk;
-      }
-    );
+    const origGenSmk = freshKeyGeneration.generateStretchedMasterKey;
+    vi.spyOn(
+      freshKeyGeneration,
+      "generateStretchedMasterKey"
+    ).mockImplementation(async (mk) => {
+      const smk = await origGenSmk(mk);
+      workerSmks.push(smk);
+      return smk;
+    });
 
     await import("$lib/workers/crypto.worker");
     expect(mockSelf.onmessage).toBeTypeOf("function");
@@ -398,5 +406,217 @@ describe("Crypto Password Rotation Keys & Worker Derivation", () => {
     }
     expect(workerSmks).toHaveLength(1);
     expect(workerSmks[0].keybuffer.every((b) => b === 0)).toBe(true);
+  }, 15_000);
+
+  it("BaseKey.zero() wipes internal AES and HMAC buffers so previously protected payloads fail MAC verification", async () => {
+    const smk = new StretchedMasterKey(
+      crypto.getRandomValues(new Uint8Array(64))
+    );
+    const sk = new SymmetricKey(crypto.getRandomValues(new Uint8Array(64)));
+
+    const psk = await smk.protectKey(sk);
+    const ciphertext = await sk.encrypt(
+      new TextEncoder().encode("secret-payload")
+    );
+
+    smk.zero();
+    sk.zero();
+
+    expect(smk.keybuffer.every((b) => b === 0)).toBe(true);
+    expect(sk.keybuffer.every((b) => b === 0)).toBe(true);
+
+    await expect(smk.extractKey(psk)).rejects.toThrow("Invalid MAC signature!");
+    await expect(sk.decryptText(ciphertext)).rejects.toThrow(
+      "Invalid MAC signature!"
+    );
+  });
+
+  it("rewrapSymmetricKey rejects wrong-length or zeroed keys", async () => {
+    const validSk = new SymmetricKey(
+      crypto.getRandomValues(new Uint8Array(64))
+    );
+    const validSmk = new StretchedMasterKey(
+      crypto.getRandomValues(new Uint8Array(64))
+    );
+
+    const shortSk = new SymmetricKey(new Uint8Array(32).fill(1));
+    await expect(rewrapSymmetricKey(shortSk, validSmk)).rejects.toThrow(
+      "Invalid SymmetricKey length: expected 64 bytes, received 32"
+    );
+
+    const zeroedSk = new SymmetricKey(new Uint8Array(64).fill(1));
+    zeroedSk.zero();
+    await expect(rewrapSymmetricKey(zeroedSk, validSmk)).rejects.toThrow(
+      "Invalid SymmetricKey: key material is zeroed"
+    );
+
+    const shortSmk = new StretchedMasterKey(new Uint8Array(32).fill(2));
+    await expect(rewrapSymmetricKey(validSk, shortSmk)).rejects.toThrow(
+      "Invalid StretchedMasterKey length: expected 64 bytes, received 32"
+    );
+
+    const zeroedSmk = new StretchedMasterKey(new Uint8Array(64).fill(2));
+    zeroedSmk.zero();
+    await expect(rewrapSymmetricKey(validSk, zeroedSmk)).rejects.toThrow(
+      "Invalid StretchedMasterKey: key material is zeroed"
+    );
+
+    validSk.zero();
+    validSmk.zero();
+    shortSk.zero();
+    shortSmk.zero();
+  });
+
+  it("deriveChangePasswordKeysAsync aborts mid-flight during main-thread fallback and zeroes intermediate buffers", async () => {
+    vi.stubGlobal("Worker", undefined);
+
+    const origGenMk = keyGeneration.generateMasterKey;
+    const producedMasterKeys: Uint8Array[] = [];
+    vi.spyOn(keyGeneration, "generateMasterKey").mockImplementation(
+      async (e, pw) => {
+        const mk = await origGenMk(e, pw);
+        producedMasterKeys.push(mk);
+        return mk;
+      }
+    );
+
+    const abortController = new AbortController();
+    await expect(
+      cryptoClient.deriveChangePasswordKeysAsync(
+        "fallback-abort@mellonpass.test",
+        "CurrentPass!2025",
+        "NewPass!2026",
+        (_step, percent) => {
+          if (percent === 35) {
+            abortController.abort();
+          }
+        },
+        abortController.signal
+      )
+    ).rejects.toMatchObject({ name: "AbortError" });
+
+    expect(producedMasterKeys).toHaveLength(1);
+    expect(producedMasterKeys[0].every((b) => b === 0)).toBe(true);
+  }, 15_000);
+
+  it("deriveChangePasswordKeysAsync does not fall back to main thread on worker ERROR or cross-realm AbortError", async () => {
+    expect(isAbortError({ name: "AbortError" })).toBe(true);
+    expect(isAbortError({ message: "Operation aborted" })).toBe(true);
+    expect(isAbortError(new Error("Other error"))).toBe(false);
+    expect(isAbortError(null)).toBe(false);
+
+    class ErrorWorker {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: ((err: unknown) => void) | null = null;
+      terminate = vi.fn();
+      postMessage = vi.fn((msg: any) => {
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: {
+              id: msg.id,
+              type: "ERROR",
+              error: "Worker derivation exploded",
+            },
+          } as MessageEvent);
+        });
+      });
+    }
+
+    vi.stubGlobal("Worker", ErrorWorker as unknown as typeof Worker);
+    const generateMkSpy = vi.spyOn(keyGeneration, "generateMasterKey");
+
+    await expect(
+      cryptoClient.deriveChangePasswordKeysAsync(
+        "worker-error@mellonpass.test",
+        "CurrentPass!2025",
+        "NewPass!2026"
+      )
+    ).rejects.toThrow("Worker derivation exploded");
+    expect(generateMkSpy).not.toHaveBeenCalled();
+
+    class CrossRealmAbortWorker {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: ((err: unknown) => void) | null = null;
+      terminate = vi.fn();
+      postMessage = vi.fn(() => {
+        queueMicrotask(() => {
+          this.onerror?.({ name: "AbortError" });
+        });
+      });
+    }
+
+    vi.stubGlobal("Worker", CrossRealmAbortWorker as unknown as typeof Worker);
+
+    await expect(
+      cryptoClient.deriveChangePasswordKeysAsync(
+        "cross-realm-abort@mellonpass.test",
+        "CurrentPass!2025",
+        "NewPass!2026"
+      )
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(generateMkSpy).not.toHaveBeenCalled();
+  });
+
+  it("crypto.worker zeroes unsent transfer buffers if postMessage throws on RESULT", async () => {
+    const capturedTransfers: Uint8Array[] = [];
+    const postedMessages: Array<{ data: any; options?: any }> = [];
+    const mockSelf: {
+      onmessage: ((event: MessageEvent) => Promise<void> | void) | null;
+      postMessage: (data: any, options?: any) => void;
+    } = {
+      onmessage: null,
+      postMessage: (data: any, options?: any) => {
+        if (data.type === "RESULT") {
+          capturedTransfers.push(
+            data.result.newMasterKey,
+            data.result.newStretchedMasterKey
+          );
+          throw new Error("DataCloneError simulation");
+        }
+        postedMessages.push({ data, options });
+      },
+    };
+
+    vi.stubGlobal("self", mockSelf);
+    vi.resetModules();
+
+    const freshKeyGeneration = await import("$lib/key-generation");
+    const workerMasterKeys: Uint8Array[] = [];
+    const origGenMk = freshKeyGeneration.generateMasterKey;
+    vi.spyOn(freshKeyGeneration, "generateMasterKey").mockImplementation(
+      async (e, pw) => {
+        const buf = await origGenMk(e, pw);
+        workerMasterKeys.push(buf);
+        return buf;
+      }
+    );
+
+    await import("$lib/workers/crypto.worker");
+
+    await mockSelf.onmessage!({
+      data: {
+        id: "task-post-throw",
+        type: "DERIVE_CHANGE_PASSWORD_KEYS",
+        payload: {
+          email: "worker-throw@mellonpass.test",
+          currentMasterPassword: "OldWorkerThrowPassword!2025",
+          newMasterPassword: "NewWorkerThrowPassword!2026",
+        },
+      },
+    } as MessageEvent);
+
+    const errorMsg = postedMessages.find((m) => m.data.type === "ERROR");
+    expect(errorMsg).toBeDefined();
+    expect(errorMsg!.data.error).toBe("DataCloneError simulation");
+
+    expect(workerMasterKeys).toHaveLength(2);
+    for (const mk of workerMasterKeys) {
+      expect(mk.every((b) => b === 0)).toBe(true);
+    }
+
+    expect(capturedTransfers).toHaveLength(2);
+    for (const transferBuf of capturedTransfers) {
+      expect(transferBuf.every((b) => b === 0)).toBe(true);
+    }
   }, 15_000);
 });
