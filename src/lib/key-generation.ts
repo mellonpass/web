@@ -68,7 +68,11 @@ export const generateProtectedSymmetricKey = async (
   // Create random 512-bit Symmetric Key.
   const rawKey = crypto.getRandomValues(new Uint8Array(64));
   const sk = new SymmetricKey(rawKey);
-  return await smk.protectKey(sk);
+  try {
+    return await smk.protectKey(sk);
+  } finally {
+    sk.zero();
+  }
 };
 
 export const generateLoginhash = async (
@@ -106,14 +110,19 @@ export async function extractSymmetricKey(
   mk: string,
   key: string | ProtectedSymmetricKey
 ): Promise<SymmetricKey> {
-  const smk = await generateStretchedMasterKey(base64ToArrayBuffer(mk));
-  let psk;
-  if (typeof key == "string") {
-    psk = await ProtectedSymmetricKey.fromBase64(key);
-  } else {
-    psk = key;
+  const mkBytes = base64ToArrayBuffer(mk);
+  let smk: StretchedMasterKey | null = null;
+  try {
+    smk = await generateStretchedMasterKey(mkBytes);
+    const psk =
+      typeof key == "string"
+        ? await ProtectedSymmetricKey.fromBase64(key)
+        : key;
+    return await smk.extractKey(psk);
+  } finally {
+    mkBytes.fill(0);
+    smk?.zero();
   }
-  return await smk.extractKey(psk);
 }
 
 export async function extractCipherKey(
@@ -357,6 +366,38 @@ export const extractRSAPrivateKey = decryptPrivateKeyWithSymmetricKey;
 
 export const generateOrganizationSymmetricKey = generateOrganizationKey;
 
+function isAllZero(bytes: Uint8Array): boolean {
+  return bytes.every((b) => b === 0);
+}
+
+/**
+ * Re-wraps an existing SymmetricKey (SK) under a new StretchedMasterKey (newSmk)
+ * without altering SK or re-encrypting vault items / RSA keys.
+ */
+export async function rewrapSymmetricKey(
+  sk: SymmetricKey,
+  newSmk: StretchedMasterKey
+): Promise<ProtectedSymmetricKey> {
+  if (!sk?.keybuffer || sk.keybuffer.byteLength !== 64) {
+    throw new Error(
+      `Invalid SymmetricKey length: expected 64 bytes, received ${sk?.keybuffer?.byteLength ?? 0}`
+    );
+  }
+  if (isAllZero(sk.keybuffer)) {
+    throw new Error("Invalid SymmetricKey: key material is zeroed");
+  }
+  if (!newSmk?.keybuffer || newSmk.keybuffer.byteLength !== 64) {
+    throw new Error(
+      `Invalid StretchedMasterKey length: expected 64 bytes, received ${newSmk?.keybuffer?.byteLength ?? 0}`
+    );
+  }
+  if (isAllZero(newSmk.keybuffer)) {
+    throw new Error("Invalid StretchedMasterKey: key material is zeroed");
+  }
+
+  return await newSmk.protectKey(sk);
+}
+
 /**
  * Unwraps a CipherKey using the current Organization Symmetric Key (oldOsk)
  * and re-wraps it under a rotated Organization Symmetric Key (newOsk).
@@ -371,8 +412,6 @@ export async function rewrapCipherKey(
     const newPck = await newOsk.protectKey(ck);
     return newPck.toBase64();
   } finally {
-    try {
-      ck.keybuffer.fill(0);
-    } catch {}
+    ck.zero();
   }
 }

@@ -1,4 +1,8 @@
 import {
+  deriveChangePasswordKeys,
+  type ChangePasswordDerivedKeys,
+} from "../change-password-derivation";
+import {
   extractSymmetricKey,
   generateAsymmetricKeys,
   generateLoginhash,
@@ -47,7 +51,10 @@ self.onmessage = async (event: MessageEvent) => {
       sendProgress("Computing zero-knowledge login hash...", 45);
       const loginHash = await generateLoginhash(mk, masterPassword);
 
-      sendProgress("Stretching master key (HKDF-SHA512) & generating vault key...", 65);
+      sendProgress(
+        "Stretching master key (HKDF-SHA512) & generating vault key...",
+        65
+      );
       const smk = await generateStretchedMasterKey(mk);
       const psk = await generateProtectedSymmetricKey(smk);
       const mkBase64 = uint8ToBase64(mk);
@@ -77,6 +84,53 @@ self.onmessage = async (event: MessageEvent) => {
           rsaEncodedPublicKey,
         },
       });
+    } else if (type === "DERIVE_CHANGE_PASSWORD_KEYS") {
+      const { email, currentMasterPassword, newMasterPassword } = payload;
+      let derived: ChangePasswordDerivedKeys | null = null;
+      let newMasterKeyTransfer: Uint8Array | null = null;
+      let newStretchedMasterKeyTransfer: Uint8Array | null = null;
+      let posted = false;
+
+      try {
+        derived = await deriveChangePasswordKeys(
+          email,
+          currentMasterPassword,
+          newMasterPassword,
+          sendProgress
+        );
+
+        newMasterKeyTransfer = new Uint8Array(derived.newMasterKey);
+        newStretchedMasterKeyTransfer = new Uint8Array(
+          derived.newStretchedMasterKey.keybuffer
+        );
+
+        self.postMessage(
+          {
+            id,
+            type: "RESULT",
+            result: {
+              currentLoginHash: derived.currentLoginHash,
+              newMasterKey: newMasterKeyTransfer,
+              newLoginHash: derived.newLoginHash,
+              newStretchedMasterKey: newStretchedMasterKeyTransfer,
+            },
+          },
+          {
+            transfer: [
+              newMasterKeyTransfer.buffer,
+              newStretchedMasterKeyTransfer.buffer,
+            ],
+          }
+        );
+        posted = true;
+      } finally {
+        derived?.newMasterKey.fill(0);
+        derived?.newStretchedMasterKey.zero();
+        if (!posted) {
+          newMasterKeyTransfer?.fill(0);
+          newStretchedMasterKeyTransfer?.fill(0);
+        }
+      }
     }
   } catch (err: any) {
     self.postMessage({

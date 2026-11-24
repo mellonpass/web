@@ -1,5 +1,12 @@
 import { arrayBufferToBase64 } from "$lib/bytes";
 import {
+  createAbortError,
+  deriveChangePasswordKeys,
+  isAbortError,
+  type ChangePasswordDerivedKeys,
+  type CryptoProgressCallback,
+} from "$lib/change-password-derivation";
+import {
   decryptPrivateKeyWithSymmetricKey,
   extractSymmetricKey,
   generateAsymmetricKeys,
@@ -8,9 +15,16 @@ import {
   generateProtectedSymmetricKey,
   generateStretchedMasterKey,
 } from "$lib/key-generation";
-import type { SymmetricKey } from "$lib/models/keys";
+import { StretchedMasterKey, type SymmetricKey } from "$lib/models/keys";
 
-export type CryptoProgressCallback = (step: string, percent: number) => void;
+export type { ChangePasswordDerivedKeys, CryptoProgressCallback };
+
+class WorkerExecutionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WorkerExecutionError";
+  }
+}
 
 /**
  * In-memory storage for the user's decrypted RSA-OAEP private key.
@@ -101,41 +115,69 @@ export async function initializeUserRsaPrivateKey(
 }
 
 function runWorkerTask<T>(
-  type: "DERIVE_LOGIN_KEYS" | "DERIVE_SETUP_KEYS",
+  type:
+    | "DERIVE_LOGIN_KEYS"
+    | "DERIVE_SETUP_KEYS"
+    | "DERIVE_CHANGE_PASSWORD_KEYS",
   payload: Record<string, any>,
-  onProgress?: CryptoProgressCallback
+  onProgress?: CryptoProgressCallback,
+  signal?: AbortSignal
 ): Promise<T> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(createAbortError());
+      return;
+    }
+
+    let worker: Worker | null = null;
+    let settled = false;
+
+    const settle = (cb: () => void) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", onAbort);
+      if (worker) {
+        worker.onmessage = null;
+        worker.onerror = null;
+        try {
+          worker.terminate();
+        } catch {}
+      }
+      cb();
+    };
+
+    const onAbort = () => {
+      settle(() => reject(createAbortError()));
+    };
+
     try {
-      const worker = new Worker(
+      worker = new Worker(
         new URL("./workers/crypto.worker.ts", import.meta.url),
         { type: "module" }
       );
       const id = crypto.randomUUID();
+      signal?.addEventListener("abort", onAbort, { once: true });
 
       worker.onmessage = (event: MessageEvent) => {
         const data = event.data;
-        if (data.id !== id) return;
+        if (data.id !== id || settled) return;
 
         if (data.type === "PROGRESS") {
           onProgress?.(data.step, data.percent);
         } else if (data.type === "RESULT") {
-          worker.terminate();
-          resolve(data.result as T);
+          settle(() => resolve(data.result as T));
         } else if (data.type === "ERROR") {
-          worker.terminate();
-          reject(new Error(data.error));
+          settle(() => reject(new WorkerExecutionError(data.error)));
         }
       };
 
       worker.onerror = (err) => {
-        worker.terminate();
-        reject(err);
+        settle(() => reject(err));
       };
 
       worker.postMessage({ id, type, payload });
     } catch (err) {
-      reject(err);
+      settle(() => reject(err));
     }
   });
 }
@@ -206,5 +248,70 @@ export async function deriveSetupKeysAsync(
       rsaProtectedKey,
       rsaEncodedPublicKey,
     };
+  }
+}
+
+export async function deriveChangePasswordKeysAsync(
+  email: string,
+  currentMasterPassword: string,
+  newMasterPassword: string,
+  onProgress?: CryptoProgressCallback,
+  signal?: AbortSignal
+): Promise<ChangePasswordDerivedKeys> {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+
+  try {
+    const workerResult = await runWorkerTask<{
+      currentLoginHash: string;
+      newMasterKey: Uint8Array;
+      newLoginHash: string;
+      newStretchedMasterKey: Uint8Array;
+    }>(
+      "DERIVE_CHANGE_PASSWORD_KEYS",
+      { email, currentMasterPassword, newMasterPassword },
+      onProgress,
+      signal
+    );
+
+    const newMasterKey =
+      workerResult.newMasterKey instanceof Uint8Array
+        ? workerResult.newMasterKey
+        : new Uint8Array(workerResult.newMasterKey);
+    const smkBytes =
+      workerResult.newStretchedMasterKey instanceof Uint8Array
+        ? workerResult.newStretchedMasterKey
+        : new Uint8Array(workerResult.newStretchedMasterKey);
+    const newStretchedMasterKey = new StretchedMasterKey(smkBytes);
+
+    if (signal?.aborted) {
+      newMasterKey.fill(0);
+      newStretchedMasterKey.zero();
+      throw createAbortError();
+    }
+
+    return {
+      currentLoginHash: workerResult.currentLoginHash,
+      newMasterKey,
+      newLoginHash: workerResult.newLoginHash,
+      newStretchedMasterKey,
+    };
+  } catch (err) {
+    if (signal?.aborted || isAbortError(err)) {
+      throw isAbortError(err) ? err : createAbortError();
+    }
+    if (err instanceof WorkerExecutionError) {
+      throw err;
+    }
+
+    // Fallback to main thread if Worker fails to initialize
+    return await deriveChangePasswordKeys(
+      email,
+      currentMasterPassword,
+      newMasterPassword,
+      onProgress,
+      signal
+    );
   }
 }

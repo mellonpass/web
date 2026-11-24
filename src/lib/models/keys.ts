@@ -59,6 +59,21 @@ abstract class BaseKey {
     return btoa(arrayBufferToBase64(this.keybuffer));
   }
 
+  /**
+   * Zeroes out raw key material held in this key instance's byte buffers.
+   */
+  zero(): void {
+    try {
+      this.keybuffer.fill(0);
+    } catch {}
+    try {
+      this.aeskeyBuffer.fill(0);
+    } catch {}
+    try {
+      this.mackeyBuffer.fill(0);
+    } catch {}
+  }
+
   static fromBase64<T extends BaseKey>(
     this: new (encodedKey: Uint8Array) => T,
     encodedKey: string
