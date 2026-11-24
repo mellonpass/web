@@ -429,6 +429,16 @@ describe("Crypto Password Rotation Keys & Worker Derivation", () => {
     await expect(sk.decryptText(ciphertext)).rejects.toThrow(
       "Invalid MAC signature!"
     );
+
+    // Independently verify aeskeyBuffer (and mackeyBuffer) were zeroed: encrypting with
+    // the zeroed key must be decryptable by a fresh all-zero key.
+    const zeroedProbeCiphertext = await sk.encrypt(
+      new TextEncoder().encode("zeroed-probe")
+    );
+    const allZeroSk = new SymmetricKey(new Uint8Array(64));
+    await expect(allZeroSk.decryptText(zeroedProbeCiphertext)).resolves.toBe(
+      "zeroed-probe"
+    );
   });
 
   it("rewrapSymmetricKey rejects wrong-length or zeroed keys", async () => {
