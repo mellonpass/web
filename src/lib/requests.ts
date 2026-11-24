@@ -61,7 +61,7 @@ export async function requests({
   }
 
   throw {
-    error: data?.error ?? response.statusText ?? "Request failed.",
+    error: data?.error ?? (response.statusText || "Request failed."),
     code: data?.code,
     statusCode: response.status,
   };
@@ -112,7 +112,14 @@ export function getErrorMessage(err: unknown, fallback: string): string {
     if (typeof record.error === "string" && record.error) {
       return record.error;
     }
-    if (record.error && typeof record.error === "object") {
+    if (Array.isArray(record.error)) {
+      const items = record.error.filter(
+        (item): item is string => typeof item === "string" && item.length > 0
+      );
+      if (items.length > 0) {
+        return items.join("; ");
+      }
+    } else if (record.error && typeof record.error === "object") {
       const errorObj = record.error as Record<string, unknown>;
       const parts: string[] = [];
       for (const [key, value] of Object.entries(errorObj)) {

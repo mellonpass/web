@@ -145,6 +145,7 @@ export interface ChangePasswordParams {
   newLoginHash: string;
   newProtectedSymmetricKey: string;
   hint?: string;
+  signal?: AbortSignal;
 }
 
 export const changePassword = async ({
@@ -152,6 +153,7 @@ export const changePassword = async ({
   newLoginHash,
   newProtectedSymmetricKey,
   hint,
+  signal,
 }: ChangePasswordParams) => {
   const payload: {
     current_login_hash: string;
@@ -172,6 +174,9 @@ export const changePassword = async ({
     method: "POST",
     url: `${PUBLIC_SERVER_URL}/accounts/change-password`,
     payload,
-    options: { credentials: "include" },
+    options: {
+      credentials: "include",
+      ...(signal ? { signal } : {}),
+    },
   });
 };

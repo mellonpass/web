@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { arrayBufferToBase64 } from "$lib/bytes";
+import { createAbortError } from "$lib/change-password-derivation";
 import * as cryptoClient from "$lib/crypto-client";
 import {
   extractSymmetricKey,
@@ -8,6 +9,7 @@ import {
   generateStretchedMasterKey,
 } from "$lib/key-generation";
 import * as keyGeneration from "$lib/key-generation";
+import { getErrorMessage, requests } from "$lib/requests";
 import { changePassword } from "$lib/services/accounts";
 import { rotateMasterPassword } from "$lib/vaults";
 
@@ -66,6 +68,7 @@ describe("Master Password rotation service & orchestration", () => {
       new_protected_symmetric_key: "new-psk",
     });
     expect("hint" in body1).toBe(false);
+    expect("signal" in init1).toBe(false);
 
     // With hint: hint key is included
     await changePassword({
@@ -260,14 +263,12 @@ describe("Master Password rotation service & orchestration", () => {
     expect(localStorageSpy.setItem).not.toHaveBeenCalled();
     expect(sessionStorageSpy.setItem).not.toHaveBeenCalled();
 
-    // Abort mid-request via AbortController zeroes buffers and returns { aborted: true }
+    // Abort mid-request via AbortController forwards signal, rejects fetch, zeroes buffers, and returns { aborted: true }
     const abortController = new AbortController();
-    fetchMock.mockImplementationOnce(async () => {
+    fetchMock.mockImplementationOnce(async (_url, init) => {
+      expect(init.signal).toBe(abortController.signal);
       abortController.abort();
-      return {
-        ok: true,
-        json: async () => ({ data: { message: "ok" } }),
-      };
+      throw createAbortError();
     });
 
     const abortedResult = await rotateMasterPassword({
@@ -291,7 +292,167 @@ describe("Master Password rotation service & orchestration", () => {
     ).toBe(true);
     expect(capturedSkBuffer!.every((b) => b === 0)).toBe(true);
 
+    // Abort signaled after server commit (200 OK) preserves rotated keys to prevent client/server desync
+    const postCommitAbortController = new AbortController();
+    fetchMock.mockImplementationOnce(async (_url, init) => {
+      expect(init.signal).toBe(postCommitAbortController.signal);
+      postCommitAbortController.abort();
+      return {
+        ok: true,
+        json: async () => ({
+          data: {
+            user_email: email,
+            message: "Master password updated successfully.",
+          },
+        }),
+      };
+    });
+
+    const postCommitResult = await rotateMasterPassword({
+      email,
+      currentMasterPassword: realPassword,
+      newMasterPassword: newPassword,
+      currentMkBase64: realMkBase64,
+      currentEpsk: realEpsk,
+      signal: postCommitAbortController.signal,
+    });
+
+    expect(postCommitResult.aborted).toBe(false);
+    expect(postCommitResult.newMkBase64).toBeTruthy();
+    expect(postCommitResult.newEpsk).toBeTruthy();
+    expect(postCommitResult.response).toEqual({
+      data: {
+        user_email: email,
+        message: "Master password updated successfully.",
+      },
+    });
+    expect(capturedDerived!.newMasterKey.every((b) => b === 0)).toBe(true);
+    expect(
+      capturedDerived!.newStretchedMasterKey.keybuffer.every((b) => b === 0)
+    ).toBe(true);
+    expect(capturedSkBuffer!.every((b) => b === 0)).toBe(true);
+
     realMk.fill(0);
     realSmk.zero();
   }, 30_000);
+
+  it("rotateMasterPassword validates required inputs and handles pre-aborted signals", async () => {
+    await expect(
+      rotateMasterPassword({
+        email: "",
+        currentMasterPassword: "OldPassword!2025",
+        newMasterPassword: "NewPassword!2026",
+        currentMkBase64: "mk",
+        currentEpsk: "epsk",
+      })
+    ).rejects.toThrow("Account email is unavailable. Please sign in again.");
+
+    await expect(
+      rotateMasterPassword({
+        email: "dana@mellonpass.test",
+        currentMasterPassword: "OldPassword!2025",
+        newMasterPassword: "NewPassword!2026",
+        currentMkBase64: "",
+        currentEpsk: "epsk",
+      })
+    ).rejects.toThrow(
+      "Vault is locked. Please unlock your vault and try again."
+    );
+
+    await expect(
+      rotateMasterPassword({
+        email: "dana@mellonpass.test",
+        currentMasterPassword: "OldPassword!2025",
+        newMasterPassword: "NewPassword!2026",
+        currentMkBase64: "mk",
+        currentEpsk: "",
+      })
+    ).rejects.toThrow(
+      "Vault is locked. Please unlock your vault and try again."
+    );
+
+    const deriveSpy = vi.spyOn(cryptoClient, "deriveChangePasswordKeysAsync");
+    const preAborted = new AbortController();
+    preAborted.abort();
+
+    const preAbortedResult = await rotateMasterPassword({
+      email: "dana@mellonpass.test",
+      currentMasterPassword: "OldPassword!2025",
+      newMasterPassword: "NewPassword!2026",
+      currentMkBase64: "mk",
+      currentEpsk: "epsk",
+      signal: preAborted.signal,
+    });
+
+    expect(preAbortedResult).toEqual({
+      aborted: true,
+      newMkBase64: null,
+      newEpsk: null,
+      response: null,
+    });
+    expect(deriveSpy).not.toHaveBeenCalled();
+  });
+
+  it("requests() handles non-JSON error bodies and empty HTTP/2 statusText", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        statusText: "Bad Gateway",
+        json: async () => {
+          throw new SyntaxError("Unexpected token < in JSON");
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "",
+        json: async () => {
+          throw new SyntaxError("Unexpected end of JSON input");
+        },
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requests({ method: "GET", url: "http://localhost:8000/test" })
+    ).rejects.toEqual({
+      error: "Bad Gateway",
+      code: undefined,
+      statusCode: 502,
+    });
+
+    await expect(
+      requests({ method: "GET", url: "http://localhost:8000/test" })
+    ).rejects.toEqual({
+      error: "Request failed.",
+      code: undefined,
+      statusCode: 500,
+    });
+  });
+
+  it("getErrorMessage formats Marshmallow object field errors and array errors", () => {
+    expect(
+      getErrorMessage(
+        {
+          error: {
+            hint: ["Longer than maximum length 50."],
+            current_login_hash: "Missing data for required field.",
+          },
+          statusCode: 400,
+        },
+        "Fallback error"
+      )
+    ).toBe(
+      "hint: Longer than maximum length 50. current_login_hash: Missing data for required field."
+    );
+
+    expect(
+      getErrorMessage({ error: ["Bad request", "Try again"] }, "Fallback error")
+    ).toBe("Bad request; Try again");
+
+    expect(getErrorMessage({ error: [] }, "Fallback error")).toBe(
+      "Fallback error"
+    );
+  });
 });

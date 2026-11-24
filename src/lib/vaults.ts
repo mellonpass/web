@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 import { arrayBufferToBase64 } from "$lib/bytes";
+import { isAbortError } from "$lib/change-password-derivation";
 import {
   deriveChangePasswordKeysAsync,
   type ChangePasswordDerivedKeys,
@@ -259,12 +260,19 @@ export interface RotateMasterPasswordParams {
   isAborted?: () => boolean;
 }
 
-export interface RotateMasterPasswordResult {
-  aborted: boolean;
-  newMkBase64: string | null;
-  newEpsk: string | null;
-  response: unknown;
-}
+export type RotateMasterPasswordResult =
+  | {
+      aborted: true;
+      newMkBase64: null;
+      newEpsk: null;
+      response: null;
+    }
+  | {
+      aborted: false;
+      newMkBase64: string;
+      newEpsk: string;
+      response: unknown;
+    };
 
 /**
  * Rotates the user's Master Password by deriving new authentication/wrapping keys,
@@ -345,16 +353,8 @@ export async function rotateMasterPassword({
       newLoginHash: derived.newLoginHash,
       newProtectedSymmetricKey,
       hint,
+      signal,
     });
-
-    if (checkAborted()) {
-      return {
-        aborted: true,
-        newMkBase64: null,
-        newEpsk: null,
-        response: null,
-      };
-    }
 
     onProgress?.("Master password rotated.", 100);
     return {
@@ -364,7 +364,7 @@ export async function rotateMasterPassword({
       response,
     };
   } catch (err) {
-    if (checkAborted() || (err instanceof Error && err.name === "AbortError")) {
+    if (checkAborted() || isAbortError(err)) {
       return {
         aborted: true,
         newMkBase64: null,
