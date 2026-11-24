@@ -49,13 +49,22 @@ export async function requests({
     ...options,
   });
 
-  const data = await response.json();
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
 
   if (response.ok) {
     return data;
   }
 
-  throw { error: data.error, code: data?.code, statusCode: response.status };
+  throw {
+    error: data?.error ?? response.statusText ?? "Request failed.",
+    code: data?.code,
+    statusCode: response.status,
+  };
 }
 
 export enum GQLOperation {
@@ -102,6 +111,20 @@ export function getErrorMessage(err: unknown, fallback: string): string {
     }
     if (typeof record.error === "string" && record.error) {
       return record.error;
+    }
+    if (record.error && typeof record.error === "object") {
+      const errorObj = record.error as Record<string, unknown>;
+      const parts: string[] = [];
+      for (const [key, value] of Object.entries(errorObj)) {
+        if (Array.isArray(value) && value.length > 0) {
+          parts.push(`${key}: ${value.join("; ")}`);
+        } else if (typeof value === "string" && value) {
+          parts.push(`${key}: ${value}`);
+        }
+      }
+      if (parts.length > 0) {
+        return parts.join(" ");
+      }
     }
   }
   return fallback;

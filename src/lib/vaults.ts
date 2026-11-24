@@ -1,5 +1,16 @@
 import { get } from "svelte/store";
-import { extractSymmetricKey, generateCipherKey } from "$lib/key-generation";
+import { arrayBufferToBase64 } from "$lib/bytes";
+import {
+  deriveChangePasswordKeysAsync,
+  type ChangePasswordDerivedKeys,
+  type CryptoProgressCallback,
+} from "$lib/crypto-client";
+import {
+  extractSymmetricKey,
+  generateCipherKey,
+  rewrapSymmetricKey,
+} from "$lib/key-generation";
+import { changePassword } from "$lib/services/accounts";
 import {
   activeOrganization,
   allVaultItemsStore,
@@ -15,7 +26,7 @@ import {
   encryptCipher,
 } from "$lib/symmetric-encryption";
 
-import type { SymmetricKey } from "$lib/models/keys";
+import type { ProtectedSymmetricKey, SymmetricKey } from "$lib/models/keys";
 import {
   VaultStatus,
   type Cipher,
@@ -234,4 +245,146 @@ export async function handleCipherResponse<T extends CipherData>(
   vaultItemStore.edit(updatedVaultItem);
 
   return await decryptCipherForVaultContent<T>(effectiveSk, cipher);
+}
+
+export interface RotateMasterPasswordParams {
+  email: string;
+  currentMasterPassword: string;
+  newMasterPassword: string;
+  currentMkBase64: string;
+  currentEpsk: string;
+  hint?: string;
+  onProgress?: CryptoProgressCallback;
+  signal?: AbortSignal;
+  isAborted?: () => boolean;
+}
+
+export interface RotateMasterPasswordResult {
+  aborted: boolean;
+  newMkBase64: string | null;
+  newEpsk: string | null;
+  response: unknown;
+}
+
+/**
+ * Rotates the user's Master Password by deriving new authentication/wrapping keys,
+ * re-wrapping the existing in-memory SymmetricKey (SK) under the new StretchedMasterKey,
+ * submitting the update to `/accounts/change-password`, and zeroing all temporary
+ * key buffers in `finally` on completion, error, or abort.
+ */
+export async function rotateMasterPassword({
+  email,
+  currentMasterPassword,
+  newMasterPassword,
+  currentMkBase64,
+  currentEpsk,
+  hint,
+  onProgress,
+  signal,
+  isAborted,
+}: RotateMasterPasswordParams): Promise<RotateMasterPasswordResult> {
+  if (!email) {
+    throw new Error("Account email is unavailable. Please sign in again.");
+  }
+  if (!currentMkBase64 || !currentEpsk) {
+    throw new Error("Vault is locked. Please unlock your vault and try again.");
+  }
+
+  const checkAborted = () => Boolean(signal?.aborted || isAborted?.());
+  if (checkAborted()) {
+    return { aborted: true, newMkBase64: null, newEpsk: null, response: null };
+  }
+
+  let derived: ChangePasswordDerivedKeys | null = null;
+  let sk: SymmetricKey | null = null;
+  let newPsk: ProtectedSymmetricKey | null = null;
+
+  try {
+    derived = await deriveChangePasswordKeysAsync(
+      email,
+      currentMasterPassword,
+      newMasterPassword,
+      onProgress,
+      signal
+    );
+
+    if (checkAborted()) {
+      return {
+        aborted: true,
+        newMkBase64: null,
+        newEpsk: null,
+        response: null,
+      };
+    }
+
+    onProgress?.("Re-wrapping vault encryption key...", 96);
+    sk = await extractSymmetricKey(currentMkBase64, currentEpsk);
+    newPsk = await rewrapSymmetricKey(sk, derived.newStretchedMasterKey);
+    const newProtectedSymmetricKey = newPsk.toBase64();
+    const newMkBase64 = arrayBufferToBase64(derived.newMasterKey);
+
+    sk.zero();
+    sk = null;
+    derived.newMasterKey.fill(0);
+    derived.newStretchedMasterKey.zero();
+    newPsk.zero();
+    newPsk = null;
+
+    if (checkAborted()) {
+      return {
+        aborted: true,
+        newMkBase64: null,
+        newEpsk: null,
+        response: null,
+      };
+    }
+
+    onProgress?.("Updating master password on server...", 98);
+    const response = await changePassword({
+      currentLoginHash: derived.currentLoginHash,
+      newLoginHash: derived.newLoginHash,
+      newProtectedSymmetricKey,
+      hint,
+    });
+
+    if (checkAborted()) {
+      return {
+        aborted: true,
+        newMkBase64: null,
+        newEpsk: null,
+        response: null,
+      };
+    }
+
+    onProgress?.("Master password rotated.", 100);
+    return {
+      aborted: false,
+      newMkBase64,
+      newEpsk: newProtectedSymmetricKey,
+      response,
+    };
+  } catch (err) {
+    if (checkAborted() || (err instanceof Error && err.name === "AbortError")) {
+      return {
+        aborted: true,
+        newMkBase64: null,
+        newEpsk: null,
+        response: null,
+      };
+    }
+    throw err;
+  } finally {
+    if (sk) {
+      sk.zero();
+    }
+    if (newPsk) {
+      newPsk.zero();
+    }
+    if (derived) {
+      try {
+        derived.newMasterKey.fill(0);
+      } catch {}
+      derived.newStretchedMasterKey.zero();
+    }
+  }
 }
