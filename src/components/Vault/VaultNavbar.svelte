@@ -11,6 +11,7 @@
 
     import {
         activeAddModal,
+        isChangePasswordModalOpen,
         isCommandPaletteOpen,
         isPasswordGeneratorOpen,
         searchFilter,
@@ -307,6 +308,16 @@
                         <div class="flex items-center gap-2.5">
                             <Icon icon="hugeicons:magic-wand-01" width="16" height="16" class="text-slate-400" />
                             <span>Password Generator</span>
+                        </div>
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Item
+                        onSelect={() => ($isChangePasswordModalOpen = true)}
+                        class="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer focus:outline-none"
+                    >
+                        <div class="flex items-center gap-2.5">
+                            <Icon icon="hugeicons:key-01" width="16" height="16" class="text-slate-400" />
+                            <span>Change Master Password</span>
                         </div>
                     </DropdownMenu.Item>
 

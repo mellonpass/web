@@ -29,6 +29,7 @@ export const isPasswordGeneratorOpen: Writable<boolean> = writable(false);
 export const isCreateOrgModalOpen: Writable<boolean> = writable(false);
 export const isOrgAdminModalOpen: Writable<boolean> = writable(false);
 export const isAcceptInviteModalOpen: Writable<boolean> = writable(false);
+export const isChangePasswordModalOpen: Writable<boolean> = writable(false);
 
 const createEntityStore = <T extends { id?: string }>() => {
   const store = writable([] as Array<T>);

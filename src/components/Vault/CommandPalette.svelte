@@ -6,6 +6,7 @@
         allVaultItemsStore,
         categoryFilter,
         isAcceptInviteModalOpen,
+        isChangePasswordModalOpen,
         isCommandPaletteOpen,
         isCreateOrgModalOpen,
         isOrgAdminModalOpen,
@@ -122,6 +123,16 @@
             action: () => {
                 $isCommandPaletteOpen = false;
                 $isPasswordGeneratorOpen = true;
+            },
+        },
+        {
+            id: "change-master-password",
+            label: "Change Master Password",
+            icon: "hugeicons:key-01",
+            shortcut: "S P",
+            action: () => {
+                $isCommandPaletteOpen = false;
+                $isChangePasswordModalOpen = true;
             },
         },
         {

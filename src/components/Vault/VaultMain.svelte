@@ -1,12 +1,13 @@
 <script lang="ts">
     import { PUBLIC_DEMO_MODE } from "$env/static/public";
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount, setContext, untrack } from "svelte";
     import Icon from "@iconify/svelte";
 
     import VaultContent from "$components/Vault/VaultContent.svelte";
     import VaultNavbar from "$components/Vault/VaultNavbar.svelte";
     import VaultSideNav from "$components/Vault/VaultSideNav.svelte";
     import VaultWatchtower from "$components/Vault/VaultWatchtower.svelte";
+    import ChangePasswordModal from "$components/Vault/ChangePasswordModal.svelte";
     import CommandPalette from "$components/Vault/CommandPalette.svelte";
     import OrganizationAcceptInviteModal from "$components/Vault/OrganizationAcceptInviteModal.svelte";
     import OrganizationAdminModal from "$components/Vault/OrganizationAdminModal.svelte";
@@ -29,12 +30,25 @@
     import { theme } from "$lib/theme.svelte";
 
     let {
+        mk = undefined,
+        epsk = undefined,
         isLoadingVault = false,
         onLockVault = undefined,
     }: {
+        mk?: string | null | undefined;
+        epsk?: string | null | undefined;
         isLoadingVault?: boolean;
         onLockVault?: (() => void) | undefined;
     } = $props();
+
+    const initialMk = untrack(() => mk);
+    const initialEpsk = untrack(() => epsk);
+    if (initialMk != null) {
+        setContext("mk", initialMk);
+    }
+    if (initialEpsk != null) {
+        setContext("epsk", initialEpsk);
+    }
 
     let vaultItems: Array<VaultItem> = $state([]);
     let demoBannerDismissed = $state(false);
@@ -417,6 +431,7 @@
 
 <CommandPalette {onLockVault} />
 <PasswordGeneratorModal bind:open={$isPasswordGeneratorOpen} />
+<ChangePasswordModal />
 <OrganizationCreateModal />
 <OrganizationAcceptInviteModal />
 <OrganizationAdminModal />
