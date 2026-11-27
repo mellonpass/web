@@ -7,6 +7,7 @@
         allVaultItemsStore,
         categoryFilter,
         isAcceptInviteModalOpen,
+        isChangePasswordModalOpen,
         isCreateOrgModalOpen,
         isOrgAdminModalOpen,
         isPasswordGeneratorOpen,
@@ -458,8 +459,8 @@
         </div>
     </div>
 
-    <!-- Bottom Quick Tool -->
-    <div class="border-t border-slate-200/80 dark:border-slate-800/80 p-3">
+    <!-- Bottom Quick Tools -->
+    <div class="border-t border-slate-200/80 dark:border-slate-800/80 p-3 space-y-2">
         <button
             type="button"
             onclick={() => {
@@ -471,6 +472,21 @@
             <div class="flex items-center gap-2">
                 <Icon icon="hugeicons:magic-wand-01" width="16" height="16" class="text-indigo-500" />
                 <span>Password Generator</span>
+            </div>
+            <Icon icon="hugeicons:arrow-up-right-01" width="14" height="14" class="text-slate-400" />
+        </button>
+
+        <button
+            type="button"
+            onclick={() => {
+                $isChangePasswordModalOpen = true;
+                onSelectCategory?.();
+            }}
+            class="flex w-full items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition-all shadow-2xs cursor-pointer"
+        >
+            <div class="flex items-center gap-2">
+                <Icon icon="hugeicons:key-01" width="15" height="15" class="text-slate-500 dark:text-slate-400" />
+                <span>Change Master Password</span>
             </div>
             <Icon icon="hugeicons:arrow-up-right-01" width="14" height="14" class="text-slate-400" />
         </button>

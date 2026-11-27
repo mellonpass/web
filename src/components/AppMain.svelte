@@ -20,6 +20,7 @@
         allVaultItemsStore,
         categoryFilter,
         cipherStore,
+        isChangePasswordModalOpen,
         matchesVaultContext,
         newVaultItem,
         organizationStore,
@@ -71,16 +72,58 @@
     let isLoadingVault = $state(false);
     let rsaKeyInitAttempted = $state(false);
 
+    let cachedSk: SymmetricKey | null = null;
     let cachedSkPromise: Promise<SymmetricKey> | null = null;
+    let deferredZeroSks: SymmetricKey[] = [];
+
+    const flushDeferredZeroSks = () => {
+        for (const sk of deferredZeroSks) {
+            sk.zero();
+        }
+        deferredZeroSks = [];
+    };
+
     const getSymmetricKey = (): Promise<SymmetricKey> => {
         if (!mkState || !epskState) {
             return Promise.reject(new Error("Vault is locked"));
         }
         if (!cachedSkPromise) {
-            cachedSkPromise = extractSymmetricKey(mkState, epskState);
+            const promise = extractSymmetricKey(mkState, epskState).then(
+                (sk) => {
+                    if (!isUnlock || cachedSkPromise !== promise) {
+                        sk.zero();
+                        throw new Error("Vault is locked");
+                    }
+                    cachedSk = sk;
+                    return sk;
+                }
+            );
+            cachedSkPromise = promise;
         }
         return cachedSkPromise;
     };
+
+    setContext("getMasterKeyState", () => ({
+        mk: mkState,
+        epsk: epskState,
+    }));
+    setContext(
+        "updateMasterKeyState",
+        (newMk: string, newEpsk: string) => {
+            if (!isUnlock) return;
+            if (cachedSk) {
+                if (isLoadingVault) {
+                    deferredZeroSks.push(cachedSk);
+                } else {
+                    cachedSk.zero();
+                }
+                cachedSk = null;
+            }
+            cachedSkPromise = null;
+            mkState = newMk;
+            epskState = newEpsk;
+        }
+    );
 
     $effect(() => {
         if (
@@ -116,11 +159,15 @@
     export function lockVault() {
         loadGeneration++;
         isLoadingVault = false;
+        $isChangePasswordModalOpen = false;
         mkState = null;
         epskState = null;
         rsaProtectedKeyState = null;
         rsaKeyInitAttempted = false;
+        cachedSk?.zero();
+        cachedSk = null;
         cachedSkPromise = null;
+        flushDeferredZeroSks();
         clearUserRsaPrivateKey();
         organizationStore.clear();
         sessionStorage.removeItem("rsa_protected_key");
@@ -367,6 +414,7 @@
         } finally {
             if (currentGen === loadGeneration) {
                 isLoadingVault = false;
+                flushDeferredZeroSks();
             }
         }
     };
@@ -427,7 +475,10 @@
     onDestroy(() => {
         clearUserRsaPrivateKey();
         organizationStore.clear();
+        cachedSk?.zero();
+        cachedSk = null;
         cachedSkPromise = null;
+        flushDeferredZeroSks();
         newVaultItemUnsubscribe();
         categoryFilterUnsubscriber();
         allVaultItemsUnsubscriber();
@@ -438,7 +489,12 @@
 <div class="h-dvh w-screen overflow-hidden">
     {#if isUnlock}
         {#key `${mkState}:${epskState}`}
-            <VaultMain {isLoadingVault} onLockVault={lockVault} />
+            <VaultMain
+                mk={mkState}
+                epsk={epskState}
+                {isLoadingVault}
+                onLockVault={lockVault}
+            />
         {/key}
     {:else}
         <VaultLock />
