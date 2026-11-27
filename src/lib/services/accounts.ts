@@ -139,3 +139,44 @@ export const unlock = async (loginHash: string) => {
     options: { credentials: "include" },
   });
 };
+
+export interface ChangePasswordParams {
+  currentLoginHash: string;
+  newLoginHash: string;
+  newProtectedSymmetricKey: string;
+  hint?: string;
+  signal?: AbortSignal;
+}
+
+export const changePassword = async ({
+  currentLoginHash,
+  newLoginHash,
+  newProtectedSymmetricKey,
+  hint,
+  signal,
+}: ChangePasswordParams) => {
+  const payload: {
+    current_login_hash: string;
+    new_login_hash: string;
+    new_protected_symmetric_key: string;
+    hint?: string;
+  } = {
+    current_login_hash: currentLoginHash,
+    new_login_hash: newLoginHash,
+    new_protected_symmetric_key: newProtectedSymmetricKey,
+  };
+
+  if (hint !== undefined) {
+    payload.hint = hint;
+  }
+
+  return await requests({
+    method: "POST",
+    url: `${PUBLIC_SERVER_URL}/accounts/change-password`,
+    payload,
+    options: {
+      credentials: "include",
+      ...(signal ? { signal } : {}),
+    },
+  });
+};
